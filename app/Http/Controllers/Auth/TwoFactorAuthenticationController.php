@@ -8,8 +8,6 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
-use Inertia\Inertia;
-use Inertia\Response;
 
 /**
  * Self-service TOTP enrollment for the authenticated user's own account.
@@ -20,18 +18,6 @@ use Inertia\Response;
 class TwoFactorAuthenticationController extends Controller
 {
     public function __construct(private readonly AuditLogger $audit) {}
-
-    public function show(Request $request, TwoFactorAuthenticationService $service): Response
-    {
-        $user = $request->user();
-
-        return Inertia::render('Profile/TwoFactorAuthentication', [
-            'enabled' => $service->isEnabled($user),
-            'qrCodeUrl' => $user->two_factor_secret && ! $service->isEnabled($user)
-                ? $service->qrCodeUrl($user)
-                : null,
-        ]);
-    }
 
     public function store(Request $request, TwoFactorAuthenticationService $service): RedirectResponse
     {

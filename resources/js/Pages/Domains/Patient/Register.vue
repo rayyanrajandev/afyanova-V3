@@ -342,7 +342,6 @@ const saveDraftToSession = () => {
             nationality: form.nationality,
             phone: form.phone,
             email: form.email,
-            nida: form.nida,
             region: form.region,
             district: form.district,
             ward: form.ward,
@@ -375,7 +374,7 @@ onMounted(() => {
 
 // Auto-save on any change
 watch(
-    () => [form.first_name, form.last_name, form.dob, form.phone, form.nida, form.street_address],
+    () => [form.first_name, form.last_name, form.dob, form.phone, form.street_address],
     () => saveDraftToSession(),
     { deep: true }
 );

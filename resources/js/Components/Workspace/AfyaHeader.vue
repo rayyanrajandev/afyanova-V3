@@ -224,6 +224,10 @@ const logout = () => {
                     </div>
                     <div class="py-1">
                         <DropdownLink :href="route('profile.edit')" class="text-xs px-3 py-1.5 hover:bg-muted text-foreground">User Settings</DropdownLink>
+                        <DropdownLink :href="route('profile.edit')" class="text-xs px-3 py-1.5 hover:bg-muted text-foreground flex items-center justify-between">
+                            <span>Two-Factor Auth</span>
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                        </DropdownLink>
                         <button
                             @click="logout"
                             class="block w-full px-3 py-1.5 text-left text-xs leading-5 text-destructive hover:bg-destructive/10 rounded transition"

@@ -125,8 +125,6 @@ use App\Domains\Clinical\Http\Controllers\LabOrderController;
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/encounters/{encounter}/lab-orders', [LabOrderController::class, 'store'])->name('lab-orders.store');
-    Route::post('/lab-order-items/{item}/collect', [LabOrderController::class, 'collectSample'])->name('lab-orders.collect');
-    Route::post('/lab-order-items/{item}/results', [LabOrderController::class, 'enterResults'])->name('lab-orders.results');
 });
 
 use App\Domains\Inpatient\Http\Controllers\InpatientWorkspaceController;
@@ -211,6 +209,5 @@ use App\Domains\Identity\Http\Controllers\AccessControlWorkspaceController;
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/access-control', [AccessControlWorkspaceController::class, 'index'])->name('access-control.workspace');
     Route::post('/access-control/roles/assign', [AccessControlWorkspaceController::class, 'assignRole'])->name('access-control.roles.assign');
-    Route::post('/access-control/facilities/assign', [AccessControlWorkspaceController::class, 'assignFacility'])->name('access-control.facilities.assign');
     Route::post('/access-control/roles/{role}/permissions', [AccessControlWorkspaceController::class, 'updatePermissions'])->name('access-control.roles.permissions');
 });

@@ -53,6 +53,7 @@ import TableCell from '@/Components/ui/TableCell.vue';
 import AfyaStatusBadge from '@/Components/Afya/AfyaStatusBadge.vue';
 import AfyaItemCombobox from '@/Components/Afya/AfyaItemCombobox.vue';
 import AfyaCameraScanner from '@/Components/Afya/AfyaCameraScanner.vue';
+import InputError from '@/Components/InputError.vue';
 import { useWorkspacePreferences } from '@/Composables/useWorkspacePreferences';
 
 const props = defineProps({
@@ -1563,12 +1564,14 @@ const breadcrumbLabel = computed(() => {
                             <select v-model="requisitionForm.department_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
                                 <option v-for="d in departments" :key="d.id" :value="d.id">{{ d.name }}</option>
                             </select>
+                            <InputError :message="requisitionForm.errors.department_id" class="mt-1" />
                         </div>
                         <div>
                             <label class="font-bold text-muted-foreground text-[10px] uppercase">Destination Cabinet</label>
                             <select v-model="requisitionForm.destination_location_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
                                 <option v-for="l in locations" :key="l.id" :value="l.id">{{ l.name }}</option>
                             </select>
+                            <InputError :message="requisitionForm.errors.destination_location_id" class="mt-1" />
                         </div>
                         <div>
                             <label class="font-bold text-muted-foreground text-[10px] uppercase">Material Scope</label>
@@ -1606,6 +1609,7 @@ const breadcrumbLabel = computed(() => {
                             <span class="font-bold text-[10px] uppercase text-muted-foreground">Requested Items</span>
                             <button @click="addRequisitionItem" class="text-[10px] font-bold text-primary hover:underline">+ Add Line</button>
                         </div>
+                        <InputError :message="requisitionForm.errors.items" />
                         <div class="space-y-2 max-h-[320px] overflow-y-auto pr-1 p-0.5">
                             <div v-for="(item, idx) in requisitionForm.items" :key="idx" class="grid grid-cols-12 gap-2 items-center p-1.5 bg-muted/10 rounded-lg border border-border/40">
                                 <div class="col-span-8">
@@ -1616,9 +1620,11 @@ const breadcrumbLabel = computed(() => {
                                         placeholder="Search items by code, name, generic..."
                                         @select="(sel) => onRequisitionItemSelect(idx, sel)"
                                     />
+                                    <InputError :message="requisitionForm.errors[`items.${idx}.item_id`]" class="mt-1" />
                                 </div>
                                 <div class="col-span-3">
                                     <Input v-model.number="item.quantity_requested" type="number" min="1" placeholder="Quantity" class="h-8 text-xs font-mono text-right" />
+                                    <InputError :message="requisitionForm.errors[`items.${idx}.quantity_requested`]" class="mt-1" />
                                 </div>
                                 <div class="col-span-1 flex justify-end">
                                     <button 
@@ -1637,6 +1643,7 @@ const breadcrumbLabel = computed(() => {
                     <div>
                         <label class="font-bold text-muted-foreground text-[10px] uppercase">Requisition Justification</label>
                         <Input v-model="requisitionForm.notes" placeholder="e.g. Weekly replenishment for Maternity Labour Ward..." class="h-8 text-xs" />
+                        <InputError :message="requisitionForm.errors.notes" class="mt-1" />
                     </div>
                 </div>
 
@@ -1667,6 +1674,7 @@ const breadcrumbLabel = computed(() => {
                         <div>
                             <label class="font-bold text-muted-foreground text-[10px] uppercase">Item Code / MSD SKU</label>
                             <Input v-model="newItemForm.item_code" class="h-8 text-xs" />
+                            <InputError :message="newItemForm.errors.item_code" class="mt-1" />
                         </div>
                         <div>
                             <label class="font-bold text-muted-foreground text-[10px] uppercase">Category</label>
@@ -1681,22 +1689,26 @@ const breadcrumbLabel = computed(() => {
                                 <option value="Nutrition_Food">Kitchen Rations</option>
                                 <option value="Fixed_Asset">Biomedical Fixed Asset</option>
                             </select>
+                            <InputError :message="newItemForm.errors.category" class="mt-1" />
                         </div>
                     </div>
 
                     <div>
                         <label class="font-bold text-muted-foreground text-[10px] uppercase">Item Name</label>
                         <Input v-model="newItemForm.name" placeholder="e.g. IV Cannula G20 with Injection Port" class="h-8 text-xs" />
+                        <InputError :message="newItemForm.errors.name" class="mt-1" />
                     </div>
 
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="font-bold text-muted-foreground text-[10px] uppercase">Unit Cost (TZS)</label>
                             <Input v-model.number="newItemForm.unit_cost_price" type="number" class="h-8 text-xs" />
+                            <InputError :message="newItemForm.errors.unit_cost_price" class="mt-1" />
                         </div>
                         <div>
                             <label class="font-bold text-muted-foreground text-[10px] uppercase">Selling Price (TZS)</label>
                             <Input v-model.number="newItemForm.unit_selling_price" type="number" class="h-8 text-xs" />
+                            <InputError :message="newItemForm.errors.unit_selling_price" class="mt-1" />
                         </div>
                     </div>
                 </div>
@@ -1730,12 +1742,14 @@ const breadcrumbLabel = computed(() => {
                             <select v-model="transferForm.source_location_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
                                 <option v-for="l in locations" :key="l.id" :value="l.id">{{ l.name }}</option>
                             </select>
+                            <InputError :message="transferForm.errors.source_location_id" class="mt-1" />
                         </div>
                         <div>
                             <label class="font-bold text-muted-foreground text-[10px] uppercase">To Destination Store</label>
                             <select v-model="transferForm.destination_location_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
                                 <option v-for="l in locations" :key="l.id" :value="l.id">{{ l.name }}</option>
                             </select>
+                            <InputError :message="transferForm.errors.destination_location_id" class="mt-1" />
                         </div>
                         <div>
                             <label class="font-bold text-muted-foreground text-[10px] uppercase">Material Scope</label>
@@ -1757,6 +1771,7 @@ const breadcrumbLabel = computed(() => {
                             <span class="font-bold text-[10px] uppercase text-muted-foreground">Items to Transfer</span>
                             <button @click="addTransferItem" class="text-[10px] font-bold text-primary hover:underline">+ Add Line</button>
                         </div>
+                        <InputError :message="transferForm.errors.items" />
                         <div class="space-y-2 max-h-[320px] overflow-y-auto pr-1 p-0.5">
                             <div v-for="(item, idx) in transferForm.items" :key="idx" class="grid grid-cols-12 gap-2 items-center p-1.5 bg-muted/10 rounded-lg border border-border/40">
                                 <div class="col-span-8">
@@ -1767,9 +1782,11 @@ const breadcrumbLabel = computed(() => {
                                         placeholder="Search items to dispatch..."
                                         @select="(sel) => onTransferItemSelect(idx, sel)"
                                     />
+                                    <InputError :message="transferForm.errors[`items.${idx}.medication_id`]" class="mt-1" />
                                 </div>
                                 <div class="col-span-3">
                                     <Input v-model.number="item.quantity" type="number" min="1" placeholder="Quantity" class="h-8 text-xs font-mono text-right" />
+                                    <InputError :message="transferForm.errors[`items.${idx}.quantity`]" class="mt-1" />
                                 </div>
                                 <div class="col-span-1 flex justify-end">
                                     <button 
@@ -1788,6 +1805,7 @@ const breadcrumbLabel = computed(() => {
                     <div>
                         <label class="font-bold text-muted-foreground text-[10px] uppercase">Transfer Notes</label>
                         <Input v-model="transferForm.notes" placeholder="e.g. Replenishment dispatch..." class="h-8 text-xs" />
+                        <InputError :message="transferForm.errors.notes" class="mt-1" />
                     </div>
                 </div>
 
@@ -1823,6 +1841,7 @@ const breadcrumbLabel = computed(() => {
                     <div>
                         <label class="font-bold text-muted-foreground text-[10px] uppercase">Verification / Inspection Note</label>
                         <Input v-model="confirmTransferForm.notes" placeholder="e.g. All seal seals intact, verified count..." class="h-8 text-xs" />
+                        <InputError :message="confirmTransferForm.errors.notes" class="mt-1" />
                     </div>
                 </div>
 
@@ -1855,12 +1874,14 @@ const breadcrumbLabel = computed(() => {
                             <select v-model="poForm.supplier_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
                                 <option v-for="s in suppliers" :key="s.id" :value="s.id">{{ s.name }}</option>
                             </select>
+                            <InputError :message="poForm.errors.supplier_id" class="mt-1" />
                         </div>
                         <div>
                             <label class="font-bold text-muted-foreground text-[10px] uppercase">Receiving Store</label>
                             <select v-model="poForm.destination_location_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
                                 <option v-for="l in locations" :key="l.id" :value="l.id">{{ l.name }}</option>
                             </select>
+                            <InputError :message="poForm.errors.destination_location_id" class="mt-1" />
                         </div>
                         <div>
                             <label class="font-bold text-muted-foreground text-[10px] uppercase">Material Scope</label>
@@ -1882,6 +1903,7 @@ const breadcrumbLabel = computed(() => {
                             <span class="font-bold text-[10px] uppercase text-muted-foreground">Order Items</span>
                             <button @click="addPoItem" class="text-[10px] font-bold text-primary hover:underline">+ Add Line</button>
                         </div>
+                        <InputError :message="poForm.errors.items" />
                         <div class="space-y-2 max-h-[320px] overflow-y-auto pr-1 p-0.5">
                             <div v-for="(item, idx) in poForm.items" :key="idx" class="grid grid-cols-12 gap-2 items-center p-1.5 bg-muted/10 rounded-lg border border-border/40">
                                 <div class="col-span-6">
@@ -1892,12 +1914,15 @@ const breadcrumbLabel = computed(() => {
                                         placeholder="Search items to order..."
                                         @select="(sel) => onPoItemSelect(idx, sel)"
                                     />
+                                    <InputError :message="poForm.errors[`items.${idx}.medication_id`]" class="mt-1" />
                                 </div>
                                 <div class="col-span-3">
                                     <Input v-model.number="item.requested_quantity" type="number" min="1" placeholder="Quantity" class="h-8 text-xs font-mono text-right" />
+                                    <InputError :message="poForm.errors[`items.${idx}.requested_quantity`]" class="mt-1" />
                                 </div>
                                 <div class="col-span-2">
                                     <Input v-model.number="item.unit_cost" type="number" min="0" placeholder="Unit Cost" class="h-8 text-xs font-mono text-right" />
+                                    <InputError :message="poForm.errors[`items.${idx}.unit_cost`]" class="mt-1" />
                                 </div>
                                 <div class="col-span-1 flex justify-end">
                                     <button 
@@ -1943,12 +1968,14 @@ const breadcrumbLabel = computed(() => {
                             <select v-model="grnForm.supplier_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
                                 <option v-for="s in suppliers" :key="s.id" :value="s.id">{{ s.name }}</option>
                             </select>
+                            <InputError :message="grnForm.errors.supplier_id" class="mt-1" />
                         </div>
                         <div>
                             <label class="font-bold text-muted-foreground text-[10px] uppercase">Receiving Warehouse</label>
                             <select v-model="grnForm.location_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
                                 <option v-for="l in locations" :key="l.id" :value="l.id">{{ l.name }}</option>
                             </select>
+                            <InputError :message="grnForm.errors.location_id" class="mt-1" />
                         </div>
                         <div>
                             <label class="font-bold text-muted-foreground text-[10px] uppercase">Material Scope</label>
@@ -1969,10 +1996,12 @@ const breadcrumbLabel = computed(() => {
                         <div>
                             <label class="font-bold text-muted-foreground text-[10px] uppercase">Delivery Note #</label>
                             <Input v-model="grnForm.delivery_note_number" placeholder="DN-2026-XXXX" class="h-8 text-xs" />
+                            <InputError :message="grnForm.errors.delivery_note_number" class="mt-1" />
                         </div>
                         <div>
                             <label class="font-bold text-muted-foreground text-[10px] uppercase">Supplier Invoice #</label>
                             <Input v-model="grnForm.supplier_invoice_number" placeholder="INV-MSD-XXXX" class="h-8 text-xs" />
+                            <InputError :message="grnForm.errors.supplier_invoice_number" class="mt-1" />
                         </div>
                     </div>
 
@@ -1997,6 +2026,7 @@ const breadcrumbLabel = computed(() => {
                             <span class="font-bold text-[10px] uppercase text-muted-foreground">Received Batches & Items (Single-Line High Density)</span>
                             <button @click="addGrnItem" class="text-[10px] font-bold text-primary hover:underline">+ Add Line</button>
                         </div>
+                        <InputError :message="grnForm.errors.items" />
 
                         <!-- Column Headers -->
                         <div class="grid grid-cols-12 gap-3 text-[10px] font-bold text-muted-foreground uppercase px-2.5">
@@ -2018,15 +2048,19 @@ const breadcrumbLabel = computed(() => {
                                         placeholder="Search 5,000+ items by code, name, generic..."
                                         @select="(sel) => onGrnItemSelect(idx, sel)"
                                     />
+                                    <InputError :message="grnForm.errors[`items.${idx}.medication_id`]" class="mt-1" />
                                 </div>
                                 <div class="col-span-2">
                                     <Input v-model="item.batch_number" placeholder="Batch / Lot #" class="h-8 text-xs font-mono" />
+                                    <InputError :message="grnForm.errors[`items.${idx}.batch_number`]" class="mt-1" />
                                 </div>
                                 <div class="col-span-2">
                                     <Input v-model="item.expiry_date" type="date" class="h-8 text-xs font-mono" />
+                                    <InputError :message="grnForm.errors[`items.${idx}.expiry_date`]" class="mt-1" />
                                 </div>
                                 <div class="col-span-1">
                                     <Input v-model.number="item.received_quantity" type="number" min="1" placeholder="Qty" class="h-8 text-xs text-right font-mono" />
+                                    <InputError :message="grnForm.errors[`items.${idx}.received_quantity`]" class="mt-1" />
                                 </div>
                                 <div class="col-span-2 flex items-center gap-2">
                                     <Input v-model.number="item.unit_purchase_cost" type="number" min="0" placeholder="Cost" class="h-8 text-xs text-right font-mono flex-1" />
@@ -2039,6 +2073,9 @@ const breadcrumbLabel = computed(() => {
                                     >
                                         <X class="w-4 h-4" />
                                     </button>
+                                </div>
+                                <div class="col-span-12" v-if="grnForm.errors[`items.${idx}.unit_purchase_cost`]">
+                                    <InputError :message="grnForm.errors[`items.${idx}.unit_purchase_cost`]" />
                                 </div>
                             </div>
                         </div>

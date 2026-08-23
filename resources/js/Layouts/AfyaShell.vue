@@ -1,7 +1,7 @@
 <script setup>
-import { computed } from 'vue';
-import { usePage } from '@inertiajs/vue3';
-import { CheckCircle2, AlertTriangle, X, Clock, LogOut } from 'lucide-vue-next';
+import { ref, computed, watch, onUnmounted } from 'vue';
+import { usePage, router } from '@inertiajs/vue3';
+import { CheckCircle2, AlertTriangle, X, Clock, LogOut, ShieldAlert } from 'lucide-vue-next';
 import AfyaHeader from '@/Components/Workspace/AfyaHeader.vue';
 import { useIdleTimeout } from '@/Composables/useIdleTimeout';
 
@@ -15,6 +15,50 @@ const props = defineProps({
 const page = usePage();
 const flashSuccess = computed(() => page.props.flash?.success);
 const flashError = computed(() => page.props.flash?.error || (page.props.errors && Object.keys(page.props.errors).length > 0 ? 'Validation error occurred' : null));
+
+// Break-Glass State & Countdown
+const breakGlass = computed(() => page.props.breakGlass);
+const breakGlassRemaining = ref(0);
+let breakGlassInterval = null;
+
+const updateBreakGlassTimer = () => {
+    if (breakGlass.value?.expiresAt) {
+        const remaining = Math.max(0, Math.floor(breakGlass.value.expiresAt - Date.now() / 1000));
+        breakGlassRemaining.value = remaining;
+    } else {
+        breakGlassRemaining.value = 0;
+    }
+};
+
+const formattedBreakGlassTime = computed(() => {
+    const mins = Math.floor(breakGlassRemaining.value / 60);
+    const secs = breakGlassRemaining.value % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+});
+
+const revokeBreakGlass = () => {
+    router.delete(route('clinical.break-glass.destroy'), {
+        preserveScroll: true,
+    });
+};
+
+watch(breakGlass, (bg) => {
+    if (bg?.expiresAt) {
+        updateBreakGlassTimer();
+        if (!breakGlassInterval) {
+            breakGlassInterval = setInterval(updateBreakGlassTimer, 1000);
+        }
+    } else {
+        if (breakGlassInterval) {
+            clearInterval(breakGlassInterval);
+            breakGlassInterval = null;
+        }
+    }
+}, { immediate: true });
+
+onUnmounted(() => {
+    if (breakGlassInterval) clearInterval(breakGlassInterval);
+});
 
 // Clinical Session Idle-Timeout management (30 min timeout, 2 min warning)
 const { isWarningVisible, remainingSeconds, extendSession, forceLogout } = useIdleTimeout({
@@ -33,6 +77,23 @@ const formattedCountdown = computed(() => {
     <div class="h-screen w-screen flex flex-col overflow-hidden bg-background text-foreground antialiased font-sans">
         <!-- Persistent Global Header (48px) -->
         <AfyaHeader :active-module="activeModule" />
+
+        <!-- Break-Glass Emergency Override Banner -->
+        <div v-if="breakGlass && breakGlassRemaining > 0" class="bg-amber-600 dark:bg-amber-700 text-white text-xs px-4 py-1.5 flex items-center justify-between shadow-xs transition z-50">
+            <div class="flex items-center space-x-2">
+                <ShieldAlert class="w-4 h-4 text-amber-100" />
+                <span class="font-bold">BREAK-GLASS EMERGENCY OVERRIDE ACTIVE</span>
+                <span class="text-white font-mono text-[11px] bg-black/25 px-1.5 py-0.5 rounded font-bold">Expires in {{ formattedBreakGlassTime }}</span>
+                <span class="hidden sm:inline text-white/85 text-[11px]">— Audited cross-facility access active.</span>
+            </div>
+            <button 
+                type="button"
+                @click="revokeBreakGlass" 
+                class="bg-black/20 hover:bg-black/35 text-white text-[11px] font-bold px-2.5 py-0.5 rounded transition border border-white/30"
+            >
+                Revoke Override
+            </button>
+        </div>
 
         <!-- Notification Banner / Flash Toast -->
         <div v-if="flashSuccess" class="bg-emerald-600 text-white text-xs px-4 py-1.5 flex items-center justify-between shadow-xs transition z-50">

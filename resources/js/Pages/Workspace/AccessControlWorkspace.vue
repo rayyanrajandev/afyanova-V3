@@ -35,6 +35,7 @@ import TableBody from '@/Components/ui/TableBody.vue';
 import TableRow from '@/Components/ui/TableRow.vue';
 import TableCell from '@/Components/ui/TableCell.vue';
 import AfyaStatusBadge from '@/Components/Afya/AfyaStatusBadge.vue';
+import InputError from '@/Components/InputError.vue';
 import { useWorkspacePreferences } from '@/Composables/useWorkspacePreferences';
 
 const props = defineProps({
@@ -545,6 +546,7 @@ const breadcrumbLabel = computed(() => {
                         <select v-model="assignRoleForm.user_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
                             <option v-for="u in users" :key="u.id" :value="u.id">{{ u.first_name }} {{ u.last_name }} ({{ u.email }})</option>
                         </select>
+                        <InputError :message="assignRoleForm.errors.user_id" class="mt-1" />
                     </div>
 
                     <div>
@@ -552,6 +554,7 @@ const breadcrumbLabel = computed(() => {
                         <select v-model="assignRoleForm.role_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
                             <option v-for="r in roles" :key="r.id" :value="r.id">{{ r.name }}</option>
                         </select>
+                        <InputError :message="assignRoleForm.errors.role_id" class="mt-1" />
                     </div>
 
                     <div>
@@ -560,6 +563,7 @@ const breadcrumbLabel = computed(() => {
                             <option value="">All Facilities (Tenant Wide)</option>
                             <option v-for="f in facilities" :key="f.id" :value="f.id">{{ f.name }}</option>
                         </select>
+                        <InputError :message="assignRoleForm.errors.facility_id" class="mt-1" />
                     </div>
                 </div>
 
@@ -584,6 +588,8 @@ const breadcrumbLabel = computed(() => {
                         <X class="w-4 h-4" />
                     </button>
                 </div>
+
+                <InputError :message="rolePermissionsForm.errors.permission_ids" class="px-1" />
 
                 <div class="flex-1 overflow-y-auto space-y-4 text-xs pr-1">
                     <div v-for="(perms, domain) in permissionsByDomain" :key="domain" class="space-y-2">

@@ -67,9 +67,6 @@ Route::middleware('auth')->group(function () {
         ->name('logout');
 
     // ── TOTP MFA self-service enrollment ──
-    Route::get('two-factor-authentication', [TwoFactorAuthenticationController::class, 'show'])
-        ->name('two-factor.show');
-
     Route::post('two-factor-authentication', [TwoFactorAuthenticationController::class, 'store'])
         ->name('two-factor.enable');
 

@@ -87,7 +87,7 @@ class BreakGlassController extends Controller
         $request->session()->put('break_glass.expires_at', now()->addMinutes(5)->timestamp);
 
         return redirect()->route('patients.show', $patient)
-            ->with('flash.success', 'Break-glass access granted. This session is audited and expires in 5 minutes.');
+            ->with('success', 'Break-glass access granted. This session is audited and expires in 5 minutes.');
     }
 
     /**
@@ -110,6 +110,6 @@ class BreakGlassController extends Controller
 
         $request->session()->forget(['break_glass.patient_id', 'break_glass.expires_at']);
 
-        return back()->with('flash.success', 'Break-glass access revoked.');
+        return back()->with('success', 'Break-glass access revoked.');
     }
 }
