@@ -66,6 +66,7 @@ const emit = defineEmits(['click']);
     <button
         :type="type"
         :disabled="disabled || loading"
+        :aria-busy="loading ? 'true' : undefined"
         :class="cn(buttonVariants({ variant, size }), props.class)"
         @click="emit('click', $event)"
     >

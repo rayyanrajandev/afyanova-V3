@@ -1,0 +1,36 @@
+{
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "submit": "Submit",
+    "search": "Search",
+    "loading": "Loading...",
+    "status": "Status",
+    "actions": "Actions",
+    "confirm": "Confirm",
+    "delete": "Delete",
+    "edit": "Edit",
+    "view": "View",
+    "close": "Close",
+    "active": "Active",
+    "pending": "Pending",
+    "completed": "Completed"
+  },
+  "clinical": {
+    "consent": "Informed Consent",
+    "immunization": "Immunization & Vaccination",
+    "referral": "Inter-Facility Referral",
+    "anc": "Antenatal Care (RCH)",
+    "partograph": "WHO Intrapartum Partograph",
+    "radiology": "Radiology & Imaging Requisition",
+    "vitals": "Patient Vitals",
+    "notes": "Clinical Documentation",
+    "diagnoses": "Diagnoses & Problem List",
+    "prescriptions": "e-Prescriptions & Dispensing"
+  },
+  "security": {
+    "break_glass_active": "EMERGENCY BREAK-GLASS PRIVILEGE ACTIVE",
+    "break_glass_warning": "All clinical charting, diagnostic views, and prescription changes are legally attributed to the emergency override audit trail.",
+    "revoke_privilege": "Revoke Emergency Privilege Now"
+  }
+}
