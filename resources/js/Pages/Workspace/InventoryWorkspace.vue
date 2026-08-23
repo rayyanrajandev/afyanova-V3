@@ -105,6 +105,31 @@ const showPoModal = ref(false);
 const showGrnModal = ref(false);
 const showConfirmTransferModal = ref(false);
 const selectedTransferToConfirm = ref(null);
+const showDdaModal = ref(false);
+const showStocktakeModal = ref(false);
+
+const ddaForm = useForm({
+    facility_id: props.facilities[0]?.id || '',
+    item_id: props.itemMasters[0]?.id || '',
+    batch_id: props.batches[0]?.id || '',
+    dose_administered: 1,
+    dose_wasted_discarded: 0,
+    indication: 'Intractable acute severe pain',
+    notes: '',
+});
+
+const stocktakeForm = useForm({
+    session_id: props.stocktakeSessions[0]?.id || '',
+    counts: [
+        {
+            medication_id: props.medications[0]?.id || '',
+            batch_id: props.batches[0]?.id || '',
+            physical_counted_quantity: 50,
+            variance_reason: '',
+        }
+    ],
+    notes: '',
+});
 
 // Forms
 const requisitionForm = useForm({
@@ -391,6 +416,24 @@ const submitGrn = () => {
     });
 };
 
+const submitDdaLog = () => {
+    ddaForm.post(route('inventory.dda-logs.store'), {
+        onSuccess: () => {
+            showDdaModal.value = false;
+            ddaForm.reset();
+        }
+    });
+};
+
+const submitStocktake = () => {
+    stocktakeForm.post(route('inventory.stocktake.store'), {
+        onSuccess: () => {
+            showStocktakeModal.value = false;
+            stocktakeForm.reset();
+        }
+    });
+};
+
 const approvePo = (poId) => {
     router.post(route('inventory.purchase-orders.approve', poId));
 };
@@ -647,6 +690,28 @@ const breadcrumbLabel = computed(() => {
                             >
                                 <FileCheck2 class="w-3.5 h-3.5" />
                                 <span>Receive Goods (GRN)</span>
+                            </Button>
+
+                            <Button 
+                                v-if="activeSection === 'dda'"
+                                variant="default" 
+                                size="sm" 
+                                class="h-7 text-xs font-semibold gap-1 shadow-2xs bg-rose-600 hover:bg-rose-700 text-white"
+                                @click="showDdaModal = true"
+                            >
+                                <ShieldAlert class="w-3.5 h-3.5" />
+                                <span>Log DDA Administration</span>
+                            </Button>
+
+                            <Button 
+                                v-if="activeSection === 'stocktake'"
+                                variant="default" 
+                                size="sm" 
+                                class="h-7 text-xs font-semibold gap-1 shadow-2xs"
+                                @click="showStocktakeModal = true"
+                            >
+                                <Plus class="w-3.5 h-3.5" />
+                                <span>Record Physical Count</span>
                             </Button>
 
                             <Button 
@@ -2088,6 +2153,142 @@ const breadcrumbLabel = computed(() => {
                         Post GRN to Ledger
                     </Button>
                 </div>
+            </div>
+        </div>
+
+        <!-- MODAL: LOG DDA NARCOTICS ADMINISTRATION -->
+        <div v-if="showDdaModal" class="fixed inset-0 bg-background/80 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+            <div class="bg-card border border-border/60 rounded-xl shadow-xl w-full max-w-lg overflow-hidden">
+                <div class="flex items-center justify-between border-b border-border/60 p-4 px-6 bg-rose-500/5">
+                    <div class="flex items-center gap-2">
+                        <ShieldAlert class="w-4 h-4 text-rose-600" />
+                        <h3 class="font-bold text-sm text-foreground">Log DDA Controlled Substance Administration</h3>
+                    </div>
+                    <button @click="showDdaModal = false" class="text-muted-foreground hover:text-foreground">
+                        <X class="w-4 h-4" />
+                    </button>
+                </div>
+
+                <form @submit.prevent="submitDdaLog" class="p-6 space-y-4 text-xs">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block font-bold text-[10px] uppercase text-muted-foreground mb-1">Facility *</label>
+                            <select v-model="ddaForm.facility_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                                <option v-for="f in facilities" :key="f.id" :value="f.id">{{ f.name }}</option>
+                            </select>
+                            <InputError :message="ddaForm.errors.facility_id" class="mt-1" />
+                        </div>
+                        <div>
+                            <label class="block font-bold text-[10px] uppercase text-muted-foreground mb-1">Controlled Item *</label>
+                            <select v-model="ddaForm.item_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                                <option v-for="item in itemMasters" :key="item.id" :value="item.id">{{ item.name }} ({{ item.item_code }})</option>
+                            </select>
+                            <InputError :message="ddaForm.errors.item_id" class="mt-1" />
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block font-bold text-[10px] uppercase text-muted-foreground mb-1">Batch / Lot # *</label>
+                            <select v-model="ddaForm.batch_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                                <option v-for="b in batches" :key="b.id" :value="b.id">{{ b.batch_number }}</option>
+                            </select>
+                            <InputError :message="ddaForm.errors.batch_id" class="mt-1" />
+                        </div>
+                        <div>
+                            <label class="block font-bold text-[10px] uppercase text-muted-foreground mb-1">Dose Administered *</label>
+                            <Input v-model.number="ddaForm.dose_administered" type="number" step="0.01" min="0.01" class="h-8 text-xs font-mono" />
+                            <InputError :message="ddaForm.errors.dose_administered" class="mt-1" />
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block font-bold text-[10px] uppercase text-muted-foreground mb-1">Dose Wasted / Discarded</label>
+                            <Input v-model.number="ddaForm.dose_wasted_discarded" type="number" step="0.01" min="0" class="h-8 text-xs font-mono" />
+                            <InputError :message="ddaForm.errors.dose_wasted_discarded" class="mt-1" />
+                        </div>
+                        <div>
+                            <label class="block font-bold text-[10px] uppercase text-muted-foreground mb-1">Clinical Indication *</label>
+                            <Input v-model="ddaForm.indication" placeholder="e.g. Post-op pain management" class="h-8 text-xs" />
+                            <InputError :message="ddaForm.errors.indication" class="mt-1" />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block font-bold text-[10px] uppercase text-muted-foreground mb-1">Additional Notes</label>
+                        <Input v-model="ddaForm.notes" placeholder="e.g. Witnessed by second RN" class="h-8 text-xs" />
+                        <InputError :message="ddaForm.errors.notes" class="mt-1" />
+                    </div>
+
+                    <div class="flex justify-end gap-2 pt-3 border-t border-border/60">
+                        <Button type="button" variant="outline" size="sm" @click="showDdaModal = false">Cancel</Button>
+                        <Button type="submit" variant="default" size="sm" :disabled="ddaForm.processing" class="bg-rose-600 hover:bg-rose-700 text-white">
+                            <span>Record Legal DDA Entry</span>
+                        </Button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- MODAL: RECORD STOCKTAKE PHYSICAL COUNT -->
+        <div v-if="showStocktakeModal" class="fixed inset-0 bg-background/80 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+            <div class="bg-card border border-border/60 rounded-xl shadow-xl w-full max-w-lg overflow-hidden">
+                <div class="flex items-center justify-between border-b border-border/60 p-4 px-6 bg-muted/20">
+                    <div class="flex items-center gap-2">
+                        <Plus class="w-4 h-4 text-primary" />
+                        <h3 class="font-bold text-sm text-foreground">Record Physical Count Reconciliation</h3>
+                    </div>
+                    <button @click="showStocktakeModal = false" class="text-muted-foreground hover:text-foreground">
+                        <X class="w-4 h-4" />
+                    </button>
+                </div>
+
+                <form @submit.prevent="submitStocktake" class="p-6 space-y-4 text-xs">
+                    <div>
+                        <label class="block font-bold text-[10px] uppercase text-muted-foreground mb-1">Stocktake Session *</label>
+                        <select v-model="stocktakeForm.session_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                            <option v-for="st in stocktakeSessions" :key="st.id" :value="st.id">{{ st.session_number }} ({{ st.location?.name }})</option>
+                        </select>
+                        <InputError :message="stocktakeForm.errors.session_id" class="mt-1" />
+                    </div>
+
+                    <div v-for="(count, idx) in stocktakeForm.counts" :key="idx" class="p-3 bg-muted/30 rounded-lg border border-border/50 space-y-2">
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block font-bold text-[10px] uppercase text-muted-foreground mb-1">Medication / Item *</label>
+                                <select v-model="count.medication_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                                    <option v-for="m in medications" :key="m.id" :value="m.id">{{ m.name || m.generic_name }}</option>
+                                </select>
+                                <InputError :message="stocktakeForm.errors[`counts.${idx}.medication_id`]" class="mt-1" />
+                            </div>
+                            <div>
+                                <label class="block font-bold text-[10px] uppercase text-muted-foreground mb-1">Physical Counted Qty *</label>
+                                <Input v-model.number="count.physical_counted_quantity" type="number" min="0" class="h-8 text-xs font-mono" />
+                                <InputError :message="stocktakeForm.errors[`counts.${idx}.physical_counted_quantity`]" class="mt-1" />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block font-bold text-[10px] uppercase text-muted-foreground mb-1">Variance Reason</label>
+                            <Input v-model="count.variance_reason" placeholder="e.g. Broken ampoules found during physical count" class="h-8 text-xs" />
+                            <InputError :message="stocktakeForm.errors[`counts.${idx}.variance_reason`]" class="mt-1" />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block font-bold text-[10px] uppercase text-muted-foreground mb-1">Auditor Session Notes</label>
+                        <Input v-model="stocktakeForm.notes" placeholder="Session verification remarks..." class="h-8 text-xs" />
+                        <InputError :message="stocktakeForm.errors.notes" class="mt-1" />
+                    </div>
+
+                    <div class="flex justify-end gap-2 pt-3 border-t border-border/60">
+                        <Button type="button" variant="outline" size="sm" @click="showStocktakeModal = false">Cancel</Button>
+                        <Button type="submit" variant="default" size="sm" :disabled="stocktakeForm.processing">
+                            <span>Post Reconciled Count</span>
+                        </Button>
+                    </div>
+                </form>
             </div>
         </div>
 

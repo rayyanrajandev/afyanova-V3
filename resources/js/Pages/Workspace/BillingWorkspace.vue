@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
-import { Head, router } from '@inertiajs/vue3';
+import { Head, router, useForm } from '@inertiajs/vue3';
 import { 
     Receipt, 
     DollarSign, 
@@ -14,7 +14,10 @@ import {
     ShieldCheck,
     Loader2,
     X,
-    AlertCircle
+    AlertCircle,
+    FileCheck,
+    Edit3,
+    Plus
 } from '@lucide/vue';
 import AfyaShell from '@/Layouts/AfyaShell.vue';
 import AfyaWorkspace from '@/Components/Workspace/AfyaWorkspace.vue';
@@ -23,6 +26,7 @@ import AfyaSidebarItem from '@/Components/Workspace/AfyaSidebarItem.vue';
 import AfyaWorkspaceMain from '@/Components/Workspace/AfyaWorkspaceMain.vue';
 import AfyaContextPanel from '@/Components/Workspace/AfyaContextPanel.vue';
 import Modal from '@/Components/Modal.vue';
+import InputError from '@/Components/InputError.vue';
 import { useWorkspacePreferences } from '@/Composables/useWorkspacePreferences';
 
 // UI Primitives & Design Foundation
@@ -112,6 +116,39 @@ const refundInvoiceData = ref(null);
 const refundAmount = ref('');
 const refundReason = ref('Patient requested refund');
 const isSubmittingRefund = ref(false);
+
+// Adjust (Credit/Debit Note) Modal State
+const showAdjustModal = ref(false);
+const adjustInvoiceData = ref(null);
+const adjustForm = useForm({
+    type: 'Credit',
+    amount: '',
+    reason: '',
+});
+
+const openAdjustModal = (inv) => {
+    adjustInvoiceData.value = inv;
+    adjustForm.type = 'Credit';
+    adjustForm.amount = '';
+    adjustForm.reason = '';
+    adjustForm.clearErrors();
+    showAdjustModal.value = true;
+};
+
+const submitAdjust = () => {
+    if (!adjustInvoiceData.value) return;
+    adjustForm.post(route('billing.invoices.adjust', adjustInvoiceData.value.id), {
+        preserveScroll: true,
+        onSuccess: () => {
+            showAdjustModal.value = false;
+            adjustForm.reset();
+        }
+    });
+};
+
+const issueInvoice = (inv) => {
+    router.post(route('billing.invoices.issue', inv.id), {}, { preserveScroll: true });
+};
 
 const paymentMethods = [
     { 
@@ -617,6 +654,29 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Management Actions -->
+                        <div class="space-y-1.5 pt-1">
+                            <Button
+                                v-if="selectedInvoice.status === 'Draft'"
+                                variant="default"
+                                size="sm"
+                                class="w-full h-7 text-[11px] font-semibold gap-1.5 shadow-2xs"
+                                @click="issueInvoice(selectedInvoice)"
+                            >
+                                <FileCheck class="w-3.5 h-3.5" />
+                                <span>Issue Invoice & Lock</span>
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                class="w-full h-7 text-[11px] font-semibold gap-1.5 shadow-2xs"
+                                @click="openAdjustModal(selectedInvoice)"
+                            >
+                                <Edit3 class="w-3.5 h-3.5 text-amber-600" />
+                                <span>Issue Credit / Debit Note</span>
+                            </Button>
+                        </div>
                     </div>
 
                     <div v-else class="text-center py-10 text-muted-foreground text-xs">
@@ -900,6 +960,55 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                         <span>Confirm Ledger Reversal</span>
                     </Button>
                 </div>
+            </div>
+        </Modal>
+
+        <!-- Adjust Invoice (Credit / Debit Note) Accessible Modal Dialog -->
+        <Modal :show="showAdjustModal" max-width="md" @close="showAdjustModal = false">
+            <div class="p-6 space-y-4 text-xs">
+                <div class="flex items-center justify-between border-b border-border/60 pb-3">
+                    <div class="flex items-center gap-2">
+                        <Edit3 class="w-4 h-4 text-amber-600" />
+                        <div>
+                            <h3 class="font-bold text-sm text-foreground">Issue Invoice Adjustment Note</h3>
+                            <p class="text-[10px] text-muted-foreground">{{ adjustInvoiceData?.invoice_number }}</p>
+                        </div>
+                    </div>
+                    <button @click="showAdjustModal = false" class="text-muted-foreground hover:text-foreground">
+                        <X class="w-4 h-4" />
+                    </button>
+                </div>
+
+                <form @submit.prevent="submitAdjust" class="space-y-3">
+                    <div>
+                        <label class="block font-bold text-[10px] uppercase text-muted-foreground mb-1">Adjustment Type *</label>
+                        <select v-model="adjustForm.type" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                            <option value="Credit">Credit Note (Reduce Invoice Amount)</option>
+                            <option value="Debit">Debit Note (Increase Invoice Amount)</option>
+                        </select>
+                        <InputError :message="adjustForm.errors.type" class="mt-1" />
+                    </div>
+
+                    <div>
+                        <label class="block font-bold text-[10px] uppercase text-muted-foreground mb-1">Adjustment Amount (TZS) *</label>
+                        <Input v-model="adjustForm.amount" type="number" step="0.01" min="0.01" placeholder="e.g. 5000" class="h-8 text-xs font-mono" />
+                        <InputError :message="adjustForm.errors.amount" class="mt-1" />
+                    </div>
+
+                    <div>
+                        <label class="block font-bold text-[10px] uppercase text-muted-foreground mb-1">Reason / Justification *</label>
+                        <Input v-model="adjustForm.reason" placeholder="e.g. Price dispute correction, additional test ordered" class="h-8 text-xs" />
+                        <InputError :message="adjustForm.errors.reason" class="mt-1" />
+                    </div>
+
+                    <div class="flex justify-end gap-2 pt-3 border-t border-border/60">
+                        <Button type="button" variant="outline" size="sm" @click="showAdjustModal = false">Cancel</Button>
+                        <Button type="submit" variant="default" size="sm" :disabled="adjustForm.processing" class="bg-amber-600 hover:bg-amber-700 text-white">
+                            <Loader2 v-if="adjustForm.processing" class="w-3.5 h-3.5 animate-spin mr-1" />
+                            <span>Post Adjustment Note</span>
+                        </Button>
+                    </div>
+                </form>
             </div>
         </Modal>
 

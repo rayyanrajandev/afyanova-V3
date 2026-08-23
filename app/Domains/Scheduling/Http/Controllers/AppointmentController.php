@@ -2,10 +2,14 @@
 
 namespace App\Domains\Scheduling\Http\Controllers;
 
+use App\Domains\Identity\Models\User;
+use App\Domains\Patient\Models\Patient;
 use App\Domains\Scheduling\Actions\BookAppointmentAction;
 use App\Domains\Scheduling\Actions\CheckInPatientAction;
 use App\Domains\Scheduling\Exceptions\SchedulingConflictException;
 use App\Domains\Scheduling\Models\Appointment;
+use App\Domains\Tenancy\Models\Department;
+use App\Domains\Tenancy\Models\Facility;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -18,13 +22,28 @@ class AppointmentController extends Controller
 
     public function index(): Response
     {
-        $appointments = Appointment::with(['patient', 'provider'])
+        $appointments = Appointment::with(['patient', 'provider', 'facility', 'department'])
             ->whereDate('scheduled_time', '>=', now()->toDateString())
             ->orderBy('scheduled_time')
             ->get();
 
+        $patients = Patient::select('id', 'first_name', 'last_name', 'primary_mrn', 'phone_number')
+            ->latest()
+            ->take(100)
+            ->get();
+
+        $providers = User::select('id', 'first_name', 'last_name', 'email')
+            ->get();
+
+        $facilities = Facility::select('id', 'name')->get();
+        $departments = Department::select('id', 'name')->get();
+
         return Inertia::render('Domains/Scheduling/Calendar', [
             'appointments' => $appointments,
+            'patients' => $patients,
+            'providers' => $providers,
+            'facilities' => $facilities,
+            'departments' => $departments,
         ]);
     }
 

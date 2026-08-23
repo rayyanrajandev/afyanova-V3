@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue';
-import { Head, router } from '@inertiajs/vue3';
+import { Head, router, useForm } from '@inertiajs/vue3';
 import { 
     Calendar as CalendarIcon, 
     Clock, 
@@ -11,8 +11,9 @@ import {
     CalendarCheck,
     Plus,
     X,
-    Loader2
-} from '@lucide/vue';
+    Loader2,
+    Save
+} from 'lucide-vue-next';
 import AfyaShell from '@/Layouts/AfyaShell.vue';
 import AfyaWorkspace from '@/Components/Workspace/AfyaWorkspace.vue';
 import AfyaSidebar from '@/Components/Workspace/AfyaSidebar.vue';
@@ -20,9 +21,11 @@ import AfyaSidebarItem from '@/Components/Workspace/AfyaSidebarItem.vue';
 import AfyaWorkspaceMain from '@/Components/Workspace/AfyaWorkspaceMain.vue';
 import AfyaContextPanel from '@/Components/Workspace/AfyaContextPanel.vue';
 import Modal from '@/Components/Modal.vue';
+import InputError from '@/Components/InputError.vue';
 
 // UI Primitives & Design Foundation
 import Button from '@/Components/ui/Button.vue';
+import Input from '@/Components/ui/Input.vue';
 import Card from '@/Components/ui/Card.vue';
 import CardHeader from '@/Components/ui/CardHeader.vue';
 import CardTitle from '@/Components/ui/CardTitle.vue';
@@ -41,6 +44,22 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
+    patients: {
+        type: Array,
+        default: () => [],
+    },
+    providers: {
+        type: Array,
+        default: () => [],
+    },
+    facilities: {
+        type: Array,
+        default: () => [],
+    },
+    departments: {
+        type: Array,
+        default: () => [],
+    },
 });
 
 const selectedAppointment = ref(props.appointments?.[0] || null);
@@ -50,6 +69,43 @@ const showContext = ref(true);
 const showCheckInModal = ref(false);
 const checkingInApp = ref(null);
 const isCheckingIn = ref(false);
+
+// Book Appointment Modal State
+const showBookModal = ref(false);
+const nowIso = new Date();
+nowIso.setMinutes(0, 0, 0);
+nowIso.setHours(nowIso.getHours() + 1);
+const defaultDateStr = nowIso.toISOString().slice(0, 16);
+
+const bookForm = useForm({
+    patient_id: props.patients?.[0]?.id || '',
+    facility_id: props.facilities?.[0]?.id || '',
+    department_id: props.departments?.[0]?.id || '',
+    provider_id: props.providers?.[0]?.id || '',
+    scheduled_time: defaultDateStr,
+    duration_minutes: 30,
+    appointment_type: 'Consultation',
+    notes: '',
+});
+
+const openBookModal = () => {
+    bookForm.patient_id = props.patients?.[0]?.id || '';
+    bookForm.facility_id = props.facilities?.[0]?.id || '';
+    bookForm.department_id = props.departments?.[0]?.id || '';
+    bookForm.provider_id = props.providers?.[0]?.id || '';
+    bookForm.clearErrors();
+    showBookModal.value = true;
+};
+
+const submitBookAppointment = () => {
+    bookForm.post(route('appointments.store'), {
+        preserveScroll: true,
+        onSuccess: () => {
+            showBookModal.value = false;
+            bookForm.reset();
+        },
+    });
+};
 
 const selectAppointment = (app) => {
     selectedAppointment.value = app;
@@ -79,7 +135,7 @@ const confirmCheckIn = () => {
 </script>
 
 <template>
-    <Head title="Appointments & Schedule" />
+    <Head title="Appointments & Schedule — AfyaNova" />
 
     <AfyaShell active-module="scheduling">
         <AfyaWorkspace :show-sidebar="true" :show-context="showContext">
@@ -121,23 +177,29 @@ const confirmCheckIn = () => {
                     ]"
                 >
                     <template #actions>
-                        <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20">
-                            <CalendarCheck class="w-3.5 h-3.5" />
-                            <span>{{ appointments.length }} Appointments Today</span>
-                        </span>
+                        <div class="flex items-center gap-2">
+                            <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20">
+                                <CalendarCheck class="w-3.5 h-3.5" />
+                                <span>{{ appointments.length }} Appointments</span>
+                            </span>
+                            <Button variant="default" size="sm" class="h-7 text-xs font-semibold gap-1" @click="openBookModal">
+                                <Plus class="w-3 h-3" />
+                                <span>Book Appointment</span>
+                            </Button>
+                        </div>
                     </template>
 
                     <div class="w-full space-y-4">
-                        <div class="w-full">
+                        <div class="w-full border border-border/60 rounded-xl overflow-hidden bg-card shadow-2xs">
                             <Table>
                                 <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Time</TableHead>
-                                        <TableHead>Patient Details</TableHead>
-                                        <TableHead>Provider</TableHead>
-                                        <TableHead>Type</TableHead>
-                                        <TableHead>Status</TableHead>
-                                        <TableHead class="text-right">Action</TableHead>
+                                    <TableRow class="bg-muted/20 text-[10px] uppercase font-bold">
+                                        <TableHead class="py-2.5 px-3">Scheduled Time</TableHead>
+                                        <TableHead class="py-2.5 px-3">Patient Details</TableHead>
+                                        <TableHead class="py-2.5 px-3">Clinician / Provider</TableHead>
+                                        <TableHead class="py-2.5 px-3">Type</TableHead>
+                                        <TableHead class="py-2.5 px-3">Status</TableHead>
+                                        <TableHead class="py-2.5 px-3 text-right">Action</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -145,29 +207,29 @@ const confirmCheckIn = () => {
                                         v-for="app in appointments"
                                         :key="app.id"
                                         :selected="selectedAppointment?.id === app.id"
-                                        class="cursor-pointer"
+                                        class="cursor-pointer hover:bg-muted/30 border-b border-border/40"
                                         @click="selectAppointment(app)"
                                     >
-                                        <TableCell class="font-mono font-bold text-foreground">
-                                            {{ new Date(app.scheduled_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }}
+                                        <TableCell class="py-2 px-3 font-mono font-bold text-foreground text-xs">
+                                            {{ new Date(app.scheduled_time).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) }}
                                         </TableCell>
-                                        <TableCell>
-                                            <div class="font-bold text-foreground">{{ app.patient?.first_name }} {{ app.patient?.last_name }}</div>
+                                        <TableCell class="py-2 px-3">
+                                            <div class="font-bold text-foreground text-xs">{{ app.patient?.first_name }} {{ app.patient?.last_name }}</div>
                                             <div class="text-[10px] font-mono text-muted-foreground">MRN: {{ app.patient?.primary_mrn }}</div>
                                         </TableCell>
-                                        <TableCell class="text-xs text-muted-foreground">
-                                            {{ app.provider ? `Dr. ${app.provider.first_name || ''} ${app.provider.last_name || ''}` : 'General OPD' }}
+                                        <TableCell class="py-2 px-3 text-xs text-muted-foreground">
+                                            {{ app.provider ? `Dr. ${app.provider.first_name || ''} ${app.provider.last_name || ''}` : 'General Consultation' }}
                                         </TableCell>
-                                        <TableCell class="text-xs font-semibold">{{ app.appointment_type }}</TableCell>
-                                        <TableCell>
+                                        <TableCell class="py-2 px-3 text-xs font-semibold">{{ app.appointment_type }}</TableCell>
+                                        <TableCell class="py-2 px-3">
                                             <AfyaStatusBadge :status="app.status" dot />
                                         </TableCell>
-                                        <TableCell class="text-right">
+                                        <TableCell class="py-2 px-3 text-right" @click.stop>
                                             <Button
                                                 v-if="app.status === 'Scheduled'"
                                                 variant="default"
                                                 size="sm"
-                                                class="gap-1"
+                                                class="h-7 text-[11px] font-semibold gap-1"
                                                 @click.stop="openCheckInModal(app)"
                                             >
                                                 <UserCheck class="w-3 h-3" />
@@ -181,6 +243,10 @@ const confirmCheckIn = () => {
                                             <CalendarIcon class="w-8 h-8 mx-auto mb-2 text-muted-foreground opacity-50" />
                                             <p class="font-semibold text-foreground text-xs">No appointments scheduled</p>
                                             <p class="text-[11px]">Booked patient appointments will appear here.</p>
+                                            <Button variant="outline" size="sm" class="mt-3 text-xs gap-1" @click="openBookModal">
+                                                <Plus class="w-3 h-3" />
+                                                <span>Book First Appointment</span>
+                                            </Button>
                                         </TableCell>
                                     </TableRow>
                                 </TableBody>
@@ -204,7 +270,7 @@ const confirmCheckIn = () => {
                         </AfyaPatientIdentity>
 
                         <Card>
-                            <CardHeader><CardTitle>Booking Summary</CardTitle></CardHeader>
+                            <CardHeader><CardTitle class="text-xs font-bold">Booking Summary</CardTitle></CardHeader>
                             <CardContent class="space-y-1.5 text-xs">
                                 <div class="flex justify-between">
                                     <span class="text-muted-foreground">Date:</span>
@@ -221,6 +287,10 @@ const confirmCheckIn = () => {
                                 <div class="flex justify-between">
                                     <span class="text-muted-foreground">Type:</span>
                                     <span class="font-semibold">{{ selectedAppointment.appointment_type }}</span>
+                                </div>
+                                <div v-if="selectedAppointment.notes" class="pt-1.5 border-t border-border/50">
+                                    <span class="text-muted-foreground font-bold text-[10px] uppercase">Notes:</span>
+                                    <p class="text-foreground mt-0.5">{{ selectedAppointment.notes }}</p>
                                 </div>
                             </CardContent>
                         </Card>
@@ -243,6 +313,99 @@ const confirmCheckIn = () => {
                 </AfyaContextPanel>
             </template>
         </AfyaWorkspace>
+
+        <!-- MODAL: BOOK NEW APPOINTMENT -->
+        <Modal :show="showBookModal" max-width="lg" @close="showBookModal = false">
+            <div class="p-5 space-y-4 text-xs">
+                <div class="flex items-center justify-between border-b border-border/60 pb-3">
+                    <div class="flex items-center gap-2">
+                        <CalendarCheck class="w-4 h-4 text-primary" />
+                        <h3 class="font-bold text-sm text-foreground">Book Patient Appointment</h3>
+                    </div>
+                    <button @click="showBookModal = false" class="text-muted-foreground hover:text-foreground">
+                        <X class="w-4 h-4" />
+                    </button>
+                </div>
+
+                <form @submit.prevent="submitBookAppointment" class="space-y-3">
+                    <div>
+                        <label class="block font-bold text-[10px] uppercase text-muted-foreground mb-1">Select Patient *</label>
+                        <select v-model="bookForm.patient_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                            <option v-for="p in patients" :key="p.id" :value="p.id">{{ p.first_name }} {{ p.last_name }} ({{ p.primary_mrn }})</option>
+                        </select>
+                        <InputError :message="bookForm.errors.patient_id" class="mt-1" />
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block font-bold text-[10px] uppercase text-muted-foreground mb-1">Facility *</label>
+                            <select v-model="bookForm.facility_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                                <option v-for="f in facilities" :key="f.id" :value="f.id">{{ f.name }}</option>
+                            </select>
+                            <InputError :message="bookForm.errors.facility_id" class="mt-1" />
+                        </div>
+                        <div>
+                            <label class="block font-bold text-[10px] uppercase text-muted-foreground mb-1">Department</label>
+                            <select v-model="bookForm.department_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                                <option value="">General OPD</option>
+                                <option v-for="d in departments" :key="d.id" :value="d.id">{{ d.name }}</option>
+                            </select>
+                            <InputError :message="bookForm.errors.department_id" class="mt-1" />
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block font-bold text-[10px] uppercase text-muted-foreground mb-1">Provider / Doctor</label>
+                            <select v-model="bookForm.provider_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                                <option value="">Any Available Clinician</option>
+                                <option v-for="u in providers" :key="u.id" :value="u.id">Dr. {{ u.first_name }} {{ u.last_name }}</option>
+                            </select>
+                            <InputError :message="bookForm.errors.provider_id" class="mt-1" />
+                        </div>
+                        <div>
+                            <label class="block font-bold text-[10px] uppercase text-muted-foreground mb-1">Appointment Type *</label>
+                            <select v-model="bookForm.appointment_type" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                                <option value="Consultation">General Consultation</option>
+                                <option value="Follow-up">Follow-Up Review</option>
+                                <option value="Specialist Review">Specialist Clinic</option>
+                                <option value="ANC Visit">Antenatal Care (ANC)</option>
+                                <option value="Procedure">Minor Procedure</option>
+                            </select>
+                            <InputError :message="bookForm.errors.appointment_type" class="mt-1" />
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block font-bold text-[10px] uppercase text-muted-foreground mb-1">Scheduled Date & Time *</label>
+                            <Input v-model="bookForm.scheduled_time" type="datetime-local" class="h-8 text-xs font-mono" />
+                            <InputError :message="bookForm.errors.scheduled_time" class="mt-1" />
+                        </div>
+                        <div>
+                            <label class="block font-bold text-[10px] uppercase text-muted-foreground mb-1">Duration (Minutes) *</label>
+                            <Input v-model.number="bookForm.duration_minutes" type="number" min="5" max="180" class="h-8 text-xs font-mono" />
+                            <InputError :message="bookForm.errors.duration_minutes" class="mt-1" />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block font-bold text-[10px] uppercase text-muted-foreground mb-1">Clinical Reason / Notes</label>
+                        <Input v-model="bookForm.notes" placeholder="e.g. Hypertension review and prescription refill" class="h-8 text-xs" />
+                        <InputError :message="bookForm.errors.notes" class="mt-1" />
+                        <InputError :message="bookForm.errors.schedule" class="mt-1 font-bold" />
+                    </div>
+
+                    <div class="flex justify-end gap-2 pt-3 border-t border-border/60">
+                        <Button type="button" variant="outline" size="sm" @click="showBookModal = false">Cancel</Button>
+                        <Button type="submit" variant="default" size="sm" :disabled="bookForm.processing">
+                            <Loader2 v-if="bookForm.processing" class="w-3.5 h-3.5 animate-spin mr-1" />
+                            <span>Confirm Booking</span>
+                        </Button>
+                    </div>
+                </form>
+            </div>
+        </Modal>
 
         <!-- Check-In Accessible Modal Dialog -->
         <Modal :show="showCheckInModal" max-width="md" @close="closeCheckInModal">
