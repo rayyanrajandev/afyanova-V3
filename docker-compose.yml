@@ -1,0 +1,68 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file: .env
+    environment:
+      DB_HOST: pgsql
+      REDIS_HOST: redis
+    volumes:
+      - storage:/var/www/html/storage
+    depends_on:
+      pgsql:
+        condition: service_healthy
+    networks:
+      - afyanova
+
+  nginx:
+    image: nginx:1.27-alpine
+    ports:
+      - "8000:80"
+    volumes:
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - storage:/var/www/html/storage:ro
+    depends_on:
+      - app
+    networks:
+      - afyanova
+
+  pgsql:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-afyanova}
+      POSTGRES_USER: ${DB_USERNAME:-afyanova}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-afyanova}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgsql-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-afyanova} -d ${DB_DATABASE:-afyanova}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - afyanova
+
+  # Not yet wired into .env (QUEUE_CONNECTION/CACHE_STORE still 'database') —
+  # available here for the Phase 5 Redis/Horizon adoption.
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - afyanova
+
+networks:
+  afyanova:
+    driver: bridge
+
+volumes:
+  pgsql-data:
+  redis-data:
+  storage:

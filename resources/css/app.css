@@ -1,0 +1,138 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Base Surfaces & Backgrounds */
+    --background: 210 20% 98%;           /* #f8fafc - Crisp light neutral background */
+    --foreground: 222.2 47.4% 11.2%;     /* #0f172a - High contrast text */
+
+    --card: 0 0% 100%;                   /* #ffffff - Pure white cards */
+    --card-foreground: 222.2 47.4% 11.2%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 47.4% 11.2%;
+
+    /* Brand / Primary Clinical */
+    --primary: 224 64% 48%;              /* #2b56cb - Professional Clinical Cobalt */
+    --primary-foreground: 210 40% 98%;
+
+    /* Secondary / Neutral Surfaces */
+    --secondary: 210 40% 96.1%;          /* #f1f5f9 */
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    /* Muted Text & Backgrounds */
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%; /* #64748b - Crisp secondary labels */
+
+    /* Subtle Accents */
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    /* Semantic States */
+    --destructive: 0 84.2% 60.2%;         /* #ef4444 - Critical / Danger */
+    --destructive-foreground: 210 40% 98%;
+
+    --warning: 38 92% 50%;               /* #f59e0b - Attention / Warning */
+    --warning-foreground: 48 96% 89%;
+
+    --success: 158 64% 42%;              /* #10b981 / #059669 - Positive / Completed */
+    --success-foreground: 0 0% 100%;
+
+    --info: 199 89% 48%;                 /* #0ea5e9 - Informational */
+    --info-foreground: 0 0% 100%;
+
+    /* Borders & Form Inputs */
+    --border: 214.3 31.8% 91.4%;         /* #e2e8f0 - Crisp dividing borders */
+    --input: 215.4 16.3% 76.9%;          /* #cbd5e1 - High-contrast visible input outline */
+    --ring: 224 64% 48%;
+
+    /* Border Radius Tokens */
+    --radius: 0.375rem;                  /* 6px standard */
+    --radius-sm: 0.25rem;                /* 4px compact */
+    --radius-md: 0.375rem;               /* 6px */
+    --radius-lg: 0.5rem;                 /* 8px */
+
+    /* Workspace Dimension Tokens */
+    --afya-header-height: 3rem;          /* 48px */
+    --afya-sidebar-expanded: 15rem;      /* 240px */
+    --afya-sidebar-collapsed: 3.75rem;   /* 60px */
+    --afya-context-default: 21.25rem;    /* 340px */
+    --afya-context-min: 17.5rem;         /* 280px */
+    --afya-context-max: 30rem;           /* 480px */
+  }
+
+  .dark {
+    /* Dark Mode Surfaces & Backgrounds */
+    --background: 222.2 84% 4.9%;         /* #020817 - Deep rich dark slate */
+    --foreground: 210 40% 98%;           /* #f8fafc - High contrast text */
+
+    --card: 222.2 84% 7.5%;             /* #060e22 - Elevated dark card */
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 7.5%;
+    --popover-foreground: 210 40% 98%;
+
+    /* Brand / Primary Clinical */
+    --primary: 217.2 91.2% 59.8%;        /* #3b82f6 - Vibrant Clinical Cobalt in Dark Mode */
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    /* Secondary / Neutral Surfaces */
+    --secondary: 217.2 32.6% 17.5%;      /* #1e293b */
+    --secondary-foreground: 210 40% 98%;
+
+    /* Muted Text & Backgrounds */
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%; /* #94a3b8 */
+
+    /* Subtle Accents */
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    /* Semantic States */
+    --destructive: 0 62.8% 50.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 48 96% 89%;
+
+    --success: 158 64% 48%;              /* #10b981 */
+    --success-foreground: 0 0% 100%;
+
+    --info: 199 89% 48%;                 /* #0ea5e9 */
+    --info-foreground: 0 0% 100%;
+
+    /* Borders & Form Inputs */
+    --border: 217.2 32.6% 17.5%;         /* #1e293b - Dark dividing borders */
+    --input: 217.2 32.6% 25%;            /* #334155 - Distinct input borders in dark mode */
+    --ring: 217.2 91.2% 59.8%;
+  }
+}
+
+/* Base resets for high-density enterprise hospital software */
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased font-sans text-xs;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  /* Custom compact scrollbars for data-dense tables and panels */
+  ::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-slate-300 dark:bg-slate-700 rounded hover:bg-slate-400 dark:hover:bg-slate-600;
+  }
+
+  select option {
+    @apply bg-card text-foreground;
+  }
+}

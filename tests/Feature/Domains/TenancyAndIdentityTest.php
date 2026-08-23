@@ -1,0 +1,106 @@
+<?php
+
+use App\Core\Context\TenantContext;
+use App\Domains\Audit\Models\AuditLog;
+use App\Domains\Identity\Models\Permission;
+use App\Domains\Identity\Models\Role;
+use App\Domains\Tenancy\Models\Facility;
+use App\Domains\Tenancy\Models\Tenant;
+use Illuminate\Support\Facades\DB;
+use Ramsey\Uuid\Uuid;
+
+test('multi-tenant global scope isolates tenant records', function () {
+    // Create Tenant A
+    $tenantA = Tenant::create([
+        'name' => 'Hospital Alpha',
+        'slug' => 'hospital-alpha',
+        'status' => 'active',
+    ]);
+
+    // Create Tenant B
+    $tenantB = Tenant::create([
+        'name' => 'Hospital Beta',
+        'slug' => 'hospital-beta',
+        'status' => 'active',
+    ]);
+
+    $context = app(TenantContext::class);
+
+    // Act as Tenant A
+    $context->setTenantId($tenantA->id);
+    $facilityA = Facility::create([
+        'name' => 'Alpha Emergency',
+        'code' => 'ALPHA-ER',
+        'is_active' => true,
+    ]);
+
+    // Act as Tenant B
+    $context->setTenantId($tenantB->id);
+    $facilityB = Facility::create([
+        'name' => 'Beta Surgery',
+        'code' => 'BETA-SURG',
+        'is_active' => true,
+    ]);
+
+    // Querying under Tenant B should ONLY return Beta
+    $facilities = Facility::all();
+    expect($facilities)->toHaveCount(1)
+        ->and($facilities->first()->id)->toBe($facilityB->id);
+
+    // Switching back to Tenant A should ONLY return Alpha
+    $context->setTenantId($tenantA->id);
+    $facilitiesA = Facility::all();
+    expect($facilitiesA)->toHaveCount(1)
+        ->and($facilitiesA->first()->id)->toBe($facilityA->id);
+});
+
+test('roles and permissions can be assigned to users', function () {
+    $env = $this->setupTenantEnvironment();
+    $tenant = $env['tenant'];
+    $user = $env['user'];
+
+    $perm = Permission::create([
+        'name' => 'Create Prescription',
+        'slug' => 'pharmacy.prescribe',
+        'domain' => 'pharmacy',
+    ]);
+
+    $role = Role::create([
+        'tenant_id' => $tenant->id,
+        'name' => 'Pharmacist',
+        'slug' => 'pharmacist',
+    ]);
+
+    $role->permissions()->attach($perm->id);
+
+    DB::table('role_assignments')->insert([
+        'id' => Uuid::uuid7()->toString(),
+        'user_id' => $user->id,
+        'role_id' => $role->id,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    expect($user->roles)->toHaveCount(2) // Doctor (from setup) + Pharmacist
+        ->and($role->permissions)->toHaveCount(1);
+});
+
+test('audit logging captures cryptographic hashes for model events', function () {
+    $env = $this->setupTenantEnvironment();
+    $tenant = $env['tenant'];
+
+    // Creating a facility triggers the Auditable trait
+    $facility = Facility::create([
+        'tenant_id' => $tenant->id,
+        'name' => 'Cardiology Unit',
+        'code' => 'CARD-01',
+        'is_active' => true,
+    ]);
+
+    $log = AuditLog::where('entity_id', $facility->id)->first();
+
+    expect($log)->not->toBeNull()
+        ->and($log->tenant_id)->toBe($tenant->id)
+        ->and($log->action)->toBe('CREATE')
+        ->and($log->hash_signature)->not->toBeEmpty();
+});
