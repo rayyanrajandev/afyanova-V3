@@ -11,19 +11,40 @@ use App\Domains\Radiology\Models\RadiologyReport;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Inertia\Inertia;
+use Inertia\Response;
 use InvalidArgumentException;
 
-/**
- * No index()/workspace listing page here on purpose: unlike the other
- * Workspace/*Controller siblings, there's no Vue page under
- * resources/js/Pages/Workspace yet to render one against. These three
- * actions don't need one — each responds with a redirect, not a page —
- * so the backend is fully reachable via these routes today; a workspace
- * listing UI is frontend scope to add alongside a Vue page later.
- */
 class RadiologyWorkspaceController extends Controller
 {
     use AuthorizesRequests;
+
+    public function index(Request $request): Response
+    {
+        $orders = RadiologyOrder::with(['patient', 'encounter', 'orderingProvider', 'studies', 'reports.radiologist'])
+            ->latest('created_at')
+            ->take(100)
+            ->get();
+
+        $pendingOrders = $orders->where('status', 'Pending')->values();
+        $reportingOrders = $orders->whereIn('status', ['In Progress', 'Completed'])->values();
+        $signedOrders = $orders->where('status', 'Reported')->values();
+
+        $metrics = [
+            'total_pending' => $pendingOrders->count(),
+            'in_reporting' => $reportingOrders->count(),
+            'reported_today' => $signedOrders->count(),
+            'critical_count' => RadiologyReport::where('is_critical_finding', true)->count(),
+        ];
+
+        return Inertia::render('Workspace/RadiologyWorkspace', [
+            'orders' => $orders,
+            'pendingOrders' => $pendingOrders,
+            'reportingOrders' => $reportingOrders,
+            'signedOrders' => $signedOrders,
+            'metrics' => $metrics,
+        ]);
+    }
 
     public function order(Request $request, Encounter $encounter, OrderImagingAction $action)
     {

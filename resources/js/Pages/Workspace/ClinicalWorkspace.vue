@@ -27,7 +27,12 @@ import {
     Loader2,
     HeartPulse,
     Scissors,
-    Bandage
+    Bandage,
+    Film,
+    FileSignature,
+    Syringe,
+    Baby,
+    Heart
 } from '@lucide/vue';
 import AfyaShell from '@/Layouts/AfyaShell.vue';
 import AfyaWorkspace from '@/Components/Workspace/AfyaWorkspace.vue';
@@ -42,6 +47,12 @@ import LabOrderPad from '@/Components/Clinical/LabOrderPad.vue';
 import LabResultsCard from '@/Components/Clinical/LabResultsCard.vue';
 import LabWorkbenchModal from '@/Components/Clinical/LabWorkbenchModal.vue';
 import AfyaClinicalAlert from '@/Components/Afya/AfyaClinicalAlert.vue';
+import ConsentForm from '@/Pages/Domains/Clinical/ConsentForm.vue';
+import ImmunizationForm from '@/Pages/Domains/Clinical/ImmunizationForm.vue';
+import ReferralForm from '@/Pages/Domains/Clinical/ReferralForm.vue';
+import AncVisitForm from '@/Pages/Domains/Clinical/AncVisitForm.vue';
+import PartographForm from '@/Pages/Domains/Clinical/PartographForm.vue';
+import ImagingOrderForm from '@/Pages/Domains/Clinical/ImagingOrderForm.vue';
 import Modal from '@/Components/Modal.vue';
 
 // Design Foundation Primitives
@@ -1233,6 +1244,78 @@ const patientAllergies = computed(() => activePatient.value?.allergies || []);
                                         {{ activeEncounter.procedure_orders.length }}
                                     </span>
                                 </button>
+
+                                <button
+                                    @click="chartingTab = 'imaging'"
+                                    :class="chartingTab === 'imaging' ? 'border-primary text-primary font-bold' : 'border-transparent text-muted-foreground hover:text-foreground'"
+                                    class="py-2 px-1 border-b-2 text-xs uppercase tracking-wider flex items-center space-x-1.5 transition-all whitespace-nowrap"
+                                >
+                                    <Film class="w-3.5 h-3.5" />
+                                    <span>Radiology & Imaging</span>
+                                    <span v-if="(activeEncounter?.radiology_orders || []).length" class="px-1.5 py-0.2 rounded-full text-[9px] font-mono bg-violet-100 text-violet-800 dark:bg-violet-950 dark:text-violet-300">
+                                        {{ activeEncounter.radiology_orders.length }}
+                                    </span>
+                                </button>
+
+                                <button
+                                    @click="chartingTab = 'consents'"
+                                    :class="chartingTab === 'consents' ? 'border-primary text-primary font-bold' : 'border-transparent text-muted-foreground hover:text-foreground'"
+                                    class="py-2 px-1 border-b-2 text-xs uppercase tracking-wider flex items-center space-x-1.5 transition-all whitespace-nowrap"
+                                >
+                                    <FileSignature class="w-3.5 h-3.5" />
+                                    <span>Consent</span>
+                                    <span v-if="(activeEncounter?.consents || []).length" class="px-1.5 py-0.2 rounded-full text-[9px] font-mono bg-primary/10 text-primary">
+                                        {{ activeEncounter.consents.length }}
+                                    </span>
+                                </button>
+
+                                <button
+                                    @click="chartingTab = 'referrals'"
+                                    :class="chartingTab === 'referrals' ? 'border-primary text-primary font-bold' : 'border-transparent text-muted-foreground hover:text-foreground'"
+                                    class="py-2 px-1 border-b-2 text-xs uppercase tracking-wider flex items-center space-x-1.5 transition-all whitespace-nowrap"
+                                >
+                                    <ArrowUpRight class="w-3.5 h-3.5" />
+                                    <span>Referrals</span>
+                                    <span v-if="(activeEncounter?.referrals || []).length" class="px-1.5 py-0.2 rounded-full text-[9px] font-mono bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300">
+                                        {{ activeEncounter.referrals.length }}
+                                    </span>
+                                </button>
+
+                                <button
+                                    @click="chartingTab = 'anc'"
+                                    :class="chartingTab === 'anc' ? 'border-primary text-primary font-bold' : 'border-transparent text-muted-foreground hover:text-foreground'"
+                                    class="py-2 px-1 border-b-2 text-xs uppercase tracking-wider flex items-center space-x-1.5 transition-all whitespace-nowrap"
+                                >
+                                    <Heart class="w-3.5 h-3.5 text-rose-500" />
+                                    <span>ANC / RCH</span>
+                                    <span v-if="(activeEncounter?.anc_encounters || []).length" class="px-1.5 py-0.2 rounded-full text-[9px] font-mono bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300">
+                                        {{ activeEncounter.anc_encounters.length }}
+                                    </span>
+                                </button>
+
+                                <button
+                                    @click="chartingTab = 'partograph'"
+                                    :class="chartingTab === 'partograph' ? 'border-primary text-primary font-bold' : 'border-transparent text-muted-foreground hover:text-foreground'"
+                                    class="py-2 px-1 border-b-2 text-xs uppercase tracking-wider flex items-center space-x-1.5 transition-all whitespace-nowrap"
+                                >
+                                    <Activity class="w-3.5 h-3.5 text-amber-500" />
+                                    <span>Partograph</span>
+                                    <span v-if="(activeEncounter?.partograph_entries || []).length" class="px-1.5 py-0.2 rounded-full text-[9px] font-mono bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                                        {{ activeEncounter.partograph_entries.length }}
+                                    </span>
+                                </button>
+
+                                <button
+                                    @click="chartingTab = 'immunizations'"
+                                    :class="chartingTab === 'immunizations' ? 'border-primary text-primary font-bold' : 'border-transparent text-muted-foreground hover:text-foreground'"
+                                    class="py-2 px-1 border-b-2 text-xs uppercase tracking-wider flex items-center space-x-1.5 transition-all whitespace-nowrap"
+                                >
+                                    <Syringe class="w-3.5 h-3.5 text-emerald-500" />
+                                    <span>EPI Vaccines</span>
+                                    <span v-if="(activeEncounter?.immunizations || []).length" class="px-1.5 py-0.2 rounded-full text-[9px] font-mono bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                                        {{ activeEncounter.immunizations.length }}
+                                    </span>
+                                </button>
                             </nav>
                         </div>
 
@@ -1335,6 +1418,54 @@ const patientAllergies = computed(() => activePatient.value?.allergies || []);
                                     <span>Order First Procedure</span>
                                 </Button>
                             </div>
+                        </div>
+
+                        <!-- Tab 6: Radiology & Imaging -->
+                        <div v-else-if="chartingTab === 'imaging'" class="bg-card rounded-lg p-3.5 shadow-2xs border border-border/60">
+                            <ImagingOrderForm 
+                                :encounter-id="activeEncounter?.id || 'demo'" 
+                                :existing-orders="activeEncounter?.radiology_orders || []" 
+                            />
+                        </div>
+
+                        <!-- Tab 7: Informed Consent -->
+                        <div v-else-if="chartingTab === 'consents'" class="bg-card rounded-lg p-3.5 shadow-2xs border border-border/60">
+                            <ConsentForm 
+                                :encounter-id="activeEncounter?.id || 'demo'" 
+                                :existing-consents="activeEncounter?.consents || []" 
+                            />
+                        </div>
+
+                        <!-- Tab 8: Referrals -->
+                        <div v-else-if="chartingTab === 'referrals'" class="bg-card rounded-lg p-3.5 shadow-2xs border border-border/60">
+                            <ReferralForm 
+                                :encounter-id="activeEncounter?.id || 'demo'" 
+                                :existing-referrals="activeEncounter?.referrals || []" 
+                            />
+                        </div>
+
+                        <!-- Tab 9: Antenatal Care (ANC / RCH) -->
+                        <div v-else-if="chartingTab === 'anc'" class="bg-card rounded-lg p-3.5 shadow-2xs border border-border/60">
+                            <AncVisitForm 
+                                :encounter-id="activeEncounter?.id || 'demo'" 
+                                :existing-visits="activeEncounter?.anc_encounters || []" 
+                            />
+                        </div>
+
+                        <!-- Tab 10: Partograph -->
+                        <div v-else-if="chartingTab === 'partograph'" class="bg-card rounded-lg p-3.5 shadow-2xs border border-border/60">
+                            <PartographForm 
+                                :encounter-id="activeEncounter?.id || 'demo'" 
+                                :existing-entries="activeEncounter?.partograph_entries || []" 
+                            />
+                        </div>
+
+                        <!-- Tab 11: Immunizations / EPI -->
+                        <div v-else-if="chartingTab === 'immunizations'" class="bg-card rounded-lg p-3.5 shadow-2xs border border-border/60">
+                            <ImmunizationForm 
+                                :encounter-id="activeEncounter?.id || 'demo'" 
+                                :existing-immunizations="activeEncounter?.immunizations || []" 
+                            />
                         </div>
 
                     </div>

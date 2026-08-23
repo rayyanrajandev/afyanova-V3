@@ -25,7 +25,25 @@ class EncounterController extends Controller
     public function index(): Response
     {
         // 1. Fetch only Active (non-closed) Encounters
-        $encounters = Encounter::with(['patient.allergies', 'provider', 'vitals', 'notes', 'diagnoses', 'prescriptions.medication', 'labOrders.items.labTest', 'labOrders.items.performedBy', 'procedureOrders.catalog', 'procedureOrders.latestExecution'])
+        $encounters = Encounter::with([
+            'patient.allergies',
+            'provider',
+            'vitals',
+            'notes',
+            'diagnoses',
+            'prescriptions.medication',
+            'labOrders.items.labTest',
+            'labOrders.items.performedBy',
+            'procedureOrders.catalog',
+            'procedureOrders.latestExecution',
+            'consents.clinician',
+            'referrals.toFacility',
+            'immunizations',
+            'ancEncounters',
+            'partographEntries',
+            'radiologyOrders.reports',
+            'radiologyOrders.studies',
+        ])
             ->where('status', '!=', 'Closed')
             ->latest('created_at')
             ->take(50)
@@ -112,9 +130,46 @@ class EncounterController extends Controller
             ]);
         }
 
-        $encounter->load(['patient.allergies', 'patient.latestVital', 'provider', 'vitals', 'notes', 'diagnoses', 'prescriptions.medication', 'labOrders.items.labTest', 'labOrders.items.performedBy', 'procedureOrders.catalog', 'procedureOrders.latestExecution']);
+        $encounter->load([
+            'patient.allergies',
+            'patient.latestVital',
+            'provider',
+            'vitals',
+            'notes',
+            'diagnoses',
+            'prescriptions.medication',
+            'labOrders.items.labTest',
+            'labOrders.items.performedBy',
+            'procedureOrders.catalog',
+            'procedureOrders.latestExecution',
+            'consents.clinician',
+            'referrals.toFacility',
+            'immunizations',
+            'ancEncounters',
+            'partographEntries',
+            'radiologyOrders.reports',
+            'radiologyOrders.studies',
+        ]);
 
-        $encounters = Encounter::with(['patient.allergies', 'provider', 'vitals', 'notes', 'diagnoses', 'prescriptions.medication', 'labOrders.items.labTest', 'labOrders.items.performedBy', 'procedureOrders.catalog', 'procedureOrders.latestExecution'])
+        $encounters = Encounter::with([
+            'patient.allergies',
+            'provider',
+            'vitals',
+            'notes',
+            'diagnoses',
+            'prescriptions.medication',
+            'labOrders.items.labTest',
+            'labOrders.items.performedBy',
+            'procedureOrders.catalog',
+            'procedureOrders.latestExecution',
+            'consents.clinician',
+            'referrals.toFacility',
+            'immunizations',
+            'ancEncounters',
+            'partographEntries',
+            'radiologyOrders.reports',
+            'radiologyOrders.studies',
+        ])
             ->where('status', '!=', 'Closed')
             ->latest('created_at')
             ->take(50)

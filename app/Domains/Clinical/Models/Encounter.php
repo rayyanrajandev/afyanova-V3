@@ -11,6 +11,7 @@ use App\Domains\Insurance\Models\InsuranceClaim;
 use App\Domains\Patient\Models\Patient;
 use App\Domains\Pharmacy\Models\Prescription;
 use App\Domains\Procedure\Models\ProcedureOrder;
+use App\Domains\Radiology\Models\RadiologyOrder;
 use App\Domains\Scheduling\Models\QueueTicket;
 use App\Domains\Tenancy\Models\Facility;
 use App\Domains\Tenancy\Models\Tenant;
@@ -180,5 +181,53 @@ class Encounter extends Model
     public function procedureOrders(): HasMany
     {
         return $this->hasMany(ProcedureOrder::class);
+    }
+
+    /**
+     * @return HasMany<ClinicalConsent, $this>
+     */
+    public function consents(): HasMany
+    {
+        return $this->hasMany(ClinicalConsent::class);
+    }
+
+    /**
+     * @return HasMany<ClinicalReferral, $this>
+     */
+    public function referrals(): HasMany
+    {
+        return $this->hasMany(ClinicalReferral::class);
+    }
+
+    /**
+     * @return HasMany<PatientImmunization, $this>
+     */
+    public function immunizations(): HasMany
+    {
+        return $this->hasMany(PatientImmunization::class);
+    }
+
+    /**
+     * @return HasMany<AncEncounter, $this>
+     */
+    public function ancEncounters(): HasMany
+    {
+        return $this->hasMany(AncEncounter::class);
+    }
+
+    /**
+     * @return HasMany<PartographEntry, $this>
+     */
+    public function partographEntries(): HasMany
+    {
+        return $this->hasMany(PartographEntry::class);
+    }
+
+    /**
+     * @return HasMany<RadiologyOrder, $this>
+     */
+    public function radiologyOrders(): HasMany
+    {
+        return $this->hasMany(RadiologyOrder::class);
     }
 }

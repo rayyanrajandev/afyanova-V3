@@ -8,11 +8,15 @@ use App\Core\Traits\BelongsToTenant;
 use App\Core\Traits\HasUuidv7;
 use App\Domains\Billing\Models\Invoice;
 use App\Domains\Clinical\Models\Allergy;
+use App\Domains\Clinical\Models\ClinicalReferral;
 use App\Domains\Clinical\Models\ClinicalVital;
 use App\Domains\Clinical\Models\Encounter;
+use App\Domains\Clinical\Models\PatientProblem;
 use App\Domains\Identity\Models\User;
 use App\Domains\Insurance\Models\InsuranceClaim;
 use App\Domains\Insurance\Models\PatientPolicy;
+use App\Domains\Pharmacy\Models\MedicationReconciliation;
+use App\Domains\Radiology\Models\RadiologyOrder;
 use App\Domains\Scheduling\Models\Appointment;
 use App\Domains\Tenancy\Models\Tenant;
 use Carbon\Carbon;
@@ -281,5 +285,37 @@ class Patient extends Model
     public function claims(): HasMany
     {
         return $this->hasMany(InsuranceClaim::class);
+    }
+
+    /**
+     * @return HasMany<PatientProblem, $this>
+     */
+    public function problems(): HasMany
+    {
+        return $this->hasMany(PatientProblem::class);
+    }
+
+    /**
+     * @return HasMany<MedicationReconciliation, $this>
+     */
+    public function medicationReconciliations(): HasMany
+    {
+        return $this->hasMany(MedicationReconciliation::class);
+    }
+
+    /**
+     * @return HasMany<ClinicalReferral, $this>
+     */
+    public function referrals(): HasMany
+    {
+        return $this->hasMany(ClinicalReferral::class);
+    }
+
+    /**
+     * @return HasMany<RadiologyOrder, $this>
+     */
+    public function radiologyOrders(): HasMany
+    {
+        return $this->hasMany(RadiologyOrder::class);
     }
 }

@@ -49,6 +49,11 @@ class PatientController extends Controller
             'contacts',
             'emergencyContacts',
             'allergies',
+            'problems',
+            'medicationReconciliations',
+            'referrals.toFacility',
+            'radiologyOrders.reports',
+            'radiologyOrders.studies',
             'encounters' => function ($q) {
                 $q->with([
                     'provider',

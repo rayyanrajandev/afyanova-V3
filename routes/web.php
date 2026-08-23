@@ -151,6 +151,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 use App\Domains\Radiology\Http\Controllers\RadiologyWorkspaceController;
 
 Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/radiology', [RadiologyWorkspaceController::class, 'index'])->name('radiology.workspace');
     Route::post('/encounters/{encounter}/radiology-orders', [RadiologyWorkspaceController::class, 'order'])->name('radiology.orders.store');
     Route::post('/radiology/orders/{order}/report', [RadiologyWorkspaceController::class, 'signReport'])->name('radiology.report.sign');
     Route::post('/radiology/reports/{report}/amend', [RadiologyWorkspaceController::class, 'amendReport'])->name('radiology.report.amend');

@@ -33,7 +33,11 @@ import {
     CalendarCheck,
     Stethoscope,
     UserCheck,
-    HelpCircle
+    HelpCircle,
+    Film,
+    RefreshCw,
+    CheckCircle,
+    XCircle
 } from '@lucide/vue';
 import AfyaShell from '@/Layouts/AfyaShell.vue';
 import AfyaWorkspace from '@/Components/Workspace/AfyaWorkspace.vue';
@@ -96,6 +100,10 @@ const notes = computed(() => encounters.value.flatMap(e => (e.notes || []).map(n
 const vitals = computed(() => encounters.value.flatMap(e => (e.vitals || []).map(v => ({ ...v, encounter: e }))));
 const diagnoses = computed(() => encounters.value.flatMap(e => (e.diagnoses || []).map(d => ({ ...d, encounter: e }))));
 const prescriptions = computed(() => encounters.value.flatMap(e => (e.prescriptions || []).map(p => ({ ...p, encounter: e }))));
+const problems = computed(() => props.patient.problems || []);
+const medicationReconciliations = computed(() => props.patient.medication_reconciliations || props.patient.medicationReconciliations || []);
+const referrals = computed(() => props.patient.referrals || encounters.value.flatMap(e => (e.referrals || []).map(r => ({ ...r, encounter: e }))));
+const radiologyOrders = computed(() => props.patient.radiology_orders || props.patient.radiologyOrders || encounters.value.flatMap(e => (e.radiology_orders || []).map(o => ({ ...o, encounter: e }))));
 const invoices = computed(() => props.patient.invoices || []);
 const appointments = computed(() => props.patient.appointments || []);
 const allergies = computed(() => props.patient.allergies || []);
@@ -173,8 +181,10 @@ const summaryTabs = computed(() => [
 const clinicalTabs = computed(() => [
     { id: 'encounters', label: 'Encounters', icon: ClipboardList, badge: encounters.value.length },
     { id: 'notes', label: 'Clinical Notes', icon: FileText, badge: notes.value.length },
-    { id: 'diagnoses', label: 'Diagnoses / Problems', icon: HeartPulse, badge: diagnoses.value.length },
+    { id: 'diagnoses', label: 'Encounter Diagnoses', icon: HeartPulse, badge: diagnoses.value.length },
+    { id: 'problems', label: 'Problem List (Chronic)', icon: ClipboardList, badge: problems.value.length },
     { id: 'medications', label: 'Medications', icon: Pill, badge: prescriptions.value.length },
+    { id: 'med-reconciliation', label: 'Med Reconciliation', icon: RefreshCw, badge: medicationReconciliations.value.length },
     { id: 'allergies', label: 'Allergies', icon: AlertTriangle, badge: allergies.value.length, alert: allergies.value.length > 0 },
     { id: 'vitals', label: 'Vitals', icon: Gauge, badge: vitals.value.length },
 ]);
@@ -182,13 +192,13 @@ const clinicalTabs = computed(() => [
 const diagnosticTabs = computed(() => [
     { id: 'orders', label: 'Orders', icon: FlaskConical },
     { id: 'laboratory', label: 'Laboratory', icon: Microscope },
-    { id: 'imaging', label: 'Imaging', icon: ScanLine },
+    { id: 'imaging', label: 'Imaging', icon: Film, badge: radiologyOrders.value.length },
     { id: 'procedures', label: 'Procedures', icon: Syringe },
 ]);
 
 const adminTabs = computed(() => [
     { id: 'documents', label: 'Documents', icon: Folder },
-    { id: 'referrals', label: 'Referrals', icon: Share2 },
+    { id: 'referrals', label: 'Referrals', icon: Share2, badge: referrals.value.length },
     { id: 'billing', label: 'Billing & Insurance', icon: Receipt, badge: invoices.value.length },
 ]);
 
@@ -562,7 +572,7 @@ const totalOutstanding = computed(() => {
                             </div>
                         </div>
 
-                        <!-- ==================== TAB 5: DIAGNOSES / PROBLEMS ==================== -->
+                        <!-- ==================== TAB 5: DIAGNOSES ==================== -->
                         <div v-else-if="activeTab === 'diagnoses'" class="space-y-3">
                             <Table>
                                 <TableHeader>
@@ -586,6 +596,45 @@ const totalOutstanding = computed(() => {
                                     <TableRow v-if="diagnoses.length === 0">
                                         <TableCell colspan="5" class="text-center py-8 text-muted-foreground">
                                             No active or chronic problem diagnoses recorded.
+                                        </TableCell>
+                                    </TableRow>
+                                </TableBody>
+                            </Table>
+                        </div>
+
+                        <!-- ==================== TAB 5B: PROBLEM LIST (CHRONIC) ==================== -->
+                        <div v-else-if="activeTab === 'problems'" class="space-y-3">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Problem / Condition Title</TableHead>
+                                        <TableHead>ICD-10 / SNOMED Code</TableHead>
+                                        <TableHead>Clinical Status</TableHead>
+                                        <TableHead>Onset Date</TableHead>
+                                        <TableHead>Severity</TableHead>
+                                        <TableHead>Clinical Notes</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    <TableRow v-for="prob in problems" :key="prob.id">
+                                        <TableCell class="font-bold text-foreground">{{ prob.title || prob.condition_name }}</TableCell>
+                                        <TableCell class="font-mono text-xs">{{ prob.icd10_code || prob.snomed_code || '—' }}</TableCell>
+                                        <TableCell>
+                                            <AfyaStatusBadge :status="prob.status || 'Active'" dot />
+                                        </TableCell>
+                                        <TableCell class="font-mono text-xs">{{ prob.onset_date ? new Date(prob.onset_date).toLocaleDateString() : '—' }}</TableCell>
+                                        <TableCell>
+                                            <span class="px-1.5 py-0.5 rounded text-[10px] font-bold"
+                                                :class="prob.severity === 'Severe' ? 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300' : 'bg-muted text-foreground'"
+                                            >
+                                                {{ prob.severity || 'Moderate' }}
+                                            </span>
+                                        </TableCell>
+                                        <TableCell class="text-xs text-muted-foreground">{{ prob.notes || '—' }}</TableCell>
+                                    </TableRow>
+                                    <TableRow v-if="problems.length === 0">
+                                        <TableCell colspan="6" class="text-center py-8 text-muted-foreground">
+                                            No chronic problems or longitudinal diagnoses documented.
                                         </TableCell>
                                     </TableRow>
                                 </TableBody>
@@ -618,6 +667,40 @@ const totalOutstanding = computed(() => {
 
                                     <TableRow v-if="prescriptions.length === 0">
                                         <TableCell colspan="5" class="text-center py-8 text-muted-foreground">No medications on file.</TableCell>
+                                    </TableRow>
+                                </TableBody>
+                            </Table>
+                        </div>
+
+                        <!-- ==================== TAB 6B: MEDICATION RECONCILIATION ==================== -->
+                        <div v-else-if="activeTab === 'med-reconciliation'" class="space-y-3">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Reconciliation Date</TableHead>
+                                        <TableHead>Stage / Event</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead>Discrepancies Noted</TableHead>
+                                        <TableHead>Clinician / Pharmacist</TableHead>
+                                        <TableHead>Notes</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    <TableRow v-for="mr in medicationReconciliations" :key="mr.id">
+                                        <TableCell class="font-mono text-xs text-muted-foreground">{{ new Date(mr.reconciliation_date || mr.created_at).toLocaleDateString() }}</TableCell>
+                                        <TableCell class="font-bold text-foreground">{{ mr.stage || 'Admission' }}</TableCell>
+                                        <TableCell><AfyaStatusBadge :status="mr.status || 'Completed'" dot /></TableCell>
+                                        <TableCell class="text-xs">
+                                            <span v-if="mr.has_discrepancies" class="text-rose-600 font-bold">Discrepancy Found</span>
+                                            <span v-else class="text-emerald-600 font-semibold">Clean / Reconciled</span>
+                                        </TableCell>
+                                        <TableCell class="text-xs text-muted-foreground">{{ mr.clinician?.name || mr.reconciled_by || 'Clinical Pharmacist' }}</TableCell>
+                                        <TableCell class="text-xs text-muted-foreground">{{ mr.notes || mr.discrepancy_details || '—' }}</TableCell>
+                                    </TableRow>
+                                    <TableRow v-if="medicationReconciliations.length === 0">
+                                        <TableCell colspan="6" class="text-center py-8 text-muted-foreground">
+                                            No medication reconciliation sessions recorded for this patient.
+                                        </TableCell>
                                     </TableRow>
                                 </TableBody>
                             </Table>
@@ -704,10 +787,44 @@ const totalOutstanding = computed(() => {
                         </div>
 
                         <!-- ==================== TAB 11: IMAGING ==================== -->
-                        <div v-else-if="activeTab === 'imaging'" class="py-16 text-center text-muted-foreground text-xs space-y-2">
-                            <ScanLine class="w-8 h-8 mx-auto text-muted-foreground opacity-40" />
-                            <p class="font-semibold text-foreground text-xs">Radiology & PACS Imaging</p>
-                            <p class="text-[11px]">X-Ray, Ultrasound, CT, and MRI image studies and radiologist impressions.</p>
+                        <div v-else-if="activeTab === 'imaging'" class="space-y-3">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Order #</TableHead>
+                                        <TableHead>Date Placed</TableHead>
+                                        <TableHead>Modality</TableHead>
+                                        <TableHead>Procedure / Study</TableHead>
+                                        <TableHead>Priority</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead>Radiology Impression / Report</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    <TableRow v-for="rad in radiologyOrders" :key="rad.id">
+                                        <TableCell class="font-mono font-bold text-primary text-xs">{{ rad.order_number }}</TableCell>
+                                        <TableCell class="font-mono text-xs text-muted-foreground">{{ new Date(rad.created_at).toLocaleDateString() }}</TableCell>
+                                        <TableCell class="font-bold text-xs">{{ rad.modality }}</TableCell>
+                                        <TableCell class="font-semibold text-foreground text-xs">{{ rad.procedure_name }}</TableCell>
+                                        <TableCell>
+                                            <span class="px-1.5 py-0.5 rounded text-[10px] font-bold"
+                                                :class="rad.priority === 'STAT' ? 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300' : 'bg-muted text-foreground'"
+                                            >
+                                                {{ rad.priority }}
+                                            </span>
+                                        </TableCell>
+                                        <TableCell><AfyaStatusBadge :status="rad.status" dot /></TableCell>
+                                        <TableCell class="text-xs text-muted-foreground max-w-[250px] truncate">
+                                            {{ rad.reports?.[0]?.impression || rad.reports?.[0]?.findings || 'Pending acquisition & reporting' }}
+                                        </TableCell>
+                                    </TableRow>
+                                    <TableRow v-if="radiologyOrders.length === 0">
+                                        <TableCell colspan="7" class="text-center py-8 text-muted-foreground">
+                                            No radiology or diagnostic imaging orders on file.
+                                        </TableCell>
+                                    </TableRow>
+                                </TableBody>
+                            </Table>
                         </div>
 
                         <!-- ==================== TAB 12: PROCEDURES ==================== -->
@@ -725,10 +842,42 @@ const totalOutstanding = computed(() => {
                         </div>
 
                         <!-- ==================== TAB 14: REFERRALS ==================== -->
-                        <div v-else-if="activeTab === 'referrals'" class="py-16 text-center text-muted-foreground text-xs space-y-2">
-                            <Share2 class="w-8 h-8 mx-auto text-muted-foreground opacity-40" />
-                            <p class="font-semibold text-foreground text-xs">Inter-Facility Referrals</p>
-                            <p class="text-[11px]">Inbound referral letters and outbound hospital transfers.</p>
+                        <div v-else-if="activeTab === 'referrals'" class="space-y-3">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Date</TableHead>
+                                        <TableHead>Referral #</TableHead>
+                                        <TableHead>Urgency</TableHead>
+                                        <TableHead>Destination Facility</TableHead>
+                                        <TableHead>Specialty</TableHead>
+                                        <TableHead>Reason for Referral</TableHead>
+                                        <TableHead>Status</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    <TableRow v-for="refItem in referrals" :key="refItem.id">
+                                        <TableCell class="font-mono text-xs text-muted-foreground">{{ new Date(refItem.created_at).toLocaleDateString() }}</TableCell>
+                                        <TableCell class="font-mono font-bold text-primary text-xs">{{ refItem.referral_number || 'REF-EXT' }}</TableCell>
+                                        <TableCell>
+                                            <span class="px-1.5 py-0.5 rounded text-[10px] font-bold"
+                                                :class="refItem.urgency === 'Emergency' ? 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300' : (refItem.urgency === 'Urgent' ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300' : 'bg-muted text-foreground')"
+                                            >
+                                                {{ refItem.urgency }}
+                                            </span>
+                                        </TableCell>
+                                        <TableCell class="font-bold text-foreground text-xs">{{ refItem.external_facility_name || refItem.to_facility?.name || 'Referral Center' }}</TableCell>
+                                        <TableCell class="text-xs">{{ refItem.specialty_required }}</TableCell>
+                                        <TableCell class="text-xs text-muted-foreground max-w-[220px] truncate">{{ refItem.reason_for_referral }}</TableCell>
+                                        <TableCell><AfyaStatusBadge :status="refItem.status || 'Pending'" dot /></TableCell>
+                                    </TableRow>
+                                    <TableRow v-if="referrals.length === 0">
+                                        <TableCell colspan="7" class="text-center py-8 text-muted-foreground">
+                                            No outbound or inbound referrals documented.
+                                        </TableCell>
+                                    </TableRow>
+                                </TableBody>
+                            </Table>
                         </div>
 
                         <!-- ==================== TAB 15: BILLING & INSURANCE ==================== -->
