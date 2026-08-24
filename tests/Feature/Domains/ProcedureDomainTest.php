@@ -53,7 +53,15 @@ beforeEach(function () {
         ['slug' => 'procedure.order.create'],
         ['name' => 'Order Procedures', 'domain' => 'Procedure']
     );
-    $doctorRole->permissions()->attach($orderPermission->id);
+    $encounterViewPermission = Permission::firstOrCreate(
+        ['slug' => 'clinical.encounter.view'],
+        ['name' => 'View Encounters', 'domain' => 'Clinical']
+    );
+    $procedureViewPermission = Permission::firstOrCreate(
+        ['slug' => 'procedure.order.view'],
+        ['name' => 'View Procedure Orders', 'domain' => 'Procedure']
+    );
+    $doctorRole->permissions()->attach([$orderPermission->id, $encounterViewPermission->id, $procedureViewPermission->id]);
     app(AssignUserRoleAction::class)->execute($this->user->id, $doctorRole->id);
 
     $this->patient = Patient::create([

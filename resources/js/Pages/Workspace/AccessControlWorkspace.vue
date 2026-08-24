@@ -39,6 +39,7 @@ import InputError from '@/Components/InputError.vue';
 import { useWorkspacePreferences } from '@/Composables/useWorkspacePreferences';
 
 const props = defineProps({
+    can: { type: Object, default: () => ({}) },
     users: { type: Array, default: () => [] },
     roles: { type: Array, default: () => [] },
     permissionsByDomain: { type: Object, default: () => ({}) },
@@ -51,7 +52,9 @@ const props = defineProps({
 const { preferences, openContext } = useWorkspacePreferences();
 
 // View State: 'users' | 'roles' | 'permissions'
-const activeSection = ref('users');
+const activeSection = ref(
+    props.can.users ? 'users' : (Object.keys(props.can).find(k => props.can[k]) ?? null)
+);
 const selectedUser = ref(props.users.find(u => u.id === props.selectedUserId) || props.users[0] || null);
 const selectedRole = ref(props.roles[0] || null);
 const searchQuery = ref('');
@@ -191,6 +194,7 @@ const breadcrumbLabel = computed(() => {
                     </div>
 
                     <AfyaSidebarItem
+                        v-if="can.users"
                         :icon="Users"
                         label="Staff Directory"
                         :active="activeSection === 'users'"
@@ -199,6 +203,7 @@ const breadcrumbLabel = computed(() => {
                         @click="activeSection = 'users'"
                     />
                     <AfyaSidebarItem
+                        v-if="can.roles"
                         :icon="Key"
                         label="Standard Roles"
                         :active="activeSection === 'roles'"
@@ -207,6 +212,7 @@ const breadcrumbLabel = computed(() => {
                         @click="activeSection = 'roles'"
                     />
                     <AfyaSidebarItem
+                        v-if="can.permissions"
                         :icon="Sliders"
                         label="Permissions Matrix"
                         :active="activeSection === 'permissions'"
@@ -219,7 +225,7 @@ const breadcrumbLabel = computed(() => {
                     <div v-if="state !== 'collapsed'" class="px-2 pt-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground border-t border-border/40 mt-2">
                         System Roles (10)
                     </div>
-                    <div v-if="state !== 'collapsed'" class="space-y-1 px-1 max-h-56 overflow-y-auto">
+                    <div v-if="state !== 'collapsed' && can.updatePermissions" class="space-y-1 px-1 max-h-56 overflow-y-auto">
                         <button
                             v-for="r in roles"
                             :key="r.id"
@@ -243,9 +249,10 @@ const breadcrumbLabel = computed(() => {
                 >
                     <template #actions>
                         <div class="flex items-center gap-2">
-                            <Button 
-                                variant="default" 
-                                size="sm" 
+                            <Button
+                                v-if="can.assignRole"
+                                variant="default"
+                                size="sm"
                                 class="h-7 text-xs font-semibold gap-1 shadow-2xs"
                                 @click="openAssignRoleModal()"
                             >
@@ -377,9 +384,10 @@ const breadcrumbLabel = computed(() => {
                                                 <AfyaStatusBadge status="active" label="Active" />
                                             </TableCell>
                                             <TableCell class="py-2 px-3 text-right">
-                                                <Button 
-                                                    variant="outline" 
-                                                    size="sm" 
+                                                <Button
+                                                    v-if="can.assignRole"
+                                                    variant="outline"
+                                                    size="sm"
                                                     class="h-6 text-[10px] font-bold"
                                                     @click.stop="openAssignRoleModal(u)"
                                                 >
@@ -410,9 +418,10 @@ const breadcrumbLabel = computed(() => {
                                             </h4>
                                             <div class="text-[10px] font-mono text-muted-foreground">{{ r.slug }}</div>
                                         </div>
-                                        <Button 
-                                            variant="outline" 
-                                            size="sm" 
+                                        <Button
+                                            v-if="can.updatePermissions"
+                                            variant="outline"
+                                            size="sm"
                                             class="h-6 text-[10px] font-bold"
                                             @click="openEditRolePermissions(r)"
                                         >

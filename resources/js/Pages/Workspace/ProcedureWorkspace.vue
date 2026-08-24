@@ -49,6 +49,10 @@ import AfyaPatientIdentity from '@/Components/Afya/AfyaPatientIdentity.vue';
 import { useWorkspacePreferences } from '@/Composables/useWorkspacePreferences';
 
 const props = defineProps({
+    can: {
+        type: Object,
+        default: () => ({}),
+    },
     procedureCatalogs: {
         type: Array,
         default: () => [],
@@ -454,9 +458,10 @@ const formatTime = (dateStr) => {
                                 <span>{{ metrics.emergency_procedures }} Urgent / Emergency Procedures</span>
                             </span>
 
-                            <Button 
-                                variant="default" 
-                                size="sm" 
+                            <Button
+                                v-if="can.orderProcedure"
+                                variant="default"
+                                size="sm"
                                 class="h-7.5 px-3 text-xs font-semibold gap-1.5 shadow-2xs"
                                 @click="openOrderModal()"
                             >
@@ -582,6 +587,7 @@ const formatTime = (dateStr) => {
                                             </TableCell>
                                             <TableCell class="py-1 px-3 text-right">
                                                 <Button
+                                                    v-if="can.executeProcedure"
                                                     variant="default"
                                                     size="sm"
                                                     class="h-6 px-2 text-[10.5px] font-semibold gap-1 shadow-2xs"
@@ -695,7 +701,7 @@ const formatTime = (dateStr) => {
                                             </TableCell>
                                             <TableCell class="py-1 px-3 text-right">
                                                 <Button
-                                                    v-if="booking.status === 'Scheduled' || booking.status === 'InTheatre'"
+                                                    v-if="(booking.status === 'Scheduled' || booking.status === 'InTheatre') && can.saveWhoChecklist"
                                                     variant="outline"
                                                     size="sm"
                                                     class="h-6 px-2 text-[10px] font-semibold gap-1 text-primary border-primary/30"
@@ -705,7 +711,7 @@ const formatTime = (dateStr) => {
                                                     <span>WHO Checklist</span>
                                                 </Button>
                                                 <Button
-                                                    v-else-if="booking.status === 'PACU'"
+                                                    v-else-if="booking.status === 'PACU' && can.savePacuScore"
                                                     variant="default"
                                                     size="sm"
                                                     class="h-6 px-2 text-[10px] font-semibold gap-1 bg-emerald-700 hover:bg-emerald-800 text-white"
@@ -790,6 +796,7 @@ const formatTime = (dateStr) => {
                                             </TableCell>
                                             <TableCell class="py-1 px-3 text-right">
                                                 <Button
+                                                    v-if="can.saveWhoChecklist"
                                                     variant="outline"
                                                     size="sm"
                                                     class="h-6 px-2 text-[10px] font-semibold gap-1 text-primary border-primary/30"
@@ -861,6 +868,7 @@ const formatTime = (dateStr) => {
                                             </TableCell>
                                             <TableCell class="py-1 px-3 text-right">
                                                 <Button
+                                                    v-if="can.savePacuScore"
                                                     variant="default"
                                                     size="sm"
                                                     class="h-6 px-2 text-[10px] font-semibold gap-1 shadow-2xs"
@@ -1011,7 +1019,7 @@ const formatTime = (dateStr) => {
                         <!-- Action Triggers -->
                         <div class="space-y-1.5 pt-1">
                             <Button
-                                v-if="selectedRecord.status === 'Ordered' && selectedRecord.catalog?.tier_level === 'Tier1_Minor'"
+                                v-if="selectedRecord.status === 'Ordered' && selectedRecord.catalog?.tier_level === 'Tier1_Minor' && can.executeProcedure"
                                 variant="default"
                                 class="w-full h-8 text-xs font-semibold justify-center gap-1.5 shadow-2xs"
                                 @click="openExecuteModal(selectedRecord)"
@@ -1021,7 +1029,7 @@ const formatTime = (dateStr) => {
                             </Button>
 
                             <Button
-                                v-else-if="selectedRecord.status === 'Ordered' && selectedRecord.catalog?.tier_level === 'Tier2_MajorTheatre'"
+                                v-else-if="selectedRecord.status === 'Ordered' && selectedRecord.catalog?.tier_level === 'Tier2_MajorTheatre' && can.bookSurgery"
                                 variant="default"
                                 class="w-full h-8 text-xs font-semibold justify-center gap-1.5 shadow-2xs bg-purple-700 hover:bg-purple-800 text-white"
                                 @click="openBookSurgeryModal(selectedRecord)"
@@ -1290,7 +1298,7 @@ const formatTime = (dateStr) => {
                             <select v-model="pacuForm.oxygen_saturation_score" class="h-7 text-xs rounded border border-input bg-background font-mono">
                                 <option :value="2">2 - SpO2 > 92% on room air</option>
                                 <option :value="1">1 - Needs supplemental O2</option>
-                                <option :value="0">0 - SpO2 < 90%</option>
+                                <option :value="0">0 - SpO2 &lt; 90%</option>
                             </select>
                         </div>
                     </div>

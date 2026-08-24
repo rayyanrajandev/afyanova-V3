@@ -2,7 +2,9 @@
 
 namespace App\Domains\Inpatient\Http\Controllers;
 
+use App\Core\Traits\AuthorizesWorkspaceAccess;
 use App\Domains\Identity\Models\User;
+use App\Domains\Identity\Services\AuthorizationService;
 use App\Domains\Inpatient\Actions\AdministerMedicationAction;
 use App\Domains\Inpatient\Actions\AdmitPatientAction;
 use App\Domains\Inpatient\Actions\DischargePatientAction;
@@ -23,10 +25,20 @@ use Inertia\Response;
 
 class InpatientWorkspaceController extends Controller
 {
-    use AuthorizesRequests;
+    use AuthorizesRequests, AuthorizesWorkspaceAccess;
 
-    public function index(): Response
+    public function index(Request $request, AuthorizationService $authService): Response
     {
+        $this->authorizeAnyWorkspacePermission($request->user(), $authService, ['inpatient.ward.view']);
+
+        $can = $this->buildSectionCanMap($request->user(), $authService, [
+            'admit' => 'inpatient.admission.create',
+            'transfer' => 'inpatient.admission.transfer',
+            'discharge' => 'inpatient.admission.discharge',
+            'administerMar' => 'inpatient.mar.administer',
+            'updateBedStatus' => 'inpatient.bed.manage',
+        ]);
+
         $wards = Ward::with([
             'beds' => function ($q) {
                 $q->with('currentAdmission.patient');
@@ -81,8 +93,12 @@ class InpatientWorkspaceController extends Controller
             ->take(50)
             ->get();
 
-        $doctors = User::where('is_active', true)->get();
-        $nurses = User::where('is_active', true)->get();
+        $doctors = User::where('status', 'active')
+            ->whereHas('roles', fn ($q) => $q->where('slug', 'doctor'))
+            ->get();
+        $nurses = User::where('status', 'active')
+            ->whereHas('roles', fn ($q) => $q->where('slug', 'nurse'))
+            ->get();
 
         // Ward cabinets & pharmacy locations
         $wardCabinets = InventoryLocation::where('is_active', true)
@@ -94,13 +110,15 @@ class InpatientWorkspaceController extends Controller
             ->orderBy('name')
             ->get();
 
-        // Available ward stock balances
-        $wardStockBalances = InventoryStockBalance::with(['item', 'location'])
+        // Available ward stock balances (earliest-expiring batch first)
+        $wardStockBalances = InventoryStockBalance::with(['medication', 'location', 'batch'])
             ->where('quantity_on_hand', '>', 0)
-            ->orderBy('expiry_date', 'asc')
-            ->get();
+            ->get()
+            ->sortBy(fn ($balance) => $balance->batch?->expiry_date)
+            ->values();
 
         return Inertia::render('Workspace/InpatientWorkspace', [
+            'can' => $can,
             'wards' => $wards,
             'beds' => $beds,
             'activeAdmissions' => $activeAdmissions,

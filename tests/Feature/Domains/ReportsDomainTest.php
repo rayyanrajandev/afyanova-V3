@@ -320,3 +320,31 @@ test('reports workspace renders correctly with all intelligence datasets', funct
             ->has('filters')
         );
 });
+
+test('a role holding only the real seeded auditor report slugs sees exactly those sections, not the blanket bypass', function () {
+    // Mirrors the real DatabaseSeeder auditor grant minus reports.analytics.view,
+    // to exercise the section-level can map rather than the blanket-bypass branch.
+    $auditorRole = Role::create(['tenant_id' => $this->tenant->id, 'slug' => 'auditor', 'name' => 'Medical Auditor / Compliance']);
+    $clinicalView = Permission::firstOrCreate(['slug' => 'reports.clinical.view'], ['name' => 'View Clinical Analytics', 'domain' => 'Reports']);
+    $financialView = Permission::firstOrCreate(['slug' => 'reports.financial.view'], ['name' => 'View Financial Intelligence', 'domain' => 'Reports']);
+    $auditorRole->permissions()->attach([$clinicalView->id, $financialView->id]);
+
+    $auditorUser = User::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'first_name' => 'Peter',
+        'last_name' => 'Lyimo',
+        'email' => 'auditor@afyanova-national.test',
+    ]);
+    app(AssignUserRoleAction::class)->execute($auditorUser->id, $auditorRole->id);
+
+    $this->actingAs($auditorUser)
+        ->get(route('reports.workspace'))
+        ->assertStatus(200)
+        ->assertInertia(fn ($page) => $page
+            ->component('Workspace/ReportsWorkspace')
+            ->where('can.morbidity', true)
+            ->where('can.financial', true)
+            ->where('can.pharmaco', false)
+            ->where('can.operational', true)
+        );
+});

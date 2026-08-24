@@ -32,6 +32,10 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
+    can: {
+        type: Object,
+        default: () => ({}),
+    },
 });
 
 const selectedCategory = ref('all');
@@ -338,6 +342,7 @@ const hasAnyCriticalResults = computed(() => {
 
                         <!-- Place Order Button -->
                         <Button
+                            v-if="can.orderLabs"
                             variant="default"
                             size="sm"
                             class="w-full justify-center gap-1.5 text-xs h-7 shadow-2xs font-semibold"

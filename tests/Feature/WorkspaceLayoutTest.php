@@ -3,6 +3,9 @@
 use App\Core\Context\TenantContext;
 use App\Domains\Billing\Models\Invoice;
 use App\Domains\Clinical\Models\Encounter;
+use App\Domains\Identity\Actions\AssignUserRoleAction;
+use App\Domains\Identity\Models\Permission;
+use App\Domains\Identity\Models\Role;
 use App\Domains\Identity\Models\User;
 use App\Domains\Patient\Models\Patient;
 use App\Domains\Tenancy\Models\Facility;
@@ -32,6 +35,18 @@ beforeEach(function () {
         'gender' => 'Female',
         'status' => 'Active',
     ]);
+
+    $role = Role::create(['tenant_id' => $this->tenant->id, 'slug' => 'doctor', 'name' => 'Doctor']);
+    $billingView = Permission::firstOrCreate(
+        ['slug' => 'billing.invoice.view'],
+        ['name' => 'View Invoices', 'domain' => 'Billing']
+    );
+    $encounterView = Permission::firstOrCreate(
+        ['slug' => 'clinical.encounter.view'],
+        ['name' => 'View Encounters', 'domain' => 'Clinical']
+    );
+    $role->permissions()->syncWithoutDetaching([$billingView->id, $encounterView->id]);
+    app(AssignUserRoleAction::class)->execute($this->user->id, $role->id);
 });
 
 test('dashboard workspace renders with layout primitives for authenticated user', function () {
@@ -40,15 +55,6 @@ test('dashboard workspace renders with layout primitives for authenticated user'
         ->assertStatus(200)
         ->assertInertia(fn (Assert $page) => $page
             ->component('Workspace/HomeWorkspace')
-        );
-});
-
-test('design foundation demo renders for authenticated user', function () {
-    $this->actingAs($this->user)
-        ->get('/workspace/foundation')
-        ->assertStatus(200)
-        ->assertInertia(fn (Assert $page) => $page
-            ->component('Workspace/DesignFoundationDemo')
         );
 });
 

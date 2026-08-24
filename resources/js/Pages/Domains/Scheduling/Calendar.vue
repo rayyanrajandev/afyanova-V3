@@ -40,6 +40,10 @@ import AfyaStatusBadge from '@/Components/Afya/AfyaStatusBadge.vue';
 import AfyaPatientIdentity from '@/Components/Afya/AfyaPatientIdentity.vue';
 
 const props = defineProps({
+    can: {
+        type: Object,
+        default: () => ({}),
+    },
     appointments: {
         type: Array,
         default: () => [],
@@ -182,7 +186,7 @@ const confirmCheckIn = () => {
                                 <CalendarCheck class="w-3.5 h-3.5" />
                                 <span>{{ appointments.length }} Appointments</span>
                             </span>
-                            <Button variant="default" size="sm" class="h-7 text-xs font-semibold gap-1" @click="openBookModal">
+                            <Button variant="default" size="sm" class="h-7 text-xs font-semibold gap-1" v-if="can.store" @click="openBookModal">
                                 <Plus class="w-3 h-3" />
                                 <span>Book Appointment</span>
                             </Button>
@@ -226,7 +230,7 @@ const confirmCheckIn = () => {
                                         </TableCell>
                                         <TableCell class="py-2 px-3 text-right" @click.stop>
                                             <Button
-                                                v-if="app.status === 'Scheduled'"
+                                                v-if="app.status === 'Scheduled' && can.checkIn"
                                                 variant="default"
                                                 size="sm"
                                                 class="h-7 text-[11px] font-semibold gap-1"
@@ -243,7 +247,7 @@ const confirmCheckIn = () => {
                                             <CalendarIcon class="w-8 h-8 mx-auto mb-2 text-muted-foreground opacity-50" />
                                             <p class="font-semibold text-foreground text-xs">No appointments scheduled</p>
                                             <p class="text-[11px]">Booked patient appointments will appear here.</p>
-                                            <Button variant="outline" size="sm" class="mt-3 text-xs gap-1" @click="openBookModal">
+                                            <Button variant="outline" size="sm" class="mt-3 text-xs gap-1" v-if="can.store" @click="openBookModal">
                                                 <Plus class="w-3 h-3" />
                                                 <span>Book First Appointment</span>
                                             </Button>
@@ -296,7 +300,7 @@ const confirmCheckIn = () => {
                         </Card>
 
                         <Button
-                            v-if="selectedAppointment.status === 'Scheduled'"
+                            v-if="selectedAppointment.status === 'Scheduled' && can.checkIn"
                             variant="default"
                             size="sm"
                             class="w-full justify-center gap-1.5"

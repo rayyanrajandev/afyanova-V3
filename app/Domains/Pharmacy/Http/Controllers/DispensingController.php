@@ -2,6 +2,8 @@
 
 namespace App\Domains\Pharmacy\Http\Controllers;
 
+use App\Core\Traits\AuthorizesWorkspaceAccess;
+use App\Domains\Identity\Services\AuthorizationService;
 use App\Domains\Pharmacy\Actions\DispenseMedicationAction;
 use App\Domains\Pharmacy\Actions\VerifyPrescriptionAction;
 use App\Domains\Pharmacy\Exceptions\PharmacyException;
@@ -17,11 +19,36 @@ use Inertia\Response;
 
 class DispensingController extends Controller
 {
-    use AuthorizesRequests;
+    use AuthorizesRequests, AuthorizesWorkspaceAccess;
 
-    public function index(): Response
+    /**
+     * Both this route and InventoryBatchController::index() render the same
+     * Domains/Pharmacy/PharmacyQueue.vue component; the can map's keys must
+     * stay identical across both controllers (built via the shared trait
+     * with the same slugs) so a user can't get looser section access by
+     * switching tabs after entering through whichever route had the wider
+     * page-level bar.
+     */
+    private function sectionSlugs(): array
     {
-        $prescriptions = Prescription::with([
+        return [
+            'queue' => 'pharmacy.prescription.view',
+            'formulary' => 'pharmacy.inventory.view',
+            'movements' => 'pharmacy.inventory.view',
+            'verify' => 'pharmacy.prescription.verify',
+            'dispense' => 'pharmacy.dispense.execute',
+            'storeBatch' => 'pharmacy.inventory.receive',
+            'adjustBatch' => 'pharmacy.inventory.adjust',
+        ];
+    }
+
+    public function index(Request $request, AuthorizationService $authService): Response
+    {
+        $this->authorizeAnyWorkspacePermission($request->user(), $authService, ['pharmacy.prescription.view']);
+
+        $can = $this->buildSectionCanMap($request->user(), $authService, $this->sectionSlugs());
+
+        $prescriptions = $can['queue'] ? Prescription::with([
             'patient.allergies',
             'prescriber',
             'medication.batches' => function ($q) {
@@ -32,8 +59,13 @@ class DispensingController extends Controller
         ])
             ->whereIn('status', ['Pending', 'Verified', 'Partially Dispensed', 'Dispensed'])
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->get() : collect();
 
+        // Shared reference data for the dispensing action itself (drug/batch
+        // lookup) as well as the formulary tab display — kept loaded
+        // whenever the page loads at all rather than split per-tab, since
+        // gating it further would break the dispense flow with no real
+        // data-sensitivity benefit (formulary/batch data isn't patient PII).
         $medications = MedicationFormulary::with([
             'batches' => function ($q) {
                 $q->orderBy('expiry_date', 'asc');
@@ -49,12 +81,15 @@ class DispensingController extends Controller
             ->orderBy('expiry_date', 'asc')
             ->get();
 
-        $recentMovements = StockMovement::with(['medication', 'batch', 'performer'])
-            ->latest('created_at')
-            ->take(50)
-            ->get();
+        $recentMovements = $can['movements']
+            ? StockMovement::with(['medication', 'batch', 'performer'])
+                ->latest('created_at')
+                ->take(50)
+                ->get()
+            : collect();
 
         return Inertia::render('Domains/Pharmacy/PharmacyQueue', [
+            'can' => $can,
             'prescriptions' => $prescriptions,
             'medications' => $medications,
             'batches' => $batches,

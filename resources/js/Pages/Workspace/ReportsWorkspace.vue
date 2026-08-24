@@ -49,6 +49,10 @@ import AfyaStatusBadge from '@/Components/Afya/AfyaStatusBadge.vue';
 import { useWorkspacePreferences } from '@/Composables/useWorkspacePreferences';
 
 const props = defineProps({
+    can: {
+        type: Object,
+        default: () => ({}),
+    },
     morbidity: {
         type: Object,
         default: () => ({}),
@@ -78,7 +82,17 @@ const props = defineProps({
 const { preferences, openContext } = useWorkspacePreferences();
 
 // View State: 'morbidity' | 'notifiable' | 'financial' | 'payermix' | 'pharmaco' | 'operations'
-const activeSection = ref('morbidity');
+// Each tab reads from one of the 4 gated data props; map tab -> underlying can-key.
+const sectionSource = {
+    morbidity: 'morbidity',
+    notifiable: 'morbidity',
+    financial: 'financial',
+    payermix: 'financial',
+    pharmaco: 'pharmaco',
+    operations: 'operational',
+};
+const firstAvailableSection = Object.keys(sectionSource).find(s => props.can[sectionSource[s]]) ?? null;
+const activeSection = ref(firstAvailableSection);
 const selectedDiagnosis = ref(null);
 const selectedDepartment = ref(null);
 const selectedPayer = ref(null);
@@ -180,6 +194,7 @@ const contextIcon = computed(() => {
                         Clinical Surveillance
                     </div>
                     <AfyaSidebarItem
+                        v-if="can.morbidity"
                         :icon="Activity"
                         label="Top 10 Morbidity"
                         :active="activeSection === 'morbidity'"
@@ -188,6 +203,7 @@ const contextIcon = computed(() => {
                         @click="activeSection = 'morbidity'"
                     />
                     <AfyaSidebarItem
+                        v-if="can.morbidity"
                         :icon="ShieldAlert"
                         label="Epidemic Watchtower"
                         :active="activeSection === 'notifiable'"
@@ -197,10 +213,11 @@ const contextIcon = computed(() => {
                     />
 
                     <!-- Section 2: Executive Financials -->
-                    <div v-if="state !== 'collapsed'" class="px-2 pt-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground border-t border-border/40 mt-2">
+                    <div v-if="state !== 'collapsed' && can.financial" class="px-2 pt-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground border-t border-border/40 mt-2">
                         Financial Intelligence
                     </div>
                     <AfyaSidebarItem
+                        v-if="can.financial"
                         :icon="DollarSign"
                         label="Revenue & Cost Centers"
                         :active="activeSection === 'financial'"
@@ -208,6 +225,7 @@ const contextIcon = computed(() => {
                         @click="activeSection = 'financial'"
                     />
                     <AfyaSidebarItem
+                        v-if="can.financial"
                         :icon="ShieldCheck"
                         label="Payer Mix & NHIF"
                         :active="activeSection === 'payermix'"
@@ -216,10 +234,11 @@ const contextIcon = computed(() => {
                     />
 
                     <!-- Section 3: Supply Chain & Efficiency -->
-                    <div v-if="state !== 'collapsed'" class="px-2 pt-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground border-t border-border/40 mt-2">
+                    <div v-if="state !== 'collapsed' && (can.pharmaco || can.operational)" class="px-2 pt-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground border-t border-border/40 mt-2">
                         Operations & Supply
                     </div>
                     <AfyaSidebarItem
+                        v-if="can.pharmaco"
                         :icon="Pill"
                         label="Pharmacoeconomics"
                         :active="activeSection === 'pharmaco'"
@@ -227,6 +246,7 @@ const contextIcon = computed(() => {
                         @click="activeSection = 'pharmaco'"
                     />
                     <AfyaSidebarItem
+                        v-if="can.operational"
                         :icon="Bed"
                         label="Bed Occupancy (BOR)"
                         :active="activeSection === 'operations'"

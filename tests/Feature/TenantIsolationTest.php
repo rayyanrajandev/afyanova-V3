@@ -5,6 +5,7 @@ use App\Domains\Billing\Actions\GenerateInvoiceAction;
 use App\Domains\Billing\Models\ChargeMasterItem;
 use App\Domains\Clinical\Actions\StartEncounterAction;
 use App\Domains\Identity\Actions\AssignUserRoleAction;
+use App\Domains\Identity\Models\Permission;
 use App\Domains\Identity\Models\Role;
 use App\Domains\Identity\Models\User;
 use App\Domains\Patient\Actions\RegisterPatientAction;
@@ -96,6 +97,19 @@ test('a user cannot pay another tenant\'s invoice over HTTP', function () {
 test('a user cannot list another tenant\'s facilities via the access-control workspace', function () {
     $a = buildIsolatedTenant('epsilon');
     buildIsolatedTenant('zeta');
+
+    // buildIsolatedTenant('zeta') left the global TenantContext pointed at
+    // zeta; AssignUserRoleAction looks up the user via a tenant-scoped
+    // query, so it must be switched back to epsilon before granting a[user] a role.
+    app(TenantContext::class)->setTenantId($a['tenant']->id);
+
+    $role = Role::create(['tenant_id' => $a['tenant']->id, 'slug' => 'identity-admin', 'name' => 'Identity Admin']);
+    $permission = Permission::firstOrCreate(
+        ['slug' => 'identity.user.manage'],
+        ['name' => 'Manage Staff Accounts', 'domain' => 'Identity']
+    );
+    $role->permissions()->syncWithoutDetaching([$permission->id]);
+    app(AssignUserRoleAction::class)->execute($a['user']->id, $role->id);
 
     $this->actingAs($a['user'])
         ->get(route('access-control.workspace'))

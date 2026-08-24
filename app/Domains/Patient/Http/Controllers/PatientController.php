@@ -2,6 +2,8 @@
 
 namespace App\Domains\Patient\Http\Controllers;
 
+use App\Core\Traits\AuthorizesWorkspaceAccess;
+use App\Domains\Identity\Services\AuthorizationService;
 use App\Domains\Patient\Actions\RegisterPatientAction;
 use App\Domains\Patient\Actions\SearchPatientsAction;
 use App\Domains\Patient\Http\Requests\StorePatientRequest;
@@ -14,10 +16,12 @@ use Inertia\Response;
 
 class PatientController extends Controller
 {
-    use AuthorizesRequests;
+    use AuthorizesRequests, AuthorizesWorkspaceAccess;
 
-    public function index(Request $request, SearchPatientsAction $searchAction): Response
+    public function index(Request $request, SearchPatientsAction $searchAction, AuthorizationService $authService): Response
     {
+        $this->authorizeAnyWorkspacePermission($request->user(), $authService, ['patient.registry.view']);
+
         $search = $request->query('search', '');
         $patients = $searchAction->execute($search);
 
@@ -29,6 +33,8 @@ class PatientController extends Controller
 
     public function create(): Response
     {
+        $this->authorize('create', Patient::class);
+
         return Inertia::render('Domains/Patient/Register');
     }
 
@@ -42,33 +48,58 @@ class PatientController extends Controller
             ->with('success', 'Patient registered successfully.');
     }
 
-    public function show(Patient $patient): Response
+    public function show(Patient $patient, AuthorizationService $authService): Response
     {
-        $patient->load([
+        $this->authorize('view', $patient);
+
+        // Core demographic/clinical chart data (identifiers, allergies,
+        // problems, encounters' own vitals/notes/diagnoses/prescriptions) is
+        // available to anyone who passed the view check above — the page
+        // itself is already gated on patient.registry.view. Radiology and
+        // billing are the two genuinely separate view permissions in the
+        // catalog, so only those two are conditionally eager-loaded.
+        $can = $this->buildSectionCanMap(auth()->user(), $authService, [
+            'radiology' => 'radiology.order.view',
+            'billing' => 'billing.invoice.view',
+            'storeProblem' => 'clinical.problem-list.manage',
+            'storeReconciliation' => 'pharmacy.medication-reconciliation.record',
+            'recordAllergy' => 'clinical.allergy.record',
+            'amendAllergy' => 'clinical.allergy.verify',
+        ]);
+
+        $encounterRelations = ['provider', 'vitals', 'notes', 'diagnoses', 'prescriptions.medication'];
+        if ($can['billing']) {
+            $encounterRelations[] = 'invoices.lineItems';
+        }
+
+        $relations = [
             'identifiers',
             'contacts',
             'emergencyContacts',
             'allergies',
-            'problems',
-            'medicationReconciliations',
+            'problems.recordedBy',
+            'medicationReconciliations.reconciler',
             'referrals.toFacility',
-            'radiologyOrders.reports',
-            'radiologyOrders.studies',
-            'encounters' => function ($q) {
-                $q->with([
-                    'provider',
-                    'vitals',
-                    'notes',
-                    'diagnoses',
-                    'prescriptions.medication',
-                    'invoices.lineItems',
-                ])->latest('start_time');
-            },
             'appointments.provider',
-            'invoices.lineItems',
-        ]);
+        ];
+
+        if ($can['radiology']) {
+            $relations[] = 'radiologyOrders.reports';
+            $relations[] = 'radiologyOrders.studies';
+        }
+
+        if ($can['billing']) {
+            $relations[] = 'invoices.lineItems';
+        }
+
+        $relations['encounters'] = function ($q) use ($encounterRelations) {
+            $q->with($encounterRelations)->latest('start_time');
+        };
+
+        $patient->load($relations);
 
         return Inertia::render('Domains/Patient/Profile', [
+            'can' => $can,
             'patient' => $patient,
         ]);
     }

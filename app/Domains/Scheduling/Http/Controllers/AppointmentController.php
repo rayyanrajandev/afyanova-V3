@@ -2,7 +2,9 @@
 
 namespace App\Domains\Scheduling\Http\Controllers;
 
+use App\Core\Traits\AuthorizesWorkspaceAccess;
 use App\Domains\Identity\Models\User;
+use App\Domains\Identity\Services\AuthorizationService;
 use App\Domains\Patient\Models\Patient;
 use App\Domains\Scheduling\Actions\BookAppointmentAction;
 use App\Domains\Scheduling\Actions\CheckInPatientAction;
@@ -18,16 +20,23 @@ use Inertia\Response;
 
 class AppointmentController extends Controller
 {
-    use AuthorizesRequests;
+    use AuthorizesRequests, AuthorizesWorkspaceAccess;
 
-    public function index(): Response
+    public function index(Request $request, AuthorizationService $authService): Response
     {
+        $this->authorizeAnyWorkspacePermission($request->user(), $authService, ['scheduling.appointment.view']);
+
+        $can = $this->buildSectionCanMap($request->user(), $authService, [
+            'store' => 'scheduling.appointment.create',
+            'checkIn' => 'scheduling.appointment.checkin',
+        ]);
+
         $appointments = Appointment::with(['patient', 'provider', 'facility', 'department'])
             ->whereDate('scheduled_time', '>=', now()->toDateString())
             ->orderBy('scheduled_time')
             ->get();
 
-        $patients = Patient::select('id', 'first_name', 'last_name', 'primary_mrn', 'phone_number')
+        $patients = Patient::select('id', 'first_name', 'last_name', 'primary_mrn')
             ->latest()
             ->take(100)
             ->get();
@@ -39,6 +48,7 @@ class AppointmentController extends Controller
         $departments = Department::select('id', 'name')->get();
 
         return Inertia::render('Domains/Scheduling/Calendar', [
+            'can' => $can,
             'appointments' => $appointments,
             'patients' => $patients,
             'providers' => $providers,

@@ -71,4 +71,14 @@ class EncounterPolicy
     {
         return $this->auth->hasPermission($user, 'clinical.partograph.record', $encounter->facility_id);
     }
+
+    public function recordVitals(User $user, Encounter $encounter): bool
+    {
+        return $this->auth->hasPermission($user, 'clinical.vitals.record', $encounter->facility_id);
+    }
+
+    public function createNote(User $user, Encounter $encounter): bool
+    {
+        return $this->auth->hasPermission($user, 'clinical.notes.create', $encounter->facility_id);
+    }
 }

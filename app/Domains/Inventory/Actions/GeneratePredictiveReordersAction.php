@@ -59,7 +59,7 @@ class GeneratePredictiveReordersAction
                 $requisitionIssues = (float) DepartmentRequisitionItem::where('tenant_id', $tenantId)
                     ->where('created_at', '>=', $thirtyDaysAgo)
                     ->where('item_id', $item->id)
-                    ->sum('quantity_issued');
+                    ->sum('quantity_dispatched');
 
                 $totalConsumption30d = $marDoses + $requisitionIssues;
                 $adc = $totalConsumption30d > 0 ? round($totalConsumption30d / 30, 2) : 1.0; // minimum baseline 1.0/day
@@ -70,8 +70,7 @@ class GeneratePredictiveReordersAction
                 // 2. Current Stock on Hand (SOH)
                 $currentStockOnHand = (int) InventoryStockBalance::where('tenant_id', $tenantId)
                     ->where(function ($q) use ($item) {
-                        $q->where('item_id', $item->id)
-                            ->orWhere('medication_id', $item->id);
+                        $q->where('medication_id', $item->id);
                         if (! empty($item->medication_id)) {
                             $q->orWhere('medication_id', $item->medication_id);
                         }

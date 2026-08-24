@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p \"/home/rajani/Desktop/Portfolio/afyanova-v3/docs/audit/access-control\")",
+      "Bash(cp \"/home/rajani/.claude/plans/cheerful-humming-oasis.md\" \"/home/rajani/Desktop/Portfolio/afyanova-v3/docs/audit/access-control/cheerful-humming-oasis.md\")",
+      "Bash(php -l app/Core/Traits/AuthorizesWorkspaceAccess.php)",
+      "Bash(php -l app/Http/Middleware/HandleInertiaRequests.php)",
+      "Bash(./vendor/bin/pint --test)",
+      "Bash(./vendor/bin/pest)",
+      "Bash(php -l database/seeders/DatabaseSeeder.php)",
+      "Bash(php artisan *)",
+      "Bash(php -l database/migrations/0001_01_01_000003_create_uuid_min_max_aggregates.php)",
+      "Bash(./vendor/bin/pint app/Domains/Billing/Http/Controllers/BillingController.php)",
+      "Bash(grep -rln 'DatabaseSeeder\\\\|Artisan::call\\('\\\\''db:seed'\\\\''\\\\|\\\\$this->seed\\(' tests/Feature/)",
+      "Bash(php -l app/Domains/Inventory/Http/Controllers/InventoryWorkspaceController.php)",
+      "Bash(npm run *)",
+      "Bash(python3 -c ' *)",
+      "Bash(php -l app/Domains/Patient/Http/Controllers/PatientController.php)"
+    ]
+  }
+}

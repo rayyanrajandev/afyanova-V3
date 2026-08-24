@@ -2,7 +2,9 @@
 
 namespace App\Domains\Procedure\Http\Controllers;
 
+use App\Core\Traits\AuthorizesWorkspaceAccess;
 use App\Domains\Clinical\Models\Encounter;
+use App\Domains\Identity\Services\AuthorizationService;
 use App\Domains\Inpatient\Models\Ward;
 use App\Domains\Pharmacy\Models\InventoryBatch;
 use App\Domains\Procedure\Actions\BookSurgicalCaseAction;
@@ -23,10 +25,21 @@ use Inertia\Inertia;
 
 class ProcedureWorkspaceController extends Controller
 {
-    use AuthorizesRequests;
+    use AuthorizesRequests, AuthorizesWorkspaceAccess;
 
-    public function index()
+    public function index(Request $request, AuthorizationService $authService)
     {
+        $this->authorizeAnyWorkspacePermission($request->user(), $authService, ['procedure.order.view']);
+
+        $can = $this->buildSectionCanMap($request->user(), $authService, [
+            'orderProcedure' => 'procedure.order.create',
+            'executeProcedure' => 'procedure.order.execute',
+            'bookSurgery' => 'procedure.theatre.book',
+            'saveWhoChecklist' => 'procedure.theatre.checklist',
+            'savePacuScore' => 'procedure.theatre.pacu',
+        ]);
+
+        // 'catalogue' (procedureCatalogs) stays ungated below — reference data, not patient data.
         $procedureCatalogs = ProcedureCatalog::where('is_active', true)
             ->orderBy('category')
             ->orderBy('name')
@@ -74,6 +87,7 @@ class ProcedureWorkspaceController extends Controller
         ];
 
         return Inertia::render('Workspace/ProcedureWorkspace', [
+            'can' => $can,
             'procedureCatalogs' => $procedureCatalogs,
             'dressingQueue' => $dressingQueue,
             'surgicalBookings' => $surgicalBookings,

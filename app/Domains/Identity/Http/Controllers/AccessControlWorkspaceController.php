@@ -2,6 +2,7 @@
 
 namespace App\Domains\Identity\Http\Controllers;
 
+use App\Core\Traits\AuthorizesWorkspaceAccess;
 use App\Domains\Identity\Actions\AssignUserRoleAction;
 use App\Domains\Identity\Actions\UpdateRolePermissionsAction;
 use App\Domains\Identity\Models\Permission;
@@ -20,26 +21,43 @@ use Inertia\Response;
 
 class AccessControlWorkspaceController extends Controller
 {
+    use AuthorizesWorkspaceAccess;
+
     public function index(Request $request, AuthorizationService $authService): Response
     {
+        $this->authorizeAnyWorkspacePermission($request->user(), $authService, ['identity.user.manage', 'identity.role.manage']);
+
+        $can = $this->buildSectionCanMap($request->user(), $authService, [
+            'users' => 'identity.user.manage',
+            'roles' => 'identity.role.manage',
+            'permissions' => 'identity.role.manage',
+            'assignRole' => 'identity.roles.assign',
+            'updatePermissions' => 'identity.permissions.manage',
+        ]);
+
         $tenantId = auth()->user()?->tenant_id ?? Tenant::first()?->id;
 
-        $users = User::with(['roleAssignments.role', 'roleAssignments.facility', 'roleAssignments.department'])
-            ->where('tenant_id', $tenantId)
-            ->get();
+        $users = $can['users']
+            ? User::with(['roleAssignments.role', 'roleAssignments.facility', 'roleAssignments.department'])
+                ->where('tenant_id', $tenantId)
+                ->get()
+            : collect();
 
-        $roles = Role::with('permissions')
-            ->where('tenant_id', $tenantId)
-            ->get();
+        $roles = ($can['roles'] || $can['permissions'])
+            ? Role::with('permissions')
+                ->where('tenant_id', $tenantId)
+                ->get()
+            : collect();
 
-        $permissions = Permission::all()->groupBy('domain');
-        $facilities = Facility::where('tenant_id', $tenantId)->get();
+        $permissions = $can['permissions'] ? Permission::all()->groupBy('domain') : collect();
+        $facilities = $can['users'] ? Facility::where('tenant_id', $tenantId)->get() : collect();
 
-        $selectedUserId = $request->get('user_id', $users->first()?->id);
-        $selectedUser = $users->firstWhere('id', $selectedUserId);
-        $effectivePermissions = $selectedUser ? $authService->getUserPermissions($selectedUser) : [];
+        $selectedUserId = $can['users'] ? $request->get('user_id', $users->first()?->id) : null;
+        $selectedUser = $can['users'] ? $users->firstWhere('id', $selectedUserId) : null;
+        $effectivePermissions = ($can['users'] && $selectedUser) ? $authService->getUserPermissions($selectedUser) : [];
 
         return Inertia::render('Workspace/AccessControlWorkspace', [
+            'can' => $can,
             'users' => $users,
             'roles' => $roles,
             'permissionsByDomain' => $permissions,
@@ -47,10 +65,10 @@ class AccessControlWorkspaceController extends Controller
             'selectedUserId' => $selectedUserId,
             'effectivePermissions' => $effectivePermissions,
             'metrics' => [
-                'total_users' => $users->count(),
-                'total_roles' => $roles->count(),
-                'total_permissions' => Permission::count(),
-                'multi_facility_assignments' => RoleAssignment::whereNotNull('facility_id')->count(),
+                'total_users' => $can['users'] ? $users->count() : null,
+                'total_roles' => ($can['roles'] || $can['permissions']) ? $roles->count() : null,
+                'total_permissions' => $can['permissions'] ? Permission::count() : null,
+                'multi_facility_assignments' => $can['users'] ? RoleAssignment::whereNotNull('facility_id')->count() : null,
             ],
         ]);
     }

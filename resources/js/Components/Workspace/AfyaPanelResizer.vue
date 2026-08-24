@@ -84,7 +84,7 @@ const startDrag = (event) => {
 };
 
 const handleKeyDown = (event) => {
-    let delta = 0;
+    let delta;
     if (event.key === 'ArrowLeft') {
         delta = props.side === 'left' ? -props.step : props.step;
     } else if (event.key === 'ArrowRight') {

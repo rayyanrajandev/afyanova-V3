@@ -24,6 +24,10 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
+    can: {
+        type: Object,
+        default: () => ({}),
+    },
 });
 
 const successMessage = ref('');
@@ -158,7 +162,7 @@ const formatDate = (dateStr) => {
                 <Input v-model="form.height_cm" type="number" step="0.1" placeholder="175" class="h-8 text-xs" />
             </div>
             <div class="flex items-end">
-                <Button type="submit" variant="default" size="sm" :disabled="form.processing" class="w-full h-8 justify-center gap-1 shadow-2xs">
+                <Button v-if="can.recordVitals" type="submit" variant="default" size="sm" :disabled="form.processing" class="w-full h-8 justify-center gap-1 shadow-2xs">
                     <Loader2 v-if="form.processing" class="w-3.5 h-3.5 animate-spin mr-1" />
                     <Save v-else class="w-3.5 h-3.5" />
                     <span>{{ form.processing ? 'Saving...' : 'Save Vitals' }}</span>

@@ -49,6 +49,10 @@ import AfyaPatientIdentity from '@/Components/Afya/AfyaPatientIdentity.vue';
 import { useWorkspacePreferences } from '@/Composables/useWorkspacePreferences';
 
 const props = defineProps({
+    can: {
+        type: Object,
+        default: () => ({}),
+    },
     orders: {
         type: Array,
         default: () => [],
@@ -359,20 +363,20 @@ const formatDate = (dateStr) => {
                                     </TableCell>
                                     <TableCell class="py-2 px-3 text-right" @click.stop>
                                         <div class="flex items-center justify-end gap-1.5">
-                                            <Button 
-                                                v-if="order.status !== 'Reported'" 
-                                                variant="default" 
-                                                size="sm" 
+                                            <Button
+                                                v-if="order.status !== 'Reported' && can.signReport"
+                                                variant="default"
+                                                size="sm"
                                                 class="h-7 text-[11px] font-semibold gap-1"
                                                 @click="openSignDialog(order)"
                                             >
                                                 <Edit3 class="w-3 h-3" />
                                                 <span>Sign Report</span>
                                             </Button>
-                                            <Button 
-                                                v-else 
-                                                variant="outline" 
-                                                size="sm" 
+                                            <Button
+                                                v-else-if="order.status === 'Reported' && can.amendReport"
+                                                variant="outline"
+                                                size="sm"
                                                 class="h-7 text-[11px] font-semibold gap-1"
                                                 @click="openAmendDialog(order)"
                                             >
@@ -452,9 +456,9 @@ const formatDate = (dateStr) => {
                         </div>
 
                         <div class="pt-2">
-                            <Button 
-                                v-if="selectedOrder.status !== 'Reported'" 
-                                variant="default" 
+                            <Button
+                                v-if="selectedOrder.status !== 'Reported' && can.signReport"
+                                variant="default"
                                 class="w-full h-8 text-xs font-semibold gap-1.5"
                                 @click="openSignDialog(selectedOrder)"
                             >

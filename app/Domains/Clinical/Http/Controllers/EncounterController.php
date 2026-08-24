@@ -2,11 +2,13 @@
 
 namespace App\Domains\Clinical\Http\Controllers;
 
+use App\Core\Traits\AuthorizesWorkspaceAccess;
 use App\Domains\Clinical\Actions\StartEncounterAction;
 use App\Domains\Clinical\Models\ClinicalVital;
 use App\Domains\Clinical\Models\Encounter;
 use App\Domains\Clinical\Models\LabOrder;
 use App\Domains\Clinical\Models\LabTest;
+use App\Domains\Identity\Services\AuthorizationService;
 use App\Domains\Patient\Models\Patient;
 use App\Domains\Pharmacy\Models\MedicationFormulary;
 use App\Domains\Procedure\Models\ProcedureCatalog;
@@ -20,10 +22,33 @@ use Inertia\Response;
 
 class EncounterController extends Controller
 {
-    use AuthorizesRequests;
+    use AuthorizesRequests, AuthorizesWorkspaceAccess;
 
-    public function index(): Response
+    public function index(Request $request, AuthorizationService $authService): Response
     {
+        $this->authorizeAnyWorkspacePermission($request->user(), $authService, ['clinical.encounter.view']);
+
+        // completeEncounter reflects only the base clinical.encounter.update
+        // permission — EncounterPolicy::update also requires the caller be
+        // the encounter's own provider (or hold clinical.encounter.override),
+        // a per-row check the Vue side already applies on top of this flag.
+        $can = $this->buildSectionCanMap($request->user(), $authService, [
+            'startEncounter' => 'clinical.encounter.create',
+            'completeEncounter' => 'clinical.encounter.update',
+            'orderProcedure' => 'procedure.order.create',
+            'createNote' => 'clinical.notes.create',
+            'signNote' => 'clinical.notes.sign',
+            'recordVitals' => 'clinical.vitals.record',
+            'prescribe' => 'pharmacy.prescription.create',
+            'orderLabs' => 'lab.order.create',
+            'orderImaging' => 'radiology.order.create',
+            'recordConsent' => 'clinical.consent.record',
+            'createReferral' => 'clinical.referral.create',
+            'recordAncVisit' => 'clinical.anc.record',
+            'recordPartograph' => 'clinical.partograph.record',
+            'administerImmunization' => 'clinical.immunization.administer',
+        ]);
+
         // 1. Fetch only Active (non-closed) Encounters
         $encounters = Encounter::with([
             'patient.allergies',
@@ -73,6 +98,7 @@ class EncounterController extends Controller
             ->get();
 
         return Inertia::render('Workspace/ClinicalWorkspace', [
+            'can' => $can,
             'encounters' => $encounters,
             'patients' => $waitingPatients,
             'allPatients' => $allPatients,
@@ -121,8 +147,27 @@ class EncounterController extends Controller
             ->with('success', 'Encounter started successfully.');
     }
 
-    public function workspace(Encounter $encounter): Response
+    public function workspace(Encounter $encounter, AuthorizationService $authService): Response
     {
+        $this->authorize('view', $encounter);
+
+        $can = $this->buildSectionCanMap(auth()->user(), $authService, [
+            'startEncounter' => 'clinical.encounter.create',
+            'completeEncounter' => 'clinical.encounter.update',
+            'orderProcedure' => 'procedure.order.create',
+            'createNote' => 'clinical.notes.create',
+            'signNote' => 'clinical.notes.sign',
+            'recordVitals' => 'clinical.vitals.record',
+            'prescribe' => 'pharmacy.prescription.create',
+            'orderLabs' => 'lab.order.create',
+            'orderImaging' => 'radiology.order.create',
+            'recordConsent' => 'clinical.consent.record',
+            'createReferral' => 'clinical.referral.create',
+            'recordAncVisit' => 'clinical.anc.record',
+            'recordPartograph' => 'clinical.partograph.record',
+            'administerImmunization' => 'clinical.immunization.administer',
+        ]);
+
         if ($encounter->status === 'Triage') {
             $encounter->update([
                 'status' => 'In Progress',
@@ -197,6 +242,7 @@ class EncounterController extends Controller
             ->get();
 
         return Inertia::render('Workspace/ClinicalWorkspace', [
+            'can' => $can,
             'encounter' => $encounter,
             'encounters' => $encounters,
             'patients' => $waitingPatients,

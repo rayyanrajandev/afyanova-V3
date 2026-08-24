@@ -2,6 +2,7 @@
 
 namespace App\Domains\Billing\Http\Controllers;
 
+use App\Core\Traits\AuthorizesWorkspaceAccess;
 use App\Domains\Billing\Actions\CloseCashierShiftAction;
 use App\Domains\Billing\Actions\GenerateInvoiceAction;
 use App\Domains\Billing\Actions\IssueInvoiceAction;
@@ -16,6 +17,7 @@ use App\Domains\Billing\Models\Invoice;
 use App\Domains\Billing\Models\LedgerEntry;
 use App\Domains\Clinical\Models\Encounter;
 use App\Domains\Identity\Models\User;
+use App\Domains\Identity\Services\AuthorizationService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -25,10 +27,22 @@ use Inertia\Response;
 
 class BillingController extends Controller
 {
-    use AuthorizesRequests;
+    use AuthorizesRequests, AuthorizesWorkspaceAccess;
 
-    public function index(): Response
+    public function index(Request $request, AuthorizationService $authService): Response
     {
+        $this->authorizeAnyWorkspacePermission($request->user(), $authService, ['billing.invoice.view']);
+
+        $can = $this->buildSectionCanMap($request->user(), $authService, [
+            'pay' => 'billing.payment.collect',
+            'refund' => 'billing.refund.issue',
+            'addItem' => 'billing.invoice.create',
+            'issue' => 'billing.invoice.create',
+            'adjustInvoice' => 'billing.discount.approve',
+            'openShift' => 'billing.shift.open',
+            'closeShift' => 'billing.shift.close',
+        ]);
+
         $invoices = Invoice::with(['patient', 'lineItems'])
             ->orderBy('created_at', 'desc')
             ->get();
@@ -82,6 +96,7 @@ class BillingController extends Controller
         }
 
         return Inertia::render('Workspace/BillingWorkspace', [
+            'can' => $can,
             'invoices' => $invoices,
             'activeShift' => $activeShift,
             'recentShifts' => $recentShifts,
@@ -224,8 +239,10 @@ class BillingController extends Controller
         }
     }
 
-    public function openShift(Request $request, OpenCashierShiftAction $action)
+    public function openShift(Request $request, OpenCashierShiftAction $action, AuthorizationService $authService)
     {
+        abort_unless($authService->hasPermission($request->user(), 'billing.shift.open'), 403);
+
         $validated = $request->validate([
             'opening_float' => 'required|numeric|min:0',
             'notes' => 'nullable|string|max:255',
@@ -236,8 +253,18 @@ class BillingController extends Controller
         return back()->with('success', 'Cashier shift session opened successfully.');
     }
 
-    public function closeShift(Request $request, CashierShift $shift, CloseCashierShiftAction $action)
+    public function closeShift(Request $request, CashierShift $shift, CloseCashierShiftAction $action, AuthorizationService $authService)
     {
+        abort_unless($authService->hasPermission($request->user(), 'billing.shift.close'), 403);
+
+        // A cashier may only close their own shift; a tenant-admin can close
+        // any shift (e.g. a forgotten one left open at end of day).
+        abort_unless(
+            $shift->user_id === $request->user()->id || $authService->isTenantAdmin($request->user()),
+            403,
+            'You can only close your own cashier shift.'
+        );
+
         $validated = $request->validate([
             'closing_cash_counted' => 'required|numeric|min:0',
             'notes' => 'nullable|string|max:255',

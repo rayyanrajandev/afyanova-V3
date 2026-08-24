@@ -51,4 +51,34 @@ class InventoryPolicy
     {
         return $this->auth->hasPermission($user, 'inventory.dda.record', $facilityId);
     }
+
+    public function manageCatalog(User $user): bool
+    {
+        return $this->auth->hasPermission($user, 'inventory.catalog.manage');
+    }
+
+    public function createRequisition(User $user, ?string $facilityId = null): bool
+    {
+        return $this->auth->hasPermission($user, 'inventory.requisition.create', $facilityId);
+    }
+
+    public function approveRequisition(User $user, ?string $facilityId = null): bool
+    {
+        return $this->auth->hasPermission($user, 'inventory.requisition.approve', $facilityId);
+    }
+
+    public function issueRequisition(User $user, ?string $facilityId = null): bool
+    {
+        return $this->auth->hasPermission($user, 'inventory.requisition.issue', $facilityId);
+    }
+
+    public function confirmRequisition(User $user, ?string $facilityId = null): bool
+    {
+        return $this->auth->hasPermission($user, 'inventory.requisition.confirm', $facilityId);
+    }
+
+    public function generatePredictiveReorder(User $user, ?string $facilityId = null): bool
+    {
+        return $this->auth->hasPermission($user, 'inventory.predictive.generate', $facilityId);
+    }
 }

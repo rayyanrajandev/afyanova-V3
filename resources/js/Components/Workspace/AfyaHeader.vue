@@ -14,7 +14,6 @@ import {
     Pill, 
     Users, 
     Clock, 
-    Palette, 
     Search, 
     Bell,
     ChevronDown,
@@ -24,7 +23,8 @@ import {
     Scissors,
     TrendingUp,
     Package,
-    Shield
+    Shield,
+    ScanLine
 } from '@lucide/vue';
 import { useWorkspacePreferences } from '@/Composables/useWorkspacePreferences';
 
@@ -57,25 +57,35 @@ onUnmounted(() => {
 const page = usePage();
 const user = page.props.auth?.user || { first_name: 'Staff', last_name: 'User', email: 'user@afyanova.local' };
 
+// permAny: [] means always visible (no page-level permission bar exists for
+// that workspace); otherwise the user needs at least one of the listed
+// slugs — mirrors exactly what each workspace controller's own
+// authorizeAnyWorkspacePermission() call requires, so this nav never shows
+// a link the server would 403 on click.
 const hospitalModules = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, route: 'dashboard' },
-    { id: 'reports', label: 'Hospital Analytics & BI', icon: TrendingUp, route: 'reports.workspace' },
-    { id: 'clinical', label: 'Clinical Workspace', icon: Stethoscope, route: 'workspace.clinical' },
-    { id: 'inpatient', label: 'Inpatient Wards', icon: Bed, route: 'inpatient.workspace' },
-    { id: 'procedures', label: 'Procedures & Surgery', icon: Scissors, route: 'procedures.workspace' },
-    { id: 'laboratory', label: 'Laboratory', icon: FlaskConical, route: 'laboratory.workspace' },
-    { id: 'insurance', label: 'Insurance & Claims', icon: ShieldCheck, route: 'insurance.workspace' },
-    { id: 'billing', label: 'Billing & POS', icon: Receipt, route: 'billing.desk' },
-    { id: 'pharmacy', label: 'Pharmacy', icon: Pill, route: 'pharmacy.queue' },
-    { id: 'inventory', label: 'Inventory & Warehousing', icon: Package, route: 'inventory.workspace' },
-    { id: 'access-control', label: 'Access Control & RBAC', icon: Shield, route: 'access-control.workspace' },
-    { id: 'patients', label: 'Patient Registry', icon: Users, route: 'patients.index' },
-    { id: 'scheduling', label: 'Live Queue & Triage', icon: Clock, route: 'queue.index' },
-    { id: 'foundation', label: 'Design Foundation', icon: Palette, route: 'workspace.foundation' },
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, route: 'dashboard', permAny: [] },
+    { id: 'reports', label: 'Hospital Analytics & BI', icon: TrendingUp, route: 'reports.workspace', permAny: ['reports.clinical.view', 'reports.financial.view', 'reports.pharmacoeconomic.view', 'reports.analytics.view'] },
+    { id: 'clinical', label: 'Clinical Workspace', icon: Stethoscope, route: 'workspace.clinical', permAny: ['clinical.encounter.view'] },
+    { id: 'inpatient', label: 'Inpatient Wards', icon: Bed, route: 'inpatient.workspace', permAny: ['inpatient.ward.view'] },
+    { id: 'procedures', label: 'Procedures & Surgery', icon: Scissors, route: 'procedures.workspace', permAny: ['procedure.order.view'] },
+    { id: 'laboratory', label: 'Laboratory', icon: FlaskConical, route: 'laboratory.workspace', permAny: ['lab.order.view'] },
+    { id: 'radiology', label: 'Radiology & Imaging', icon: ScanLine, route: 'radiology.workspace', permAny: ['radiology.order.view'] },
+    { id: 'insurance', label: 'Insurance & Claims', icon: ShieldCheck, route: 'insurance.workspace', permAny: ['insurance.claim.view'] },
+    { id: 'billing', label: 'Billing & POS', icon: Receipt, route: 'billing.desk', permAny: ['billing.invoice.view'] },
+    { id: 'pharmacy', label: 'Pharmacy', icon: Pill, route: 'pharmacy.queue', permAny: ['pharmacy.prescription.view', 'pharmacy.inventory.view'] },
+    { id: 'inventory', label: 'Inventory & Warehousing', icon: Package, route: 'inventory.workspace', permAny: ['inventory.stock.view', 'inventory.catalog.view', 'inventory.requisition.view', 'inventory.transfer.view', 'inventory.po.view', 'inventory.predictive.view', 'inventory.grn.view', 'inventory.dda.view', 'inventory.gas.view', 'inventory.stocktake.view'] },
+    { id: 'access-control', label: 'Access Control & RBAC', icon: Shield, route: 'access-control.workspace', permAny: ['identity.user.manage', 'identity.role.manage'] },
+    { id: 'patients', label: 'Patient Registry', icon: Users, route: 'patients.index', permAny: ['patient.registry.view'] },
+    { id: 'scheduling', label: 'Live Queue & Triage', icon: Clock, route: 'queue.index', permAny: ['scheduling.appointment.view', 'scheduling.queue.view'] },
 ];
 
+const userPermissions = page.props.auth?.permissions || [];
+const visibleModules = hospitalModules.filter(
+    (mod) => mod.permAny.length === 0 || mod.permAny.some((slug) => userPermissions.includes(slug))
+);
+
 const currentModuleObj = () => {
-    return hospitalModules.find(m => m.id === props.activeModule) || hospitalModules[0];
+    return hospitalModules.find(m => m.id === props.activeModule) || visibleModules[0] || hospitalModules[0];
 };
 
 const switchModule = (mod) => {
@@ -143,7 +153,7 @@ const logout = () => {
                     </div>
                     <div class="py-1 space-y-0.5">
                         <button
-                            v-for="mod in hospitalModules"
+                            v-for="mod in visibleModules"
                             :key="mod.id"
                             type="button"
                             @click="switchModule(mod)"

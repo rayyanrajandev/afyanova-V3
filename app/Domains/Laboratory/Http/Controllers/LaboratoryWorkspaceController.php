@@ -2,6 +2,7 @@
 
 namespace App\Domains\Laboratory\Http\Controllers;
 
+use App\Core\Traits\AuthorizesWorkspaceAccess;
 use App\Domains\Clinical\Models\LabOrder;
 use App\Domains\Clinical\Models\LabOrderItem;
 use App\Domains\Clinical\Models\LabTest;
@@ -17,10 +18,20 @@ use Inertia\Inertia;
 
 class LaboratoryWorkspaceController extends Controller
 {
-    use AuthorizesRequests;
+    use AuthorizesRequests, AuthorizesWorkspaceAccess;
 
-    public function index()
+    public function index(Request $request, AuthorizationService $authService)
     {
+        $this->authorizeAnyWorkspacePermission($request->user(), $authService, ['lab.order.view']);
+
+        $can = $this->buildSectionCanMap($request->user(), $authService, [
+            'collectSample' => 'lab.specimen.collect',
+            'saveResults' => 'lab.result.record',
+            'verifyResults' => 'lab.result.verify',
+            'storeTest' => 'lab.catalog.manage',
+        ]);
+
+        // 'catalogue' (labTests) stays ungated below — reference data, not patient data.
         $labTests = LabTest::where('is_active', true)
             ->orderBy('category')
             ->orderBy('name')
@@ -52,6 +63,7 @@ class LaboratoryWorkspaceController extends Controller
         ];
 
         return Inertia::render('Workspace/LaboratoryWorkspace', [
+            'can' => $can,
             'labTests' => $labTests,
             'pendingSamples' => $pendingSamples,
             'testingWorklist' => $testingWorklist,

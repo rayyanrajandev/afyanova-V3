@@ -57,6 +57,7 @@ import InputError from '@/Components/InputError.vue';
 import { useWorkspacePreferences } from '@/Composables/useWorkspacePreferences';
 
 const props = defineProps({
+    can: { type: Object, default: () => ({}) },
     locations: { type: Array, default: () => [] },
     selectedLocationId: { type: String, default: null },
     stockBalances: { type: Array, default: () => [] },
@@ -81,7 +82,21 @@ const props = defineProps({
 const { preferences, openContext } = useWorkspacePreferences();
 
 // View State: 'stock' | 'catalog' | 'requisitions' | 'transfers' | 'procurement' | 'predictive' | 'grn' | 'dda' | 'gas' | 'stocktake'
-const activeSection = ref('stock');
+// Tab name -> backend can-map key (a few tabs are pluralized/renamed relative to their permission slug's noun).
+const sectionCanKey = {
+    stock: 'stock',
+    catalog: 'catalog',
+    requisitions: 'requisition',
+    transfers: 'transfer',
+    procurement: 'po',
+    predictive: 'predictive',
+    grn: 'grn',
+    dda: 'dda',
+    gas: 'gas',
+    stocktake: 'stocktake',
+};
+const firstAvailableSection = Object.keys(sectionCanKey).find(s => props.can[sectionCanKey[s]]) ?? null;
+const activeSection = ref(firstAvailableSection);
 const selectedLocation = ref(props.selectedLocationId);
 const selectedItem = ref(null);
 const searchQuery = ref('');
@@ -516,6 +531,7 @@ const breadcrumbLabel = computed(() => {
                     </div>
 
                     <AfyaSidebarItem
+                        v-if="can.stock"
                         :icon="Package"
                         label="Stock Balances"
                         :active="activeSection === 'stock'"
@@ -524,6 +540,7 @@ const breadcrumbLabel = computed(() => {
                         @click="activeSection = 'stock'"
                     />
                     <AfyaSidebarItem
+                        v-if="can.catalog"
                         :icon="Layers"
                         label="Universal Item Catalog"
                         :active="activeSection === 'catalog'"
@@ -532,6 +549,7 @@ const breadcrumbLabel = computed(() => {
                         @click="activeSection = 'catalog'"
                     />
                     <AfyaSidebarItem
+                        v-if="can.requisition"
                         :icon="FileText"
                         label="Department Indents"
                         :active="activeSection === 'requisitions'"
@@ -540,6 +558,7 @@ const breadcrumbLabel = computed(() => {
                         @click="activeSection = 'requisitions'"
                     />
                     <AfyaSidebarItem
+                        v-if="can.transfer"
                         :icon="ArrowRightLeft"
                         label="Transfers Handshake"
                         :active="activeSection === 'transfers'"
@@ -548,6 +567,7 @@ const breadcrumbLabel = computed(() => {
                         @click="activeSection = 'transfers'"
                     />
                     <AfyaSidebarItem
+                        v-if="can.po"
                         :icon="ShoppingCart"
                         label="Purchase Orders"
                         :active="activeSection === 'procurement'"
@@ -556,6 +576,7 @@ const breadcrumbLabel = computed(() => {
                         @click="activeSection = 'procurement'"
                     />
                     <AfyaSidebarItem
+                        v-if="can.predictive"
                         :icon="TrendingUp"
                         label="Predictive Reorders"
                         :active="activeSection === 'predictive'"
@@ -564,6 +585,7 @@ const breadcrumbLabel = computed(() => {
                         @click="activeSection = 'predictive'"
                     />
                     <AfyaSidebarItem
+                        v-if="can.grn"
                         :icon="FileCheck2"
                         label="Goods Receiving (GRN)"
                         :active="activeSection === 'grn'"
@@ -572,6 +594,7 @@ const breadcrumbLabel = computed(() => {
                         @click="activeSection = 'grn'"
                     />
                     <AfyaSidebarItem
+                        v-if="can.dda"
                         :icon="ShieldAlert"
                         label="DDA Narcotics Register"
                         :active="activeSection === 'dda'"
@@ -580,6 +603,7 @@ const breadcrumbLabel = computed(() => {
                         @click="activeSection = 'dda'"
                     />
                     <AfyaSidebarItem
+                        v-if="can.gas"
                         :icon="Wind"
                         label="Oxygen Cylinder Fleet"
                         :active="activeSection === 'gas'"
@@ -588,6 +612,7 @@ const breadcrumbLabel = computed(() => {
                         @click="activeSection = 'gas'"
                     />
                     <AfyaSidebarItem
+                        v-if="can.stocktake"
                         :icon="ClipboardCheck"
                         label="Stocktaking Audits"
                         :active="activeSection === 'stocktake'"
@@ -625,10 +650,10 @@ const breadcrumbLabel = computed(() => {
                 >
                     <template #actions>
                         <div class="flex items-center gap-2">
-                            <Button 
-                                v-if="activeSection === 'catalog'"
-                                variant="default" 
-                                size="sm" 
+                            <Button
+                                v-if="activeSection === 'catalog' && can.storeItem"
+                                variant="default"
+                                size="sm"
                                 class="h-7 text-xs font-semibold gap-1 shadow-2xs"
                                 @click="showNewItemModal = true"
                             >
@@ -636,10 +661,10 @@ const breadcrumbLabel = computed(() => {
                                 <span>Add Hospital Item</span>
                             </Button>
 
-                            <Button 
-                                v-if="activeSection === 'requisitions'"
-                                variant="default" 
-                                size="sm" 
+                            <Button
+                                v-if="activeSection === 'requisitions' && can.storeRequisition"
+                                variant="default"
+                                size="sm"
                                 class="h-7 text-xs font-semibold gap-1 shadow-2xs"
                                 @click="showRequisitionModal = true"
                             >
@@ -647,10 +672,10 @@ const breadcrumbLabel = computed(() => {
                                 <span>New Department Indent</span>
                             </Button>
 
-                            <Button 
-                                v-if="activeSection === 'stock' || activeSection === 'transfers'"
-                                variant="default" 
-                                size="sm" 
+                            <Button
+                                v-if="(activeSection === 'stock' || activeSection === 'transfers') && can.storeTransfer"
+                                variant="default"
+                                size="sm"
                                 class="h-7 text-xs font-semibold gap-1 shadow-2xs"
                                 @click="showTransferModal = true"
                             >
@@ -658,10 +683,10 @@ const breadcrumbLabel = computed(() => {
                                 <span>New Stock Transfer</span>
                             </Button>
 
-                            <Button 
-                                v-if="activeSection === 'procurement'"
-                                variant="default" 
-                                size="sm" 
+                            <Button
+                                v-if="activeSection === 'procurement' && can.storePurchaseOrder"
+                                variant="default"
+                                size="sm"
                                 class="h-7 text-xs font-semibold gap-1 shadow-2xs"
                                 @click="showPoModal = true"
                             >
@@ -669,10 +694,10 @@ const breadcrumbLabel = computed(() => {
                                 <span>Create Purchase Order</span>
                             </Button>
 
-                            <Button 
-                                v-if="activeSection === 'predictive'"
-                                variant="default" 
-                                size="sm" 
+                            <Button
+                                v-if="activeSection === 'predictive' && can.generatePredictiveReorder"
+                                variant="default"
+                                size="sm"
                                 class="h-7 text-xs font-semibold gap-1.5 bg-primary/90 hover:bg-primary shadow-2xs"
                                 :disabled="isGeneratingPredictive"
                                 @click="triggerPredictiveReorder"
@@ -681,10 +706,10 @@ const breadcrumbLabel = computed(() => {
                                 <span>{{ isGeneratingPredictive ? 'Generating Orders...' : 'Auto-Generate Replenishment POs' }}</span>
                             </Button>
 
-                            <Button 
-                                v-if="activeSection === 'grn'"
-                                variant="default" 
-                                size="sm" 
+                            <Button
+                                v-if="activeSection === 'grn' && can.storeGoodsReceipt"
+                                variant="default"
+                                size="sm"
                                 class="h-7 text-xs font-semibold gap-1 shadow-2xs"
                                 @click="showGrnModal = true"
                             >
@@ -692,10 +717,10 @@ const breadcrumbLabel = computed(() => {
                                 <span>Receive Goods (GRN)</span>
                             </Button>
 
-                            <Button 
-                                v-if="activeSection === 'dda'"
-                                variant="default" 
-                                size="sm" 
+                            <Button
+                                v-if="activeSection === 'dda' && can.storeDdaLog"
+                                variant="default"
+                                size="sm"
                                 class="h-7 text-xs font-semibold gap-1 shadow-2xs bg-rose-600 hover:bg-rose-700 text-white"
                                 @click="showDdaModal = true"
                             >
@@ -703,10 +728,10 @@ const breadcrumbLabel = computed(() => {
                                 <span>Log DDA Administration</span>
                             </Button>
 
-                            <Button 
-                                v-if="activeSection === 'stocktake'"
-                                variant="default" 
-                                size="sm" 
+                            <Button
+                                v-if="activeSection === 'stocktake' && can.storeStocktake"
+                                variant="default"
+                                size="sm"
                                 class="h-7 text-xs font-semibold gap-1 shadow-2xs"
                                 @click="showStocktakeModal = true"
                             >
@@ -952,8 +977,8 @@ const breadcrumbLabel = computed(() => {
                                                 />
                                             </TableCell>
                                             <TableCell class="py-2 px-3 text-right space-x-1">
-                                                <Button 
-                                                    v-if="req.status === 'Submitted'"
+                                                <Button
+                                                    v-if="req.status === 'Submitted' && can.approveRequisition"
                                                     variant="outline"
                                                     size="sm"
                                                     class="h-6 text-[10px] font-bold border-indigo-500/40 text-indigo-600 hover:bg-indigo-50"
@@ -961,8 +986,8 @@ const breadcrumbLabel = computed(() => {
                                                 >
                                                     Approve Indent
                                                 </Button>
-                                                <Button 
-                                                    v-if="req.status === 'Approved'"
+                                                <Button
+                                                    v-if="req.status === 'Approved' && can.issueRequisition"
                                                     variant="default"
                                                     size="sm"
                                                     class="h-6 text-[10px] font-bold"
@@ -970,8 +995,8 @@ const breadcrumbLabel = computed(() => {
                                                 >
                                                     Store Dispatch
                                                 </Button>
-                                                <Button 
-                                                    v-if="req.status === 'Dispatched_In_Transit'"
+                                                <Button
+                                                    v-if="req.status === 'Dispatched_In_Transit' && can.confirmRequisition"
                                                     variant="default"
                                                     size="sm"
                                                     class="h-6 text-[10px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white"
@@ -1111,8 +1136,8 @@ const breadcrumbLabel = computed(() => {
                                                 />
                                             </TableCell>
                                             <TableCell class="py-2 px-3 text-right">
-                                                <Button 
-                                                    v-if="trf.status === 'Dispatched_In_Transit'"
+                                                <Button
+                                                    v-if="trf.status === 'Dispatched_In_Transit' && can.confirmTransfer"
                                                     variant="default"
                                                     size="sm"
                                                     class="h-6 text-[10px] font-bold bg-emerald-600 hover:bg-emerald-700 text-white"
@@ -1176,8 +1201,8 @@ const breadcrumbLabel = computed(() => {
                                                 />
                                             </TableCell>
                                             <TableCell class="py-2 px-3 text-right">
-                                                <Button 
-                                                    v-if="po.status === 'Draft' || po.status === 'Submitted'"
+                                                <Button
+                                                    v-if="(po.status === 'Draft' || po.status === 'Submitted') && can.approvePurchaseOrder"
                                                     variant="outline"
                                                     size="sm"
                                                     class="h-6 text-[10px] font-bold border-indigo-500/40 text-indigo-600 hover:bg-indigo-50"
@@ -1242,9 +1267,10 @@ const breadcrumbLabel = computed(() => {
                                         </p>
                                     </div>
                                 </div>
-                                <Button 
-                                    variant="default" 
-                                    size="sm" 
+                                <Button
+                                    v-if="can.generatePredictiveReorder"
+                                    variant="default"
+                                    size="sm"
                                     class="h-8 text-xs font-semibold gap-1.5 whitespace-nowrap shadow-2xs"
                                     :disabled="isGeneratingPredictive || !predictiveProcurement?.items_needing_reorder_count"
                                     @click="triggerPredictiveReorder"

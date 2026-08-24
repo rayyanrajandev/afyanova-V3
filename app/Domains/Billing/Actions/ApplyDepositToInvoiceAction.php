@@ -80,7 +80,7 @@ class ApplyDepositToInvoiceAction
                 'allocated_at' => now(),
             ]);
 
-            return $allocation->fresh(['deposit', 'invoice']);
+            return $allocation->fresh(['deposit', 'invoice']) ?? $allocation;
         });
     }
 }

@@ -57,6 +57,7 @@ use App\Domains\Tenancy\Models\Department;
 use App\Domains\Tenancy\Models\Facility;
 use App\Domains\Tenancy\Models\Tenant;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Ramsey\Uuid\Uuid;
@@ -1742,12 +1743,30 @@ class DatabaseSeeder extends Seeder
             ['name' => 'Sign Clinical Notes', 'slug' => 'clinical.notes.sign', 'domain' => 'Clinical'],
             ['name' => 'Record Vital Signs', 'slug' => 'clinical.vitals.record', 'domain' => 'Clinical'],
             ['name' => 'Manage Diagnoses', 'slug' => 'clinical.diagnosis.manage', 'domain' => 'Clinical'],
+            ['name' => 'Record Informed Consent', 'slug' => 'clinical.consent.record', 'domain' => 'Clinical'],
+            ['name' => 'Create Inter-Facility Referral', 'slug' => 'clinical.referral.create', 'domain' => 'Clinical'],
+            ['name' => 'Administer Immunization', 'slug' => 'clinical.immunization.administer', 'domain' => 'Clinical'],
+            ['name' => 'Record ANC Visit', 'slug' => 'clinical.anc.record', 'domain' => 'Clinical'],
+            ['name' => 'Record Partograph Entry', 'slug' => 'clinical.partograph.record', 'domain' => 'Clinical'],
+            ['name' => 'Manage Problem List', 'slug' => 'clinical.problem-list.manage', 'domain' => 'Clinical'],
+            ['name' => 'Override Another Provider\'s Encounter', 'slug' => 'clinical.encounter.override', 'domain' => 'Clinical'],
+            ['name' => 'Add Clinical Note', 'slug' => 'clinical.notes.create', 'domain' => 'Clinical'],
+            ['name' => 'Record Patient Allergy', 'slug' => 'clinical.allergy.record', 'domain' => 'Clinical'],
+            ['name' => 'Verify/Amend Patient Allergy', 'slug' => 'clinical.allergy.verify', 'domain' => 'Clinical'],
+
+            // Patient Registry
+            ['name' => 'Register Patient', 'slug' => 'patient.registry.create', 'domain' => 'Patient'],
+            ['name' => 'View Patient Registry', 'slug' => 'patient.registry.view', 'domain' => 'Patient'],
 
             // Pharmacy
             ['name' => 'Create Prescription', 'slug' => 'pharmacy.prescription.create', 'domain' => 'Pharmacy'],
             ['name' => 'View Prescription', 'slug' => 'pharmacy.prescription.view', 'domain' => 'Pharmacy'],
             ['name' => 'Verify Prescription', 'slug' => 'pharmacy.prescription.verify', 'domain' => 'Pharmacy'],
             ['name' => 'Dispense Medication', 'slug' => 'pharmacy.dispense.execute', 'domain' => 'Pharmacy'],
+            ['name' => 'Record Medication Reconciliation', 'slug' => 'pharmacy.medication-reconciliation.record', 'domain' => 'Pharmacy'],
+            ['name' => 'Receive Pharmacy Stock Batch', 'slug' => 'pharmacy.inventory.receive', 'domain' => 'Pharmacy'],
+            ['name' => 'Adjust Pharmacy Stock Batch', 'slug' => 'pharmacy.inventory.adjust', 'domain' => 'Pharmacy'],
+            ['name' => 'View Pharmacy Inventory', 'slug' => 'pharmacy.inventory.view', 'domain' => 'Pharmacy'],
 
             // Inventory & Warehousing
             ['name' => 'View Inventory Locations', 'slug' => 'inventory.location.view', 'domain' => 'Inventory'],
@@ -1758,6 +1777,23 @@ class DatabaseSeeder extends Seeder
             ['name' => 'Receive Goods Note (GRN)', 'slug' => 'inventory.grn.receive', 'domain' => 'Inventory'],
             ['name' => 'Initiate Stocktaking', 'slug' => 'inventory.stocktake.create', 'domain' => 'Inventory'],
             ['name' => 'Approve Stocktake Reconciliation', 'slug' => 'inventory.stocktake.approve', 'domain' => 'Inventory'],
+            ['name' => 'Record DDA Narcotic Administration', 'slug' => 'inventory.dda.record', 'domain' => 'Inventory'],
+            ['name' => 'View Stock Balances', 'slug' => 'inventory.stock.view', 'domain' => 'Inventory'],
+            ['name' => 'View Item Catalog', 'slug' => 'inventory.catalog.view', 'domain' => 'Inventory'],
+            ['name' => 'View Department Requisitions', 'slug' => 'inventory.requisition.view', 'domain' => 'Inventory'],
+            ['name' => 'View Stock Transfers', 'slug' => 'inventory.transfer.view', 'domain' => 'Inventory'],
+            ['name' => 'View Purchase Orders', 'slug' => 'inventory.po.view', 'domain' => 'Inventory'],
+            ['name' => 'View Predictive Reorders', 'slug' => 'inventory.predictive.view', 'domain' => 'Inventory'],
+            ['name' => 'View Goods Receipt Notes', 'slug' => 'inventory.grn.view', 'domain' => 'Inventory'],
+            ['name' => 'View DDA Register', 'slug' => 'inventory.dda.view', 'domain' => 'Inventory'],
+            ['name' => 'View Medical Gas Cylinders', 'slug' => 'inventory.gas.view', 'domain' => 'Inventory'],
+            ['name' => 'View Stocktake Sessions', 'slug' => 'inventory.stocktake.view', 'domain' => 'Inventory'],
+            ['name' => 'Manage Item Catalog', 'slug' => 'inventory.catalog.manage', 'domain' => 'Inventory'],
+            ['name' => 'Submit Department Requisition', 'slug' => 'inventory.requisition.create', 'domain' => 'Inventory'],
+            ['name' => 'Approve Department Requisition', 'slug' => 'inventory.requisition.approve', 'domain' => 'Inventory'],
+            ['name' => 'Issue/Dispatch Department Requisition', 'slug' => 'inventory.requisition.issue', 'domain' => 'Inventory'],
+            ['name' => 'Confirm Department Requisition Receipt', 'slug' => 'inventory.requisition.confirm', 'domain' => 'Inventory'],
+            ['name' => 'Generate Predictive Reorder Purchase Orders', 'slug' => 'inventory.predictive.generate', 'domain' => 'Inventory'],
 
             // Billing & Financial
             ['name' => 'Create Invoice', 'slug' => 'billing.invoice.create', 'domain' => 'Billing'],
@@ -1765,38 +1801,72 @@ class DatabaseSeeder extends Seeder
             ['name' => 'Collect Payment', 'slug' => 'billing.payment.collect', 'domain' => 'Billing'],
             ['name' => 'Approve Discount', 'slug' => 'billing.discount.approve', 'domain' => 'Billing'],
             ['name' => 'Reconcile Till Shift', 'slug' => 'billing.shift.reconcile', 'domain' => 'Billing'],
+            ['name' => 'Open Cashier Shift', 'slug' => 'billing.shift.open', 'domain' => 'Billing'],
+            ['name' => 'Close Cashier Shift', 'slug' => 'billing.shift.close', 'domain' => 'Billing'],
+            ['name' => 'Issue Refund', 'slug' => 'billing.refund.issue', 'domain' => 'Billing'],
 
             // Insurance
             ['name' => 'Create Insurance Claim', 'slug' => 'insurance.claim.create', 'domain' => 'Insurance'],
             ['name' => 'Submit Claims Batch', 'slug' => 'insurance.claim.submit', 'domain' => 'Insurance'],
             ['name' => 'Adjudicate Claim', 'slug' => 'insurance.claim.vet', 'domain' => 'Insurance'],
+            ['name' => 'Adjudicate Remittance', 'slug' => 'insurance.claim.adjudicate', 'domain' => 'Insurance'],
             ['name' => 'Manage Insurance Tariffs', 'slug' => 'insurance.tariff.manage', 'domain' => 'Insurance'],
+            ['name' => 'View Insurance Claims', 'slug' => 'insurance.claim.view', 'domain' => 'Insurance'],
+            ['name' => 'Verify Policy Eligibility', 'slug' => 'insurance.policy.verify', 'domain' => 'Insurance'],
+            ['name' => 'Request Pre-Authorization', 'slug' => 'insurance.preauth.create', 'domain' => 'Insurance'],
 
             // Laboratory
             ['name' => 'Order Lab Test', 'slug' => 'lab.order.create', 'domain' => 'Laboratory'],
             ['name' => 'Collect Specimen', 'slug' => 'lab.specimen.collect', 'domain' => 'Laboratory'],
-            ['name' => 'Enter Lab Results', 'slug' => 'lab.result.enter', 'domain' => 'Laboratory'],
+            ['name' => 'Enter Lab Results', 'slug' => 'lab.result.record', 'domain' => 'Laboratory'],
             ['name' => 'Verify Lab Report', 'slug' => 'lab.result.verify', 'domain' => 'Laboratory'],
+            ['name' => 'View Lab Orders & Results', 'slug' => 'lab.order.view', 'domain' => 'Laboratory'],
+            ['name' => 'Manage Lab Test Catalog', 'slug' => 'lab.catalog.manage', 'domain' => 'Laboratory'],
+
+            // Radiology
+            ['name' => 'Order Diagnostic Imaging', 'slug' => 'radiology.order.create', 'domain' => 'Radiology'],
+            ['name' => 'View Radiology Order', 'slug' => 'radiology.order.view', 'domain' => 'Radiology'],
+            ['name' => 'Acquire Imaging Study', 'slug' => 'radiology.study.acquire', 'domain' => 'Radiology'],
+            ['name' => 'Sign Radiology Report', 'slug' => 'radiology.report.sign', 'domain' => 'Radiology'],
+            ['name' => 'Amend Radiology Report', 'slug' => 'radiology.report.amend', 'domain' => 'Radiology'],
 
             // Procedures & Surgery
             ['name' => 'Order Procedure', 'slug' => 'procedure.order.create', 'domain' => 'Procedure'],
             ['name' => 'Execute Minor Procedure', 'slug' => 'procedure.execute.dressing', 'domain' => 'Procedure'],
-            ['name' => 'Book Operating Theatre', 'slug' => 'procedure.booking.theatre', 'domain' => 'Procedure'],
-            ['name' => 'Sign WHO Checklist', 'slug' => 'procedure.who_checklist.sign', 'domain' => 'Procedure'],
+            ['name' => 'Book Operating Theatre', 'slug' => 'procedure.theatre.book', 'domain' => 'Procedure'],
+            ['name' => 'Sign WHO Checklist', 'slug' => 'procedure.theatre.checklist', 'domain' => 'Procedure'],
+            ['name' => 'Record PACU Recovery', 'slug' => 'procedure.theatre.pacu', 'domain' => 'Procedure'],
+            ['name' => 'Execute Ordered Procedure', 'slug' => 'procedure.order.execute', 'domain' => 'Procedure'],
+            ['name' => 'View Procedure Orders', 'slug' => 'procedure.order.view', 'domain' => 'Procedure'],
 
             // Inpatient
             ['name' => 'Admit Inpatient', 'slug' => 'inpatient.admission.create', 'domain' => 'Inpatient'],
             ['name' => 'Discharge Inpatient', 'slug' => 'inpatient.admission.discharge', 'domain' => 'Inpatient'],
+            ['name' => 'Transfer Inpatient Admission', 'slug' => 'inpatient.admission.transfer', 'domain' => 'Inpatient'],
             ['name' => 'Transfer Inpatient Bed', 'slug' => 'inpatient.bed.transfer', 'domain' => 'Inpatient'],
+            ['name' => 'Manage Bed Status', 'slug' => 'inpatient.bed.manage', 'domain' => 'Inpatient'],
+            ['name' => 'Administer MAR Medication', 'slug' => 'inpatient.mar.administer', 'domain' => 'Inpatient'],
+            ['name' => 'View Ward & Bed Status', 'slug' => 'inpatient.ward.view', 'domain' => 'Inpatient'],
+
+            // Scheduling
+            ['name' => 'Create Appointment', 'slug' => 'scheduling.appointment.create', 'domain' => 'Scheduling'],
+            ['name' => 'Check In Appointment', 'slug' => 'scheduling.appointment.checkin', 'domain' => 'Scheduling'],
+            ['name' => 'Call Queue Ticket', 'slug' => 'scheduling.queue.call', 'domain' => 'Scheduling'],
+            ['name' => 'Transfer Queue Ticket', 'slug' => 'scheduling.queue.transfer', 'domain' => 'Scheduling'],
+            ['name' => 'View Live Queue', 'slug' => 'scheduling.queue.view', 'domain' => 'Scheduling'],
+            ['name' => 'View Appointments', 'slug' => 'scheduling.appointment.view', 'domain' => 'Scheduling'],
 
             // Reports & BI
             ['name' => 'View Clinical Analytics', 'slug' => 'reports.clinical.view', 'domain' => 'Reports'],
             ['name' => 'View Financial Intelligence', 'slug' => 'reports.financial.view', 'domain' => 'Reports'],
             ['name' => 'View Pharmacoeconomics', 'slug' => 'reports.pharmacoeconomic.view', 'domain' => 'Reports'],
+            ['name' => 'View Analytics & Reports', 'slug' => 'reports.analytics.view', 'domain' => 'Reports'],
 
             // Identity & Audit
             ['name' => 'Manage Staff Accounts', 'slug' => 'identity.user.manage', 'domain' => 'Identity'],
             ['name' => 'Manage Roles & Permissions', 'slug' => 'identity.role.manage', 'domain' => 'Identity'],
+            ['name' => 'Assign User Roles', 'slug' => 'identity.roles.assign', 'domain' => 'Identity'],
+            ['name' => 'Manage Role Permissions', 'slug' => 'identity.permissions.manage', 'domain' => 'Identity'],
             ['name' => 'View Security Audit Trail', 'slug' => 'audit.log.view', 'domain' => 'Audit'],
         ];
 
@@ -1821,56 +1891,103 @@ class DatabaseSeeder extends Seeder
                 'desc' => 'Clinical diagnosis, SOAP charting, lab ordering, Rx prescriptions, and theatre surgery.',
                 'perms' => [
                     'clinical.encounter.create', 'clinical.encounter.view', 'clinical.encounter.update', 'clinical.encounter.close',
-                    'clinical.notes.sign', 'clinical.vitals.record', 'clinical.diagnosis.manage',
+                    'clinical.encounter.override',
+                    'clinical.notes.sign', 'clinical.notes.create', 'clinical.vitals.record', 'clinical.diagnosis.manage',
+                    'clinical.consent.record', 'clinical.referral.create', 'clinical.immunization.administer',
+                    'clinical.anc.record', 'clinical.partograph.record', 'clinical.problem-list.manage',
+                    'clinical.allergy.record', 'clinical.allergy.verify',
                     'pharmacy.prescription.create', 'pharmacy.prescription.view',
-                    'lab.order.create', 'procedure.order.create', 'procedure.booking.theatre', 'procedure.who_checklist.sign',
-                    'inpatient.admission.create', 'inpatient.admission.discharge', 'inpatient.bed.transfer',
+                    'lab.order.create', 'lab.order.view', 'procedure.order.create', 'procedure.order.execute', 'procedure.order.view',
+                    'procedure.theatre.book', 'procedure.theatre.checklist', 'procedure.theatre.pacu',
+                    'radiology.order.create', 'radiology.order.view',
+                    'inpatient.admission.create', 'inpatient.admission.discharge', 'inpatient.admission.transfer', 'inpatient.bed.transfer',
+                    'inpatient.ward.view',
+                    'inventory.dda.record',
+                    'patient.registry.view',
                     'reports.clinical.view',
+                    'scheduling.queue.view', 'scheduling.appointment.view',
                 ],
             ],
             'nurse' => [
                 'name' => 'Nurse / Triage Officer',
                 'desc' => 'Vital signs, queue triage, dressing desk procedures, MAR medication administration, and ward notes.',
                 'perms' => [
-                    'clinical.vitals.record', 'clinical.encounter.view',
-                    'procedure.execute.dressing', 'procedure.who_checklist.sign',
-                    'inpatient.ward.view', 'inpatient.bed.transfer',
+                    'clinical.vitals.record', 'clinical.encounter.view', 'clinical.notes.create',
+                    'clinical.immunization.administer', 'clinical.anc.record', 'clinical.partograph.record',
+                    'clinical.allergy.record',
+                    'procedure.execute.dressing', 'procedure.theatre.checklist', 'procedure.theatre.pacu', 'procedure.order.view',
+                    'inpatient.ward.view', 'inpatient.bed.transfer', 'inpatient.bed.manage',
+                    'inpatient.admission.transfer', 'inpatient.mar.administer', 'inventory.dda.record',
+                    'inventory.dda.view', 'inventory.stock.view',
+                    'inventory.requisition.create', 'inventory.requisition.confirm',
+                    'scheduling.queue.call', 'scheduling.queue.transfer', 'scheduling.queue.view', 'scheduling.appointment.view',
+                    'patient.registry.view',
                 ],
             ],
             'lab-technologist' => [
                 'name' => 'Laboratory Scientist / Technologist',
                 'desc' => 'Specimen collection, bench testing, analyzer result entry, and laboratory verification.',
-                'perms' => ['lab.order.view', 'lab.specimen.collect', 'lab.result.enter', 'lab.result.verify'],
+                'perms' => ['lab.specimen.collect', 'lab.result.record', 'lab.result.verify', 'lab.order.view', 'lab.catalog.manage', 'patient.registry.view'],
+            ],
+            'radiologist' => [
+                'name' => 'Radiologist',
+                'desc' => 'Diagnostic imaging report authoring, sign-off, and clinical amendment.',
+                'perms' => ['radiology.order.view', 'radiology.study.acquire', 'radiology.report.sign', 'radiology.report.amend', 'patient.registry.view'],
             ],
             'pharmacist' => [
                 'name' => 'Pharmacist',
-                'desc' => 'Prescription safety review, drug-allergy vetting, and clinical dispensing.',
-                'perms' => ['pharmacy.prescription.view', 'pharmacy.prescription.verify', 'pharmacy.dispense.execute', 'inventory.location.view'],
+                'desc' => 'Prescription safety review, drug-allergy vetting, clinical dispensing, and medication reconciliation.',
+                'perms' => [
+                    'pharmacy.prescription.view', 'pharmacy.prescription.verify', 'pharmacy.dispense.execute',
+                    'pharmacy.medication-reconciliation.record', 'pharmacy.inventory.adjust', 'pharmacy.inventory.receive', 'pharmacy.inventory.view',
+                    'inventory.location.view', 'inventory.stock.view', 'inventory.catalog.view', 'inventory.dda.view',
+                    'inpatient.ward.view', 'clinical.allergy.verify',
+                    'patient.registry.view',
+                ],
             ],
             'cashier' => [
                 'name' => 'Cashier / Billing Officer',
                 'desc' => 'Patient invoice generation, cash/M-Pesa collection, and shift reconciliation.',
-                'perms' => ['billing.invoice.create', 'billing.invoice.view', 'billing.payment.collect', 'billing.shift.reconcile'],
+                'perms' => ['billing.invoice.create', 'billing.invoice.view', 'billing.payment.collect', 'billing.shift.reconcile', 'billing.shift.open', 'billing.shift.close', 'patient.registry.view'],
             ],
             'insurance-manager' => [
                 'name' => 'Billing & Insurance Manager',
-                'desc' => 'Insurance tariffs, NHIF claims batching, pre-auth approvals, and discount authorization.',
-                'perms' => ['insurance.claim.create', 'insurance.claim.submit', 'insurance.claim.vet', 'insurance.tariff.manage', 'billing.discount.approve', 'reports.financial.view'],
+                'desc' => 'Insurance tariffs, NHIF claims batching, pre-auth approvals, discount authorization, and refunds.',
+                'perms' => [
+                    'insurance.claim.create', 'insurance.claim.submit', 'insurance.claim.vet', 'insurance.claim.adjudicate', 'insurance.claim.view',
+                    'insurance.policy.verify', 'insurance.preauth.create',
+                    'insurance.tariff.manage', 'billing.discount.approve', 'billing.refund.issue', 'reports.financial.view',
+                    'billing.invoice.view',
+                    'patient.registry.view',
+                ],
             ],
             'inventory-officer' => [
                 'name' => 'Inventory & Store Officer',
                 'desc' => 'Purchase orders, GRN batch inward posting, stock transfers handshake, and physical stocktaking.',
-                'perms' => ['inventory.location.view', 'inventory.transfer.dispatch', 'inventory.transfer.confirm', 'inventory.po.create', 'inventory.po.approve', 'inventory.grn.receive', 'inventory.stocktake.create', 'inventory.stocktake.approve', 'reports.pharmacoeconomic.view'],
+                'perms' => [
+                    'inventory.location.view', 'inventory.transfer.dispatch', 'inventory.transfer.confirm',
+                    'inventory.po.create', 'inventory.po.approve', 'inventory.grn.receive',
+                    'inventory.stocktake.create', 'inventory.stocktake.approve', 'reports.pharmacoeconomic.view',
+                    'inventory.stock.view', 'inventory.catalog.view', 'inventory.requisition.view', 'inventory.transfer.view',
+                    'inventory.po.view', 'inventory.predictive.view', 'inventory.grn.view', 'inventory.dda.view',
+                    'inventory.gas.view', 'inventory.stocktake.view',
+                    'inventory.catalog.manage', 'inventory.requisition.approve', 'inventory.requisition.issue',
+                    'inventory.predictive.generate',
+                ],
             ],
             'receptionist' => [
                 'name' => 'Receptionist / Registration Clerk',
-                'desc' => 'Universal patient registration, MPI search, appointment booking, and triage ticketing.',
-                'perms' => ['clinical.encounter.create', 'clinical.encounter.view'],
+                'desc' => 'Universal patient registration, MPI search, appointment booking, and triage ticketing. Purely administrative: check-in creates the clinical encounter via a separate action (CheckInPatientAction) attributed to the appointment\'s assigned provider, not the receptionist — this role has no reason to hold any clinical.* permission.',
+                'perms' => [
+                    'patient.registry.create', 'patient.registry.view',
+                    'scheduling.appointment.create', 'scheduling.appointment.checkin', 'scheduling.appointment.view',
+                    'scheduling.queue.call', 'scheduling.queue.transfer', 'scheduling.queue.view',
+                ],
             ],
             'auditor' => [
                 'name' => 'Medical Auditor / Compliance',
                 'desc' => 'Read-only inspection of clinical records, financial ledgers, and security audit trails.',
-                'perms' => ['clinical.encounter.view', 'billing.invoice.view', 'insurance.claim.vet', 'reports.clinical.view', 'reports.financial.view', 'audit.log.view'],
+                'perms' => ['clinical.encounter.view', 'billing.invoice.view', 'insurance.claim.view', 'reports.clinical.view', 'reports.financial.view', 'reports.analytics.view', 'audit.log.view', 'patient.registry.view', 'inpatient.ward.view', 'pharmacy.prescription.view', 'inventory.dda.view'],
             ],
         ];
 
@@ -1888,6 +2005,46 @@ class DatabaseSeeder extends Seeder
                 }
             }
             $role->permissions()->sync($rolePermIds);
+        }
+
+        // 'doctor' and 'cashier' already have a login-capable user created
+        // above (section 4) — this covers the other 9 standard roles so
+        // every role in the system has at least one account to actually
+        // log in and test as, not just a permissioned-but-unreachable
+        // Role row.
+        $additionalRoleUsers = [
+            'tenant-admin' => ['Neema', 'Kessy'],
+            'nurse' => ['Fatuma', 'Juma'],
+            'lab-technologist' => ['Baraka', 'Mwakalinga'],
+            'radiologist' => ['Amina', 'Chuma'],
+            'pharmacist' => ['Emmanuel', 'Shirima'],
+            'insurance-manager' => ['Happiness', 'Ngowi'],
+            'inventory-officer' => ['Daniel', 'Mrema'],
+            'receptionist' => ['Zawadi', 'Komba'],
+            'auditor' => ['Peter', 'Lyimo'],
+        ];
+
+        foreach ($additionalRoleUsers as $slug => [$firstName, $lastName]) {
+            $role = Role::where('tenant_id', $tenant->id)->where('slug', $slug)->first();
+
+            if (! $role) {
+                continue;
+            }
+
+            $roleUser = User::firstOrCreate(
+                ['tenant_id' => $tenant->id, 'email' => "{$slug}@afyanova.local"],
+                [
+                    'first_name' => $firstName,
+                    'last_name' => $lastName,
+                    'password_hash' => Hash::make('password123'),
+                    'status' => 'active',
+                ]
+            );
+
+            DB::table('role_assignments')->updateOrInsert(
+                ['user_id' => $roleUser->id, 'role_id' => $role->id],
+                ['id' => Uuid::uuid7()->toString(), 'created_at' => now(), 'updated_at' => now()]
+            );
         }
 
         // ==============================================================
@@ -2336,6 +2493,16 @@ class DatabaseSeeder extends Seeder
                 ]
             );
         }
+
+        // AuthorizationService caches each user's resolved permission map for
+        // an hour (see clearUserCache()); the two real runtime mutation paths
+        // (AssignUserRoleAction, UpdateRolePermissionsAction) invalidate it
+        // correctly, but this seeder writes role/permission rows directly via
+        // Eloquent sync() and has no per-user list to target, so a role
+        // change here silently keeps serving stale grants to a warm server
+        // until the TTL expires. Flush on every run so re-seeding against a
+        // running dev server takes effect immediately.
+        Cache::flush();
 
         echo "Enterprise Seeding Complete!\n";
     }

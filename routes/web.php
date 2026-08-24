@@ -26,10 +26,6 @@ Route::get('/workspace/clinical', [EncounterController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('workspace.clinical');
 
-Route::get('/workspace/foundation', function () {
-    return Inertia::render('Workspace/DesignFoundationDemo');
-})->middleware(['auth', 'verified'])->name('workspace.foundation');
-
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -47,6 +43,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/patients/{patient}', [PatientController::class, 'show'])->name('patients.show');
 });
 
+use App\Domains\Clinical\Http\Controllers\AllergyController;
 use App\Domains\Clinical\Http\Controllers\ClinicalCareExtensionsController;
 use App\Domains\Clinical\Http\Controllers\ClinicalChartingController;
 use App\Domains\Clinical\Http\Controllers\ProblemListController;
@@ -73,6 +70,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::post('/patients/{patient}/problems', [ProblemListController::class, 'store'])->name('clinical.problems.store');
     Route::post('/problems/{problem}/resolve', [ProblemListController::class, 'resolve'])->name('clinical.problems.resolve');
+
+    Route::post('/patients/{patient}/allergies', [AllergyController::class, 'store'])->name('clinical.allergies.store');
+    Route::post('/allergies/{allergy}/amend', [AllergyController::class, 'amend'])->name('clinical.allergies.amend');
 });
 
 use App\Domains\Scheduling\Http\Controllers\AppointmentController;

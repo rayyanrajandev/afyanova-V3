@@ -48,6 +48,10 @@ import InvoiceChargesDrawer from '@/Components/Billing/InvoiceChargesDrawer.vue'
 import CashierShiftModal from '@/Components/Billing/CashierShiftModal.vue';
 
 const props = defineProps({
+    can: {
+        type: Object,
+        default: () => ({}),
+    },
     invoices: {
         type: Array,
         default: () => [],
@@ -384,7 +388,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                                     <span>Shift: <strong>{{ activeShift.shift_number }}</strong> (Float: TZS {{ Number(activeShift.opening_float).toLocaleString() }})</span>
                                 </span>
-                                <Button variant="outline" size="sm" class="h-7 px-2.5 text-[11px] gap-1 shadow-2xs" @click="closeShiftDialog">
+                                <Button v-if="can.closeShift" variant="outline" size="sm" class="h-7 px-2.5 text-[11px] gap-1 shadow-2xs" @click="closeShiftDialog">
                                     <Clock class="w-3.5 h-3.5 text-amber-600" />
                                     <span>End Shift & Handover</span>
                                 </Button>
@@ -394,7 +398,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                                     <AlertTriangle class="w-3.5 h-3.5 text-amber-600" />
                                     <span>Till Offline (No Active Shift)</span>
                                 </span>
-                                <Button variant="default" size="sm" class="h-7 px-2.5 text-[11px] gap-1 shadow-2xs font-semibold" @click="openShiftDialog">
+                                <Button v-if="can.openShift" variant="default" size="sm" class="h-7 px-2.5 text-[11px] gap-1 shadow-2xs font-semibold" @click="openShiftDialog">
                                     <Wallet class="w-3.5 h-3.5" />
                                     <span>Open Cashier Shift</span>
                                 </Button>
@@ -538,7 +542,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                                                     <span>Charges ({{ (inv.line_items || inv.lineItems || []).length }})</span>
                                                 </Button>
                                                 <Button
-                                                    v-if="inv.status !== 'Paid'"
+                                                    v-if="inv.status !== 'Paid' && can.pay"
                                                     variant="default"
                                                     size="sm"
                                                     class="h-6 px-2.5 text-[10px] font-semibold shadow-2xs"
@@ -547,7 +551,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                                                     Pay
                                                 </Button>
                                                 <Button
-                                                    v-else
+                                                    v-else-if="inv.status === 'Paid' && can.refund"
                                                     variant="subtle"
                                                     size="sm"
                                                     class="h-6 px-2.5 text-[10px] font-semibold"
@@ -658,7 +662,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                         <!-- Management Actions -->
                         <div class="space-y-1.5 pt-1">
                             <Button
-                                v-if="selectedInvoice.status === 'Draft'"
+                                v-if="selectedInvoice.status === 'Draft' && can.issue"
                                 variant="default"
                                 size="sm"
                                 class="w-full h-7 text-[11px] font-semibold gap-1.5 shadow-2xs"
@@ -668,6 +672,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                                 <span>Issue Invoice & Lock</span>
                             </Button>
                             <Button
+                                v-if="can.adjustInvoice"
                                 variant="outline"
                                 size="sm"
                                 class="w-full h-7 text-[11px] font-semibold gap-1.5 shadow-2xs"
@@ -893,6 +898,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                 <div class="flex items-center justify-end gap-2 pt-3 border-t border-border">
                     <Button variant="outline" size="sm" @click="closePaymentModal" :disabled="isSubmittingPayment">Cancel</Button>
                     <Button
+                        v-if="can.pay"
                         variant="default"
                         size="sm"
                         @click="submitPayment"
@@ -955,7 +961,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
 
                 <div class="flex items-center justify-end gap-2 pt-2 border-t border-border">
                     <Button variant="outline" size="sm" @click="closeRefundModal" :disabled="isSubmittingRefund">Cancel</Button>
-                    <Button variant="destructive" size="sm" @click="submitRefund" :disabled="isSubmittingRefund || !refundAmount">
+                    <Button v-if="can.refund" variant="destructive" size="sm" @click="submitRefund" :disabled="isSubmittingRefund || !refundAmount">
                         <Loader2 v-if="isSubmittingRefund" class="w-3.5 h-3.5 animate-spin mr-1.5" />
                         <span>Confirm Ledger Reversal</span>
                     </Button>
@@ -1016,6 +1022,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
         <InvoiceChargesDrawer
             :invoice="selectedInvoice"
             :open="showChargesDrawer"
+            :can="can"
             @close="showChargesDrawer = false"
             @pay="openPaymentModal"
             @refund="openRefundModal"
@@ -1027,6 +1034,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
             :mode="shiftModalMode"
             :active-shift="activeShift"
             :telemetry="tillTelemetry"
+            :can="can"
             @close="showShiftModal = false"
         />
     </AfyaShell>

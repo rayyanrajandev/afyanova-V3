@@ -54,7 +54,9 @@ export function useTheme() {
         theme.value = newTheme;
         try {
             localStorage.setItem(THEME_STORAGE_KEY, newTheme);
-        } catch {}
+        } catch {
+            // Storage unavailable (private browsing, quota) — theme still applies for this session.
+        }
         applyThemeToDocument(newTheme);
     };
 

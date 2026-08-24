@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import Modal from '@/Components/Modal.vue';
 import InputError from '@/Components/InputError.vue';
@@ -28,9 +28,9 @@ const form = useForm({
 });
 
 // Update patient_id if prop changes
-computed(() => {
-    if (props.patientId) {
-        form.patient_id = props.patientId;
+watch(() => props.patientId, (patientId) => {
+    if (patientId) {
+        form.patient_id = patientId;
     }
 });
 

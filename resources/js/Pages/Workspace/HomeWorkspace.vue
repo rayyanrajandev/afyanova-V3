@@ -38,6 +38,10 @@ import AfyaStatusBadge from '@/Components/Afya/AfyaStatusBadge.vue';
 import AfyaPatientIdentity from '@/Components/Afya/AfyaPatientIdentity.vue';
 
 const props = defineProps({
+    can: {
+        type: Object,
+        default: () => ({}),
+    },
     metrics: {
         type: Object,
         default: () => ({
@@ -154,6 +158,7 @@ const formatTime = (dateStr) => {
                     />
                     
                     <AfyaSidebarItem
+                        v-if="can.clinical"
                         label="Clinical Encounters"
                         :icon="Stethoscope"
                         :badge="metrics.active_encounters"
@@ -161,8 +166,9 @@ const formatTime = (dateStr) => {
                         :collapsed="state === 'collapsed'"
                         @click="activeTab = 'clinical'"
                     />
-                    
+
                     <AfyaSidebarItem
+                        v-if="can.queue"
                         label="Live Queue & Triage"
                         :icon="Clock"
                         :badge="metrics.queue_waiting"
@@ -172,6 +178,7 @@ const formatTime = (dateStr) => {
                     />
 
                     <AfyaSidebarItem
+                        v-if="can.appointments"
                         label="Scheduled Appointments"
                         :icon="Calendar"
                         :badge="metrics.today_appointments"
@@ -181,6 +188,7 @@ const formatTime = (dateStr) => {
                     />
 
                     <AfyaSidebarItem
+                        v-if="can.pharmacy"
                         label="Pharmacy Dispensary"
                         :icon="Pill"
                         :badge="metrics.pending_pharmacy"
@@ -188,8 +196,9 @@ const formatTime = (dateStr) => {
                         :collapsed="state === 'collapsed'"
                         @click="activeTab = 'pharmacy'"
                     />
-                    
+
                     <AfyaSidebarItem
+                        v-if="can.billing"
                         label="Cashier & Billing Desk"
                         :icon="Receipt"
                         :badge="metrics.unpaid_invoices"
@@ -198,8 +207,9 @@ const formatTime = (dateStr) => {
                         :collapsed="state === 'collapsed'"
                         @click="activeTab = 'billing'"
                     />
-                    
+
                     <AfyaSidebarItem
+                        v-if="can.patients"
                         label="Patient Registry"
                         :icon="Users"
                         :badge="metrics.total_patients"

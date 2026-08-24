@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Domains\Identity\Services\AuthorizationService;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 use Tighten\Ziggy\Ziggy;
@@ -34,6 +35,9 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'auth' => [
                 'user' => $request->user(),
+                'permissions' => fn () => $request->user()
+                    ? app(AuthorizationService::class)->getUserPermissions($request->user())
+                    : [],
             ],
             'flash' => fn () => [
                 'success' => $request->session()->get('success'),

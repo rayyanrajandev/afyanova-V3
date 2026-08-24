@@ -21,6 +21,10 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
+    can: {
+        type: Object,
+        default: () => ({}),
+    },
 });
 
 const successMessage = ref('');
@@ -108,7 +112,7 @@ const formatDate = (dateStr) => {
                     <label class="block text-[11px] font-semibold text-foreground mb-1">Urgency Level *</label>
                     <select v-model="form.urgency" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
                         <option value="Routine">Routine (Elective / Outpatient)</option>
-                        <option value="Urgent">Urgent (< 24 Hours)</option>
+                        <option value="Urgent">Urgent (&lt; 24 Hours)</option>
                         <option value="Emergency">Emergency (Immediate Transfer)</option>
                     </select>
                     <InputError :message="form.errors.urgency" class="mt-1" />
@@ -161,7 +165,7 @@ const formatDate = (dateStr) => {
             </div>
 
             <div class="flex justify-end pt-1">
-                <Button type="submit" variant="default" size="sm" :disabled="form.processing" class="h-8 px-4 gap-1 shadow-2xs font-semibold">
+                <Button v-if="can.createReferral" type="submit" variant="default" size="sm" :disabled="form.processing" class="h-8 px-4 gap-1 shadow-2xs font-semibold">
                     <Loader2 v-if="form.processing" class="w-3.5 h-3.5 animate-spin mr-1" />
                     <Save v-else class="w-3.5 h-3.5" />
                     <span>{{ form.processing ? 'Dispatching...' : 'Dispatch Clinical Referral' }}</span>

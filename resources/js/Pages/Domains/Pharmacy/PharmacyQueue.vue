@@ -58,6 +58,10 @@ import AfyaPatientIdentity from '@/Components/Afya/AfyaPatientIdentity.vue';
 import { useWorkspacePreferences } from '@/Composables/useWorkspacePreferences';
 
 const props = defineProps({
+    can: {
+        type: Object,
+        default: () => ({}),
+    },
     prescriptions: {
         type: Array,
         default: () => [],
@@ -82,7 +86,9 @@ const props = defineProps({
 
 const { preferences, openContext } = useWorkspacePreferences();
 
-const activeSection = ref(props.initialSection || 'queue');
+const activeSection = ref(
+    props.can[props.initialSection] ? props.initialSection : (Object.keys(props.can).find(k => props.can[k]) ?? null)
+);
 const selectedPrescription = ref(props.prescriptions?.[0] || null);
 const selectedMedication = ref(props.medications?.[0] || null);
 const selectedMovement = ref(props.recentMovements?.[0] || null);
@@ -391,6 +397,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                     </div>
                     
                     <AfyaSidebarItem
+                        v-if="can.queue"
                         label="Dispensing Queue"
                         :icon="Pill"
                         :badge="prescriptions.length"
@@ -398,8 +405,9 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                         :collapsed="state === 'collapsed'"
                         @click="activeSection = 'queue'"
                     />
-                    
+
                     <AfyaSidebarItem
+                        v-if="can.formulary"
                         label="FEFO Stock & Formulary"
                         :icon="Package"
                         :badge="inventoryMetrics.totalUnits"
@@ -409,6 +417,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                     />
 
                     <AfyaSidebarItem
+                        v-if="can.movements"
                         label="Stock Movements Ledger"
                         :icon="History"
                         :badge="recentMovements.length"
@@ -440,10 +449,10 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                                 <ShieldCheck class="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
                                 <span>FEFO Batch Tracking</span>
                             </span>
-                            <Button 
-                                v-if="activeSection === 'formulary'"
-                                variant="default" 
-                                size="sm" 
+                            <Button
+                                v-if="activeSection === 'formulary' && can.storeBatch"
+                                variant="default"
+                                size="sm"
                                 class="h-7.5 px-3 text-xs font-semibold gap-1.5 shadow-2xs"
                                 @click="openReceiveModal()"
                             >
@@ -528,7 +537,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                                                 <AfyaStatusBadge :status="rx.status" dot />
                                             </TableCell>
                                             <TableCell class="py-1 px-3 text-right w-36">
-                                                <div v-if="rx.status === 'Pending'" class="flex items-center justify-end gap-1">
+                                                <div v-if="rx.status === 'Pending' && can.verify" class="flex items-center justify-end gap-1">
                                                     <Button
                                                         variant="default"
                                                         size="sm"
@@ -548,7 +557,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                                                 </div>
                                                 <div v-else-if="rx.status === 'Verified' || rx.status === 'Partially Dispensed'" class="flex justify-end">
                                                     <Button
-                                                        v-if="isPaid(rx)"
+                                                        v-if="isPaid(rx) && can.dispense"
                                                         variant="default"
                                                         size="sm"
                                                         class="h-5 px-2 text-[9.5px] font-semibold"
@@ -905,7 +914,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                         <div class="space-y-1.5">
                             <div class="flex items-center justify-between text-[9.5px] font-bold text-muted-foreground uppercase tracking-wider">
                                 <span>Tracked Batches (FEFO)</span>
-                                <Button variant="subtle" size="sm" class="h-6 px-2 text-[10.5px] font-semibold gap-1" @click="openReceiveModal(selectedMedication)">
+                                <Button v-if="can.storeBatch" variant="subtle" size="sm" class="h-6 px-2 text-[10.5px] font-semibold gap-1" @click="openReceiveModal(selectedMedication)">
                                     <Plus class="w-3 h-3" />
                                     <span>Add Batch</span>
                                 </Button>
@@ -932,7 +941,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                                         <div class="col-span-2">Supplier: <span class="font-medium text-foreground">{{ batch.supplier_name || 'MSD' }}</span></div>
                                     </div>
                                     <div class="flex justify-end pt-1 border-t border-border/40">
-                                        <Button variant="outline" size="sm" class="h-4.5 px-1.5 text-[8.5px]" @click="openAdjustModal(batch)">
+                                        <Button v-if="can.adjustBatch" variant="outline" size="sm" class="h-4.5 px-1.5 text-[8.5px]" @click="openAdjustModal(batch)">
                                             Adjust Stock
                                         </Button>
                                     </div>

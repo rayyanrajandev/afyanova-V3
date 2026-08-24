@@ -68,6 +68,10 @@ import AfyaStatusBadge from '@/Components/Afya/AfyaStatusBadge.vue';
 import AfyaPatientIdentity from '@/Components/Afya/AfyaPatientIdentity.vue';
 
 const props = defineProps({
+    can: {
+        type: Object,
+        default: () => ({}),
+    },
     encounters: {
         type: Array,
         default: () => [],
@@ -470,7 +474,8 @@ const patientAllergies = computed(() => activePatient.value?.allergies || []);
                 >
                     <template #actions>
                         <div class="flex items-center gap-2">
-                            <Button 
+                            <Button v-if="can.startEncounter"
+                                
                                 variant="default" 
                                 size="sm" 
                                 :disabled="isStartingEncounter"
@@ -482,7 +487,8 @@ const patientAllergies = computed(() => activePatient.value?.allergies || []);
                                 <span>Call Next Patient ({{ patients.length }})</span>
                             </Button>
                             
-                            <Button 
+                            <Button v-if="can.startEncounter"
+                                
                                 variant="outline" 
                                 size="sm" 
                                 class="h-7 text-xs font-semibold gap-1 bg-card shadow-2xs text-primary hover:bg-primary/5 border-primary/30"
@@ -570,7 +576,8 @@ const patientAllergies = computed(() => activePatient.value?.allergies || []);
                                     <span class="text-[10px] font-mono text-muted-foreground ml-1">({{ encounters.length }})</span>
                                 </div>
                                 <div class="flex items-center gap-2">
-                                    <Button 
+                                    <Button v-if="can.startEncounter"
+                                
                                         variant="outline" 
                                         size="sm" 
                                         class="h-6 text-[10px] font-bold text-primary gap-1 bg-card border-primary/30"
@@ -655,7 +662,8 @@ const patientAllergies = computed(() => activePatient.value?.allergies || []);
                 >
                     <template #actions>
                         <div class="flex items-center gap-2">
-                            <Button 
+                            <Button v-if="can.startEncounter"
+                                
                                 variant="default" 
                                 size="sm" 
                                 :disabled="isStartingEncounter"
@@ -667,7 +675,8 @@ const patientAllergies = computed(() => activePatient.value?.allergies || []);
                                 <span>Call Next Patient</span>
                             </Button>
                             
-                            <Button 
+                            <Button v-if="can.startEncounter"
+                                
                                 variant="outline" 
                                 size="sm" 
                                 class="h-7 text-xs font-semibold gap-1 bg-card shadow-2xs text-primary hover:bg-primary/5 border-primary/30"
@@ -840,7 +849,8 @@ const patientAllergies = computed(() => activePatient.value?.allergies || []);
                     ]"
                 >
                     <template #actions>
-                        <Button 
+                        <Button v-if="can.startEncounter"
+                                
                             variant="default" 
                             size="sm" 
                             class="h-7 text-xs font-semibold gap-1 bg-primary text-primary-foreground shadow-2xs"
@@ -1116,9 +1126,10 @@ const patientAllergies = computed(() => activePatient.value?.allergies || []);
                                 <ArrowLeft class="w-3 h-3" />
                                 <span>Close Chart</span>
                             </Button>
-                            <Button 
-                                variant="default" 
-                                size="sm" 
+                            <Button
+                                v-if="can.completeEncounter"
+                                variant="default"
+                                size="sm"
                                 :disabled="isCompletingEncounter"
                                 class="h-7 text-xs font-semibold gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs"
                                 @click="completeConsultation"
@@ -1321,17 +1332,19 @@ const patientAllergies = computed(() => activePatient.value?.allergies || []);
 
                         <!-- Tab 1: SOAP Note -->
                         <div v-if="chartingTab === 'soap'" class="bg-card rounded-lg p-3.5 shadow-2xs border border-border/60">
-                            <SOAPNote 
-                                :encounter-id="activeEncounter?.id || 'demo'" 
-                                :existing-notes="activeEncounter?.notes || []" 
+                            <SOAPNote
+                                :encounter-id="activeEncounter?.id || 'demo'"
+                                :existing-notes="activeEncounter?.notes || []"
+                                :can="can"
                             />
                         </div>
 
                         <!-- Tab 2: Vitals -->
                         <div v-else-if="chartingTab === 'vitals'" class="bg-card rounded-lg p-3.5 shadow-2xs border border-border/60">
-                            <VitalsForm 
-                                :encounter-id="activeEncounter?.id || 'demo'" 
-                                :existing-vitals="activeEncounter?.vitals || []" 
+                            <VitalsForm
+                                :encounter-id="activeEncounter?.id || 'demo'"
+                                :existing-vitals="activeEncounter?.vitals || []"
+                                :can="can"
                             />
                         </div>
 
@@ -1344,6 +1357,7 @@ const patientAllergies = computed(() => activePatient.value?.allergies || []);
                                 :allergies="patientAllergies"
                                 :formularies="formularies"
                                 :existing-prescriptions="activeEncounter?.prescriptions || []"
+                                :can="can"
                             />
                         </div>
 
@@ -1352,6 +1366,7 @@ const patientAllergies = computed(() => activePatient.value?.allergies || []);
                             <LabOrderPad
                                 :encounter="activeEncounter"
                                 :lab-tests="labTests"
+                                :can="can"
                             />
                         </div>
 
@@ -1365,9 +1380,10 @@ const patientAllergies = computed(() => activePatient.value?.allergies || []);
                                         <div class="text-[10px] text-muted-foreground">Order dressing, minor procedures, or theatre bookings routed to treatment desks.</div>
                                     </div>
                                 </div>
-                                <Button 
-                                    variant="default" 
-                                    size="sm" 
+                                <Button
+                                    v-if="can.orderProcedure"
+                                    variant="default"
+                                    size="sm"
                                     class="h-7 text-xs font-semibold gap-1.5 shadow-2xs"
                                     @click="openDoctorProcedureModal"
                                 >
@@ -1413,7 +1429,7 @@ const patientAllergies = computed(() => activePatient.value?.allergies || []);
                             <div v-else class="text-center py-8 text-muted-foreground text-xs space-y-2">
                                 <Scissors class="w-8 h-8 text-muted-foreground/40 mx-auto" />
                                 <div>No clinical procedures ordered for this encounter yet.</div>
-                                <Button variant="outline" size="sm" class="h-6.5 text-[10px] font-semibold gap-1" @click="openDoctorProcedureModal">
+                                <Button v-if="can.orderProcedure" variant="outline" size="sm" class="h-6.5 text-[10px] font-semibold gap-1" @click="openDoctorProcedureModal">
                                     <Plus class="w-3 h-3" />
                                     <span>Order First Procedure</span>
                                 </Button>
@@ -1422,49 +1438,55 @@ const patientAllergies = computed(() => activePatient.value?.allergies || []);
 
                         <!-- Tab 6: Radiology & Imaging -->
                         <div v-else-if="chartingTab === 'imaging'" class="bg-card rounded-lg p-3.5 shadow-2xs border border-border/60">
-                            <ImagingOrderForm 
-                                :encounter-id="activeEncounter?.id || 'demo'" 
-                                :existing-orders="activeEncounter?.radiology_orders || []" 
+                            <ImagingOrderForm
+                                :encounter-id="activeEncounter?.id || 'demo'"
+                                :existing-orders="activeEncounter?.radiology_orders || []"
+                                :can="can"
                             />
                         </div>
 
                         <!-- Tab 7: Informed Consent -->
                         <div v-else-if="chartingTab === 'consents'" class="bg-card rounded-lg p-3.5 shadow-2xs border border-border/60">
-                            <ConsentForm 
-                                :encounter-id="activeEncounter?.id || 'demo'" 
-                                :existing-consents="activeEncounter?.consents || []" 
+                            <ConsentForm
+                                :encounter-id="activeEncounter?.id || 'demo'"
+                                :existing-consents="activeEncounter?.consents || []"
+                                :can="can"
                             />
                         </div>
 
                         <!-- Tab 8: Referrals -->
                         <div v-else-if="chartingTab === 'referrals'" class="bg-card rounded-lg p-3.5 shadow-2xs border border-border/60">
-                            <ReferralForm 
-                                :encounter-id="activeEncounter?.id || 'demo'" 
-                                :existing-referrals="activeEncounter?.referrals || []" 
+                            <ReferralForm
+                                :encounter-id="activeEncounter?.id || 'demo'"
+                                :existing-referrals="activeEncounter?.referrals || []"
+                                :can="can"
                             />
                         </div>
 
                         <!-- Tab 9: Antenatal Care (ANC / RCH) -->
                         <div v-else-if="chartingTab === 'anc'" class="bg-card rounded-lg p-3.5 shadow-2xs border border-border/60">
-                            <AncVisitForm 
-                                :encounter-id="activeEncounter?.id || 'demo'" 
-                                :existing-visits="activeEncounter?.anc_encounters || []" 
+                            <AncVisitForm
+                                :encounter-id="activeEncounter?.id || 'demo'"
+                                :existing-visits="activeEncounter?.anc_encounters || []"
+                                :can="can"
                             />
                         </div>
 
                         <!-- Tab 10: Partograph -->
                         <div v-else-if="chartingTab === 'partograph'" class="bg-card rounded-lg p-3.5 shadow-2xs border border-border/60">
-                            <PartographForm 
-                                :encounter-id="activeEncounter?.id || 'demo'" 
-                                :existing-entries="activeEncounter?.partograph_entries || []" 
+                            <PartographForm
+                                :encounter-id="activeEncounter?.id || 'demo'"
+                                :existing-entries="activeEncounter?.partograph_entries || []"
+                                :can="can"
                             />
                         </div>
 
                         <!-- Tab 11: Immunizations / EPI -->
                         <div v-else-if="chartingTab === 'immunizations'" class="bg-card rounded-lg p-3.5 shadow-2xs border border-border/60">
-                            <ImmunizationForm 
-                                :encounter-id="activeEncounter?.id || 'demo'" 
-                                :existing-immunizations="activeEncounter?.immunizations || []" 
+                            <ImmunizationForm
+                                :encounter-id="activeEncounter?.id || 'demo'"
+                                :existing-immunizations="activeEncounter?.immunizations || []"
+                                :can="can"
                             />
                         </div>
 
@@ -1587,7 +1609,8 @@ const patientAllergies = computed(() => activePatient.value?.allergies || []);
                             <div class="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                                 Queue Action
                             </div>
-                            <Button 
+                            <Button v-if="can.startEncounter"
+                                
                                 variant="default" 
                                 size="sm" 
                                 :disabled="isStartingEncounter"
@@ -1681,7 +1704,8 @@ const patientAllergies = computed(() => activePatient.value?.allergies || []);
                                 Physician Shortcuts
                             </div>
                             <div class="space-y-1.5">
-                                <Button 
+                                <Button v-if="can.startEncounter"
+                                
                                     variant="outline" 
                                     size="sm" 
                                     :disabled="isStartingEncounter"
@@ -1692,7 +1716,8 @@ const patientAllergies = computed(() => activePatient.value?.allergies || []);
                                     <Stethoscope v-else class="w-3.5 h-3.5 text-primary" />
                                     <span>Call Next Patient ({{ patients.length }})</span>
                                 </Button>
-                                <Button 
+                                <Button v-if="can.startEncounter"
+                                
                                     variant="outline" 
                                     size="sm" 
                                     class="w-full justify-start gap-2 text-xs h-8 bg-card shadow-2xs font-semibold text-primary"
@@ -1829,7 +1854,7 @@ const patientAllergies = computed(() => activePatient.value?.allergies || []);
                         <label class="block font-bold text-xs text-foreground">Clinical Indication / Instructions</label>
                         <Input 
                             v-model="clinicalProcForm.clinical_indication" 
-                            placeholder="e.g. Abscess on left arm, needs I&D; Wound dressing with Betadine" 
+                            placeholder="e.g. Abscess on left arm, needs I&amp;D; Wound dressing with Betadine" 
                             class="h-8.5 text-xs" 
                         />
                     </div>

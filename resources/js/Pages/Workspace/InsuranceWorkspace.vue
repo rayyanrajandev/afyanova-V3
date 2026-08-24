@@ -49,6 +49,10 @@ import AfyaPatientIdentity from '@/Components/Afya/AfyaPatientIdentity.vue';
 import { useWorkspacePreferences } from '@/Composables/useWorkspacePreferences';
 
 const props = defineProps({
+    can: {
+        type: Object,
+        default: () => ({}),
+    },
     claimsQueue: {
         type: Array,
         default: () => [],
@@ -405,10 +409,10 @@ const formatDate = (dateStr) => {
                 >
                     <template #actions>
                         <div class="flex items-center gap-2">
-                            <Button 
-                                v-if="activeSection === 'claims' && selectedClaimIds.length > 0"
-                                variant="default" 
-                                size="sm" 
+                            <Button
+                                v-if="activeSection === 'claims' && selectedClaimIds.length > 0 && can.batchSubmit"
+                                variant="default"
+                                size="sm"
                                 class="h-7.5 px-3 text-xs font-semibold gap-1.5 shadow-2xs bg-emerald-700 hover:bg-emerald-800 text-white"
                                 @click="submitBatchClaims"
                                 :disabled="isSubmittingBatch"
@@ -418,10 +422,10 @@ const formatDate = (dateStr) => {
                                 <span>Submit Batch ({{ selectedClaimIds.length }})</span>
                             </Button>
 
-                            <Button 
-                                v-if="activeSection === 'claims'"
-                                variant="default" 
-                                size="sm" 
+                            <Button
+                                v-if="activeSection === 'claims' && can.generateClaim"
+                                variant="default"
+                                size="sm"
                                 class="h-7.5 px-3 text-xs font-semibold gap-1.5 shadow-2xs"
                                 @click="openGenerateClaimModal()"
                             >
@@ -429,10 +433,10 @@ const formatDate = (dateStr) => {
                                 <span>Generate Claim</span>
                             </Button>
 
-                            <Button 
-                                v-if="activeSection === 'preauth'"
-                                variant="default" 
-                                size="sm" 
+                            <Button
+                                v-if="activeSection === 'preauth' && can.storePreAuth"
+                                variant="default"
+                                size="sm"
                                 class="h-7.5 px-3 text-xs font-semibold gap-1.5 shadow-2xs"
                                 @click="openPreAuthModal()"
                             >
@@ -670,6 +674,7 @@ const formatDate = (dateStr) => {
                                             </TableCell>
                                             <TableCell class="py-1 px-3 text-right">
                                                 <Button
+                                                    v-if="can.adjudicate"
                                                     variant="outline"
                                                     size="sm"
                                                     class="h-6 px-2 text-[10px] font-semibold gap-1 text-primary border-primary/30"
@@ -818,6 +823,7 @@ const formatDate = (dateStr) => {
                                             </TableCell>
                                             <TableCell class="py-1 px-3 text-right">
                                                 <Button
+                                                    v-if="can.verifyPolicy"
                                                     variant="outline"
                                                     size="sm"
                                                     class="h-6 px-2 text-[10px] font-semibold gap-1 text-primary border-primary/30"
@@ -989,7 +995,7 @@ const formatDate = (dateStr) => {
                         <!-- Action Triggers -->
                         <div class="space-y-1.5 pt-1">
                             <Button
-                                v-if="selectedRecord.status === 'Submitted'"
+                                v-if="selectedRecord.status === 'Submitted' && can.adjudicate"
                                 variant="default"
                                 class="w-full h-8 text-xs font-semibold justify-center gap-1.5 shadow-2xs"
                                 @click="openAdjudicateModal(selectedRecord)"

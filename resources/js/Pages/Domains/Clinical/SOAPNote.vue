@@ -44,6 +44,10 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
+    can: {
+        type: Object,
+        default: () => ({}),
+    },
 });
 
 const form = useForm({
@@ -589,11 +593,12 @@ const formatDate = (dateStr) => {
                         <span>Clear Form</span>
                     </Button>
 
-                    <Button 
-                        type="submit" 
-                        variant="default" 
-                        size="sm" 
-                        :disabled="form.processing || !isFormDirty" 
+                    <Button
+                        v-if="can.createNote"
+                        type="submit"
+                        variant="default"
+                        size="sm"
+                        :disabled="form.processing || !isFormDirty"
                         class="h-7 px-3 text-xs font-semibold gap-1.5 shadow-2xs"
                     >
                         <Loader2 v-if="form.processing" class="w-3.5 h-3.5 animate-spin" />
@@ -636,7 +641,7 @@ const formatDate = (dateStr) => {
 
                         <div class="flex items-center space-x-1.5">
                             <Button
-                                v-if="!note.is_signed"
+                                v-if="!note.is_signed && can.signNote"
                                 variant="default"
                                 size="sm"
                                 class="h-5 px-2 text-[9px] font-semibold gap-1"
@@ -646,7 +651,7 @@ const formatDate = (dateStr) => {
                                 <span>Sign & Lock</span>
                             </Button>
                             <Button
-                                v-else
+                                v-else-if="note.is_signed && can.signNote"
                                 variant="outline"
                                 size="sm"
                                 class="h-5 px-2 text-[9px] font-semibold gap-1 bg-card"

@@ -9,7 +9,6 @@ import {
     Pill, 
     Users, 
     Clock, 
-    Palette, 
     Plus, 
     Calendar,
     ArrowRight,
@@ -52,7 +51,6 @@ const navigationItems = [
     // Quick Actions
     { id: 'reg', label: 'Register New Patient (MPI)', group: 'Quick Actions', icon: UserPlus, route: '/patients/create', shortcut: '⌘N' },
     { id: 'vitals', label: 'Record Triage Vitals', group: 'Quick Actions', icon: Activity, route: '/queue' },
-    { id: 'found', label: 'Design System Foundation Demo', group: 'Quick Actions', icon: Palette, route: '/workspace/foundation' },
 
     // Workspace Controls
     { id: 'toggle-sidebar', label: 'Toggle Module Navigation Sidebar', group: 'Workspace Controls', icon: Sidebar, action: 'sidebar', shortcut: '⌘B' },

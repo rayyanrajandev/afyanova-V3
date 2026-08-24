@@ -2,6 +2,8 @@
 
 namespace App\Domains\Scheduling\Http\Controllers;
 
+use App\Core\Traits\AuthorizesWorkspaceAccess;
+use App\Domains\Identity\Services\AuthorizationService;
 use App\Domains\Scheduling\Actions\TransferQueueAction;
 use App\Domains\Scheduling\Models\QueueTicket;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -12,10 +14,17 @@ use Inertia\Response;
 
 class QueueController extends Controller
 {
-    use AuthorizesRequests;
+    use AuthorizesRequests, AuthorizesWorkspaceAccess;
 
-    public function index(Request $request): Response
+    public function index(Request $request, AuthorizationService $authService): Response
     {
+        $this->authorizeAnyWorkspacePermission($request->user(), $authService, ['scheduling.queue.view']);
+
+        $can = $this->buildSectionCanMap($request->user(), $authService, [
+            'call' => 'scheduling.queue.call',
+            'transfer' => 'scheduling.queue.transfer',
+        ]);
+
         $servicePoint = $request->query('point', 'Triage');
 
         $tickets = QueueTicket::with(['patient'])
@@ -26,6 +35,7 @@ class QueueController extends Controller
             ->get();
 
         return Inertia::render('Domains/Scheduling/LiveQueue', [
+            'can' => $can,
             'tickets' => $tickets,
             'currentPoint' => $servicePoint,
         ]);

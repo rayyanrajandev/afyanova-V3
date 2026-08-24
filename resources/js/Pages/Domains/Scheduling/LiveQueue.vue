@@ -39,6 +39,10 @@ import AfyaStatusBadge from '@/Components/Afya/AfyaStatusBadge.vue';
 import AfyaPatientIdentity from '@/Components/Afya/AfyaPatientIdentity.vue';
 
 const props = defineProps({
+    can: {
+        type: Object,
+        default: () => ({}),
+    },
     tickets: {
         type: Array,
         default: () => [],
@@ -235,6 +239,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                                         </TableCell>
                                         <TableCell class="py-1 px-3 text-right w-32">
                                             <Button
+                                                v-if="can.call"
                                                 variant="default"
                                                 size="sm"
                                                 class="h-5 px-2 text-[9.5px] font-semibold gap-1"
@@ -298,7 +303,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                         </Card>
 
                         <!-- Quick Service Transfer Actions -->
-                        <Card>
+                        <Card v-if="can.transfer">
                             <CardHeader><CardTitle>Transfer Patient</CardTitle></CardHeader>
                             <CardContent class="space-y-1.5">
                                 <Button

@@ -19,6 +19,8 @@ class ClinicalChartingController extends Controller
 
     public function storeVitals(Request $request, Encounter $encounter, RecordVitalsAction $action)
     {
+        $this->authorize('recordVitals', $encounter);
+
         $validated = $request->validate([
             'temperature_c' => 'nullable|numeric',
             'heart_rate' => 'nullable|integer',
@@ -45,6 +47,8 @@ class ClinicalChartingController extends Controller
 
     public function storeNote(Request $request, Encounter $encounter)
     {
+        $this->authorize('createNote', $encounter);
+
         $validated = $request->validate([
             'note_type' => 'required|string',
             'content' => 'required|array',

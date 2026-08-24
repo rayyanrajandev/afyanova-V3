@@ -51,6 +51,11 @@ function buildTwoFacilityTenant(): array
     ]);
 
     $role = Role::create(['tenant_id' => $tenant->id, 'slug' => 'nurse', 'name' => 'Nurse']);
+    $viewPermission = Permission::firstOrCreate(
+        ['slug' => 'patient.registry.view'],
+        ['name' => 'View Patient Registry', 'domain' => 'Patient']
+    );
+    $role->permissions()->syncWithoutDetaching([$viewPermission->id]);
     app(AssignUserRoleAction::class)->execute($user->id, $role->id, $facilityA->id);
 
     $patientAtA = app(RegisterPatientAction::class)->execute([

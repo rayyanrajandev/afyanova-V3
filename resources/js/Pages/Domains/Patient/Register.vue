@@ -369,7 +369,9 @@ onMounted(() => {
                 restoredDraftNotice.value = true;
             }
         }
-    } catch (e) {}
+    } catch (e) {
+        // Corrupted or inaccessible draft — proceed with an empty form.
+    }
 });
 
 // Auto-save on any change

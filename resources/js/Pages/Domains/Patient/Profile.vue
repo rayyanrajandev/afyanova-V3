@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue';
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { 
     Users, 
     LayoutDashboard,
@@ -61,8 +61,15 @@ import TableCell from '@/Components/ui/TableCell.vue';
 import AfyaStatusBadge from '@/Components/Afya/AfyaStatusBadge.vue';
 import AfyaPatientIdentity from '@/Components/Afya/AfyaPatientIdentity.vue';
 import AfyaClinicalAlert from '@/Components/Afya/AfyaClinicalAlert.vue';
+import AfyaInput from '@/Components/Afya/AfyaInput.vue';
+import Modal from '@/Components/Modal.vue';
+import InputError from '@/Components/InputError.vue';
 
 const props = defineProps({
+    can: {
+        type: Object,
+        default: () => ({ radiology: true, billing: true }),
+    },
     patient: {
         type: Object,
         required: true,
@@ -102,11 +109,147 @@ const diagnoses = computed(() => encounters.value.flatMap(e => (e.diagnoses || [
 const prescriptions = computed(() => encounters.value.flatMap(e => (e.prescriptions || []).map(p => ({ ...p, encounter: e }))));
 const problems = computed(() => props.patient.problems || []);
 const medicationReconciliations = computed(() => props.patient.medication_reconciliations || props.patient.medicationReconciliations || []);
+
+// ==================== Problem List: record + resolve ====================
+const showAddProblemModal = ref(false);
+const problemForm = useForm({
+    icd10_code: '',
+    problem_name: '',
+    clinical_status: 'Confirmed',
+    severity: 'Moderate',
+    onset_date: '',
+    notes: '',
+});
+
+const openAddProblemModal = () => {
+    problemForm.reset();
+    problemForm.clearErrors();
+    showAddProblemModal.value = true;
+};
+
+const submitProblem = () => {
+    problemForm.post(route('clinical.problems.store', props.patient.id), {
+        preserveScroll: true,
+        onSuccess: () => {
+            showAddProblemModal.value = false;
+            problemForm.reset();
+        },
+    });
+};
+
+const resolveProblem = (problem) => {
+    router.post(route('clinical.problems.resolve', problem.id), {}, { preserveScroll: true });
+};
+
+// ==================== Medication Reconciliation: record ====================
+const showReconciliationModal = ref(false);
+const emptyReconciliationMedication = () => ({
+    medication_name: '',
+    dosage: '',
+    frequency: '',
+    route: '',
+    action_taken: 'Continue',
+    clinical_rationale: '',
+    substitute_medication_name: '',
+    new_dosage_instructions: '',
+});
+const reconciliationForm = useForm({
+    stage: 'Admission',
+    medications: [emptyReconciliationMedication()],
+});
+
+const openReconciliationModal = () => {
+    reconciliationForm.reset();
+    reconciliationForm.medications = [emptyReconciliationMedication()];
+    reconciliationForm.clearErrors();
+    showReconciliationModal.value = true;
+};
+
+const addReconciliationMedicationRow = () => {
+    reconciliationForm.medications.push(emptyReconciliationMedication());
+};
+
+const removeReconciliationMedicationRow = (index) => {
+    if (reconciliationForm.medications.length > 1) {
+        reconciliationForm.medications.splice(index, 1);
+    }
+};
+
+const submitReconciliation = () => {
+    reconciliationForm.post(route('pharmacy.reconciliation.store', props.patient.id), {
+        preserveScroll: true,
+        onSuccess: () => {
+            showReconciliationModal.value = false;
+            reconciliationForm.reset();
+        },
+    });
+};
+
+// ==================== Allergies: record + amend ====================
+const showAddAllergyModal = ref(false);
+const allergyForm = useForm({
+    allergen_type: 'Drug',
+    allergen: '',
+    reaction: '',
+    severity: 'Moderate',
+});
+
+const openAddAllergyModal = () => {
+    allergyForm.reset();
+    allergyForm.clearErrors();
+    showAddAllergyModal.value = true;
+};
+
+const submitAllergy = () => {
+    allergyForm.post(route('clinical.allergies.store', props.patient.id), {
+        preserveScroll: true,
+        onSuccess: () => {
+            showAddAllergyModal.value = false;
+            allergyForm.reset();
+        },
+    });
+};
+
+const showAmendAllergyModal = ref(false);
+const amendingAllergy = ref(null);
+const amendAllergyForm = useForm({
+    allergen_type: 'Drug',
+    allergen: '',
+    reaction: '',
+    severity: 'Moderate',
+    status: 'Active',
+    reason: '',
+});
+
+const openAmendAllergyModal = (allergy) => {
+    amendingAllergy.value = allergy;
+    amendAllergyForm.reset();
+    amendAllergyForm.clearErrors();
+    amendAllergyForm.allergen_type = allergy.allergen_type || 'Drug';
+    amendAllergyForm.allergen = allergy.allergen;
+    amendAllergyForm.reaction = allergy.reaction || '';
+    amendAllergyForm.severity = allergy.severity || 'Moderate';
+    amendAllergyForm.status = allergy.status || 'Active';
+    amendAllergyForm.reason = '';
+    showAmendAllergyModal.value = true;
+};
+
+const submitAmendAllergy = () => {
+    amendAllergyForm.post(route('clinical.allergies.amend', amendingAllergy.value.id), {
+        preserveScroll: true,
+        onSuccess: () => {
+            showAmendAllergyModal.value = false;
+            amendAllergyForm.reset();
+        },
+    });
+};
+
 const referrals = computed(() => props.patient.referrals || encounters.value.flatMap(e => (e.referrals || []).map(r => ({ ...r, encounter: e }))));
 const radiologyOrders = computed(() => props.patient.radiology_orders || props.patient.radiologyOrders || encounters.value.flatMap(e => (e.radiology_orders || []).map(o => ({ ...o, encounter: e }))));
 const invoices = computed(() => props.patient.invoices || []);
 const appointments = computed(() => props.patient.appointments || []);
 const allergies = computed(() => props.patient.allergies || []);
+const activeAllergies = computed(() => allergies.value.filter(a => !a.is_deprecated));
 const identifiers = computed(() => props.patient.identifiers || []);
 const contacts = computed(() => props.patient.contacts || []);
 const emergencyContacts = computed(() => props.patient.emergencyContacts || []);
@@ -192,14 +335,14 @@ const clinicalTabs = computed(() => [
 const diagnosticTabs = computed(() => [
     { id: 'orders', label: 'Orders', icon: FlaskConical },
     { id: 'laboratory', label: 'Laboratory', icon: Microscope },
-    { id: 'imaging', label: 'Imaging', icon: Film, badge: radiologyOrders.value.length },
+    ...(props.can.radiology ? [{ id: 'imaging', label: 'Imaging', icon: Film, badge: radiologyOrders.value.length }] : []),
     { id: 'procedures', label: 'Procedures', icon: Syringe },
 ]);
 
 const adminTabs = computed(() => [
     { id: 'documents', label: 'Documents', icon: Folder },
     { id: 'referrals', label: 'Referrals', icon: Share2, badge: referrals.value.length },
-    { id: 'billing', label: 'Billing & Insurance', icon: Receipt, badge: invoices.value.length },
+    ...(props.can.billing ? [{ id: 'billing', label: 'Billing & Insurance', icon: Receipt, badge: invoices.value.length }] : []),
 ]);
 
 const allNavTabs = computed(() => [
@@ -335,9 +478,9 @@ const totalOutstanding = computed(() => {
                     <div class="w-full space-y-3.5">
                         <!-- Sticky Clinical Alert Banner if Patient has Allergies -->
                         <AfyaClinicalAlert
-                            v-if="allergies.length > 0"
+                            v-if="activeAllergies.length > 0"
                             title="Patient Clinical Safety Warning"
-                            :message="`Documented Allergies: ${allergies.map(a => `${a.allergen} (${a.severity || 'Active'} — ${a.reaction || 'Reaction unspecified'})`).join(', ')}`"
+                            :message="`Documented Allergies: ${activeAllergies.map(a => `${a.allergen} (${a.severity} — ${a.reaction || 'Reaction unspecified'})`).join(', ')}`"
                             severity="critical"
                         />
 
@@ -363,7 +506,7 @@ const totalOutstanding = computed(() => {
                                         <div class="text-xl font-mono font-bold text-emerald-700 mt-0.5">{{ prescriptions.length }}</div>
                                     </CardContent>
                                 </Card>
-                                <Card>
+                                <Card v-if="can.billing">
                                     <CardContent class="p-2.5">
                                         <div class="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">POS Balance Due</div>
                                         <div class="text-lg font-mono font-bold mt-0.5" :class="totalOutstanding > 0 ? 'text-rose-700' : 'text-emerald-700'">
@@ -604,21 +747,27 @@ const totalOutstanding = computed(() => {
 
                         <!-- ==================== TAB 5B: PROBLEM LIST (CHRONIC) ==================== -->
                         <div v-else-if="activeTab === 'problems'" class="space-y-3">
+                            <div class="flex items-center justify-end">
+                                <Button v-if="can.storeProblem" size="sm" @click="openAddProblemModal">
+                                    <Plus class="w-3.5 h-3.5 mr-1" /> Add Problem
+                                </Button>
+                            </div>
                             <Table>
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead>Problem / Condition Title</TableHead>
-                                        <TableHead>ICD-10 / SNOMED Code</TableHead>
+                                        <TableHead>ICD-10 Code</TableHead>
                                         <TableHead>Clinical Status</TableHead>
                                         <TableHead>Onset Date</TableHead>
                                         <TableHead>Severity</TableHead>
                                         <TableHead>Clinical Notes</TableHead>
+                                        <TableHead class="text-right">Action</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     <TableRow v-for="prob in problems" :key="prob.id">
-                                        <TableCell class="font-bold text-foreground">{{ prob.title || prob.condition_name }}</TableCell>
-                                        <TableCell class="font-mono text-xs">{{ prob.icd10_code || prob.snomed_code || '—' }}</TableCell>
+                                        <TableCell class="font-bold text-foreground">{{ prob.problem_name }}</TableCell>
+                                        <TableCell class="font-mono text-xs">{{ prob.icd10_code || '—' }}</TableCell>
                                         <TableCell>
                                             <AfyaStatusBadge :status="prob.status || 'Active'" dot />
                                         </TableCell>
@@ -631,9 +780,14 @@ const totalOutstanding = computed(() => {
                                             </span>
                                         </TableCell>
                                         <TableCell class="text-xs text-muted-foreground">{{ prob.notes || '—' }}</TableCell>
+                                        <TableCell class="text-right">
+                                            <Button v-if="prob.status !== 'Resolved' && can.storeProblem" size="sm" variant="outline" @click="resolveProblem(prob)">
+                                                <CheckCircle class="w-3.5 h-3.5 mr-1" /> Resolve
+                                            </Button>
+                                        </TableCell>
                                     </TableRow>
                                     <TableRow v-if="problems.length === 0">
-                                        <TableCell colspan="6" class="text-center py-8 text-muted-foreground">
+                                        <TableCell colspan="7" class="text-center py-8 text-muted-foreground">
                                             No chronic problems or longitudinal diagnoses documented.
                                         </TableCell>
                                     </TableRow>
@@ -674,31 +828,35 @@ const totalOutstanding = computed(() => {
 
                         <!-- ==================== TAB 6B: MEDICATION RECONCILIATION ==================== -->
                         <div v-else-if="activeTab === 'med-reconciliation'" class="space-y-3">
+                            <div class="flex items-center justify-end">
+                                <Button v-if="can.storeReconciliation" size="sm" @click="openReconciliationModal">
+                                    <RefreshCw class="w-3.5 h-3.5 mr-1" /> Record Reconciliation
+                                </Button>
+                            </div>
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead>Reconciliation Date</TableHead>
-                                        <TableHead>Stage / Event</TableHead>
-                                        <TableHead>Status</TableHead>
-                                        <TableHead>Discrepancies Noted</TableHead>
-                                        <TableHead>Clinician / Pharmacist</TableHead>
-                                        <TableHead>Notes</TableHead>
+                                        <TableHead>Reconciled At</TableHead>
+                                        <TableHead>Stage</TableHead>
+                                        <TableHead>Medication</TableHead>
+                                        <TableHead>Dosage / Route</TableHead>
+                                        <TableHead>Action Taken</TableHead>
+                                        <TableHead>Reconciled By</TableHead>
+                                        <TableHead>Rationale</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     <TableRow v-for="mr in medicationReconciliations" :key="mr.id">
-                                        <TableCell class="font-mono text-xs text-muted-foreground">{{ new Date(mr.reconciliation_date || mr.created_at).toLocaleDateString() }}</TableCell>
-                                        <TableCell class="font-bold text-foreground">{{ mr.stage || 'Admission' }}</TableCell>
-                                        <TableCell><AfyaStatusBadge :status="mr.status || 'Completed'" dot /></TableCell>
-                                        <TableCell class="text-xs">
-                                            <span v-if="mr.has_discrepancies" class="text-rose-600 font-bold">Discrepancy Found</span>
-                                            <span v-else class="text-emerald-600 font-semibold">Clean / Reconciled</span>
-                                        </TableCell>
-                                        <TableCell class="text-xs text-muted-foreground">{{ mr.clinician?.name || mr.reconciled_by || 'Clinical Pharmacist' }}</TableCell>
-                                        <TableCell class="text-xs text-muted-foreground">{{ mr.notes || mr.discrepancy_details || '—' }}</TableCell>
+                                        <TableCell class="font-mono text-xs text-muted-foreground">{{ mr.reconciled_at ? new Date(mr.reconciled_at).toLocaleDateString() : '—' }}</TableCell>
+                                        <TableCell class="font-bold text-foreground">{{ mr.stage }}</TableCell>
+                                        <TableCell class="text-xs">{{ mr.medication_name }}</TableCell>
+                                        <TableCell class="text-xs text-muted-foreground">{{ [mr.dosage, mr.frequency, mr.route].filter(Boolean).join(' · ') || '—' }}</TableCell>
+                                        <TableCell><AfyaStatusBadge :status="mr.action_taken || 'Continue'" dot /></TableCell>
+                                        <TableCell class="text-xs text-muted-foreground">{{ mr.reconciler ? `${mr.reconciler.first_name} ${mr.reconciler.last_name}` : '—' }}</TableCell>
+                                        <TableCell class="text-xs text-muted-foreground">{{ mr.clinical_rationale || '—' }}</TableCell>
                                     </TableRow>
                                     <TableRow v-if="medicationReconciliations.length === 0">
-                                        <TableCell colspan="6" class="text-center py-8 text-muted-foreground">
+                                        <TableCell colspan="7" class="text-center py-8 text-muted-foreground">
                                             No medication reconciliation sessions recorded for this patient.
                                         </TableCell>
                                     </TableRow>
@@ -708,6 +866,11 @@ const totalOutstanding = computed(() => {
 
                         <!-- ==================== TAB 7: ALLERGIES ==================== -->
                         <div v-else-if="activeTab === 'allergies'" class="space-y-3">
+                            <div class="flex items-center justify-end">
+                                <Button v-if="can.recordAllergy" size="sm" @click="openAddAllergyModal">
+                                    <Plus class="w-3.5 h-3.5 mr-1" /> Add Allergy
+                                </Button>
+                            </div>
                             <Table>
                                 <TableHeader>
                                     <TableRow>
@@ -716,23 +879,32 @@ const totalOutstanding = computed(() => {
                                         <TableHead>Severity</TableHead>
                                         <TableHead>Reaction</TableHead>
                                         <TableHead>Status</TableHead>
+                                        <TableHead class="text-right">Action</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    <TableRow v-for="alg in allergies" :key="alg.id">
-                                        <TableCell class="font-bold text-rose-700">{{ alg.allergen }}</TableCell>
+                                    <TableRow v-for="alg in activeAllergies" :key="alg.id">
+                                        <TableCell class="font-bold text-rose-700">
+                                            {{ alg.allergen }}
+                                            <span v-if="alg.is_amendment" class="ml-1.5 px-1.5 py-0.5 rounded text-[9px] font-bold bg-muted text-muted-foreground align-middle">Amended</span>
+                                        </TableCell>
                                         <TableCell class="text-xs">{{ alg.allergen_type || 'Drug' }}</TableCell>
                                         <TableCell>
                                             <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-800 border border-rose-200">
-                                                {{ alg.severity || 'Active' }}
+                                                {{ alg.severity }}
                                             </span>
                                         </TableCell>
-                                        <TableCell class="text-xs text-muted-foreground">{{ alg.reaction || 'Anaphylaxis / Rash' }}</TableCell>
+                                        <TableCell class="text-xs text-muted-foreground">{{ alg.reaction || '—' }}</TableCell>
                                         <TableCell><AfyaStatusBadge :status="alg.status || 'Active'" dot /></TableCell>
+                                        <TableCell class="text-right">
+                                            <Button v-if="can.amendAllergy" size="sm" variant="outline" @click="openAmendAllergyModal(alg)">
+                                                Amend
+                                            </Button>
+                                        </TableCell>
                                     </TableRow>
 
-                                    <TableRow v-if="allergies.length === 0">
-                                        <TableCell colspan="5" class="text-center py-8 text-muted-foreground">
+                                    <TableRow v-if="activeAllergies.length === 0">
+                                        <TableCell colspan="6" class="text-center py-8 text-muted-foreground">
                                             No known allergies recorded (NKDA).
                                         </TableCell>
                                     </TableRow>
@@ -974,5 +1146,270 @@ const totalOutstanding = computed(() => {
             </template>
 
         </AfyaWorkspace>
+
+        <!-- Add Problem Modal -->
+        <Modal :show="showAddProblemModal" max-width="lg" @close="showAddProblemModal = false">
+            <div class="p-6 space-y-4">
+                <h3 class="text-base font-bold text-foreground">Add Problem</h3>
+                <form @submit.prevent="submitProblem" class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <AfyaInput
+                            v-model="problemForm.problem_name"
+                            label="Problem / Condition Title"
+                            required
+                            :error="problemForm.errors.problem_name"
+                            wrapper-class="col-span-2"
+                        />
+                        <AfyaInput
+                            v-model="problemForm.icd10_code"
+                            label="ICD-10 Code"
+                            required
+                            placeholder="e.g. I10"
+                            :error="problemForm.errors.icd10_code"
+                        />
+                        <AfyaInput
+                            v-model="problemForm.onset_date"
+                            type="date"
+                            label="Onset Date"
+                            :error="problemForm.errors.onset_date"
+                        />
+                        <div class="space-y-1">
+                            <label class="block text-xs font-semibold text-foreground">Clinical Status</label>
+                            <select v-model="problemForm.clinical_status" class="w-full h-8.5 text-xs rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/90 px-3">
+                                <option value="Confirmed">Confirmed</option>
+                                <option value="Provisional">Provisional</option>
+                                <option value="Differential">Differential</option>
+                            </select>
+                            <InputError :message="problemForm.errors.clinical_status" />
+                        </div>
+                        <div class="space-y-1">
+                            <label class="block text-xs font-semibold text-foreground">Severity</label>
+                            <select v-model="problemForm.severity" class="w-full h-8.5 text-xs rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/90 px-3">
+                                <option value="Mild">Mild</option>
+                                <option value="Moderate">Moderate</option>
+                                <option value="Severe">Severe</option>
+                            </select>
+                            <InputError :message="problemForm.errors.severity" />
+                        </div>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="block text-xs font-semibold text-foreground">Clinical Notes</label>
+                        <textarea v-model="problemForm.notes" rows="3" class="w-full p-2.5 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/90 text-xs"></textarea>
+                        <InputError :message="problemForm.errors.notes" />
+                    </div>
+                    <div class="flex justify-end gap-2 pt-2 border-t border-border/60">
+                        <Button type="button" variant="outline" size="sm" @click="showAddProblemModal = false">Cancel</Button>
+                        <Button type="submit" size="sm" :disabled="problemForm.processing">
+                            {{ problemForm.processing ? 'Saving…' : 'Add Problem' }}
+                        </Button>
+                    </div>
+                </form>
+            </div>
+        </Modal>
+
+        <!-- Add Allergy Modal -->
+        <Modal :show="showAddAllergyModal" max-width="lg" @close="showAddAllergyModal = false">
+            <div class="p-6 space-y-4">
+                <h3 class="text-base font-bold text-foreground">Add Allergy</h3>
+                <form @submit.prevent="submitAllergy" class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <AfyaInput
+                            v-model="allergyForm.allergen"
+                            label="Allergen"
+                            required
+                            placeholder="e.g. Penicillin"
+                            :error="allergyForm.errors.allergen"
+                            wrapper-class="col-span-2"
+                        />
+                        <div class="space-y-1">
+                            <label class="block text-xs font-semibold text-foreground">Allergen Type</label>
+                            <select v-model="allergyForm.allergen_type" class="w-full h-8.5 text-xs rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/90 px-3">
+                                <option value="Drug">Drug</option>
+                                <option value="Food">Food</option>
+                                <option value="Environmental">Environmental</option>
+                                <option value="Other">Other</option>
+                            </select>
+                            <InputError :message="allergyForm.errors.allergen_type" />
+                        </div>
+                        <div class="space-y-1">
+                            <label class="block text-xs font-semibold text-foreground">Severity</label>
+                            <select v-model="allergyForm.severity" class="w-full h-8.5 text-xs rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/90 px-3">
+                                <option value="Mild">Mild</option>
+                                <option value="Moderate">Moderate</option>
+                                <option value="Severe">Severe</option>
+                            </select>
+                            <InputError :message="allergyForm.errors.severity" />
+                        </div>
+                        <AfyaInput
+                            v-model="allergyForm.reaction"
+                            label="Reaction"
+                            placeholder="e.g. Rash, Anaphylaxis"
+                            :error="allergyForm.errors.reaction"
+                            wrapper-class="col-span-2"
+                        />
+                    </div>
+                    <div class="flex justify-end gap-2 pt-2 border-t border-border/60">
+                        <Button type="button" variant="outline" size="sm" @click="showAddAllergyModal = false">Cancel</Button>
+                        <Button type="submit" size="sm" :disabled="allergyForm.processing">
+                            {{ allergyForm.processing ? 'Saving…' : 'Add Allergy' }}
+                        </Button>
+                    </div>
+                </form>
+            </div>
+        </Modal>
+
+        <!-- Amend Allergy Modal -->
+        <Modal :show="showAmendAllergyModal" max-width="lg" @close="showAmendAllergyModal = false">
+            <div class="p-6 space-y-4">
+                <h3 class="text-base font-bold text-foreground">Amend Allergy Record</h3>
+                <p class="text-xs text-muted-foreground -mt-2">
+                    The original record is preserved and superseded by this amendment — it is not overwritten.
+                </p>
+                <form @submit.prevent="submitAmendAllergy" class="space-y-4">
+                    <div class="grid grid-cols-2 gap-4">
+                        <AfyaInput
+                            v-model="amendAllergyForm.allergen"
+                            label="Allergen"
+                            required
+                            :error="amendAllergyForm.errors.allergen"
+                            wrapper-class="col-span-2"
+                        />
+                        <div class="space-y-1">
+                            <label class="block text-xs font-semibold text-foreground">Allergen Type</label>
+                            <select v-model="amendAllergyForm.allergen_type" class="w-full h-8.5 text-xs rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/90 px-3">
+                                <option value="Drug">Drug</option>
+                                <option value="Food">Food</option>
+                                <option value="Environmental">Environmental</option>
+                                <option value="Other">Other</option>
+                            </select>
+                            <InputError :message="amendAllergyForm.errors.allergen_type" />
+                        </div>
+                        <div class="space-y-1">
+                            <label class="block text-xs font-semibold text-foreground">Severity</label>
+                            <select v-model="amendAllergyForm.severity" class="w-full h-8.5 text-xs rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/90 px-3">
+                                <option value="Mild">Mild</option>
+                                <option value="Moderate">Moderate</option>
+                                <option value="Severe">Severe</option>
+                            </select>
+                            <InputError :message="amendAllergyForm.errors.severity" />
+                        </div>
+                        <div class="space-y-1">
+                            <label class="block text-xs font-semibold text-foreground">Status</label>
+                            <select v-model="amendAllergyForm.status" class="w-full h-8.5 text-xs rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/90 px-3">
+                                <option value="Active">Active</option>
+                                <option value="Inactive">Inactive</option>
+                            </select>
+                            <InputError :message="amendAllergyForm.errors.status" />
+                        </div>
+                        <AfyaInput
+                            v-model="amendAllergyForm.reaction"
+                            label="Reaction"
+                            :error="amendAllergyForm.errors.reaction"
+                            wrapper-class="col-span-2"
+                        />
+                    </div>
+                    <div class="space-y-1">
+                        <label class="block text-xs font-semibold text-foreground">Reason for Amendment</label>
+                        <textarea v-model="amendAllergyForm.reason" rows="2" class="w-full p-2.5 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/90 text-xs" placeholder="e.g. Confirmed with patient during medication reconciliation — reaction was intolerance, not true allergy"></textarea>
+                        <InputError :message="amendAllergyForm.errors.reason" />
+                    </div>
+                    <div class="flex justify-end gap-2 pt-2 border-t border-border/60">
+                        <Button type="button" variant="outline" size="sm" @click="showAmendAllergyModal = false">Cancel</Button>
+                        <Button type="submit" size="sm" :disabled="amendAllergyForm.processing">
+                            {{ amendAllergyForm.processing ? 'Saving…' : 'Save Amendment' }}
+                        </Button>
+                    </div>
+                </form>
+            </div>
+        </Modal>
+
+        <!-- Record Medication Reconciliation Modal -->
+        <Modal :show="showReconciliationModal" max-width="3xl" @close="showReconciliationModal = false">
+            <div class="p-6 space-y-4">
+                <h3 class="text-base font-bold text-foreground">Record Medication Reconciliation</h3>
+                <form @submit.prevent="submitReconciliation" class="space-y-4">
+                    <div class="space-y-1 max-w-xs">
+                        <label class="block text-xs font-semibold text-foreground">Stage</label>
+                        <select v-model="reconciliationForm.stage" class="w-full h-8.5 text-xs rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/90 px-3">
+                            <option value="Admission">Admission</option>
+                            <option value="Transfer">Transfer</option>
+                            <option value="Discharge">Discharge</option>
+                        </select>
+                        <InputError :message="reconciliationForm.errors.stage" />
+                    </div>
+
+                    <div class="space-y-3 max-h-[45vh] overflow-y-auto pr-1">
+                        <div
+                            v-for="(med, index) in reconciliationForm.medications"
+                            :key="index"
+                            class="p-3 rounded-lg border border-border space-y-2"
+                        >
+                            <div class="flex items-center justify-between">
+                                <span class="text-[11px] font-bold text-muted-foreground uppercase">Medication {{ index + 1 }}</span>
+                                <button
+                                    v-if="reconciliationForm.medications.length > 1"
+                                    type="button"
+                                    class="text-[11px] text-destructive font-semibold"
+                                    @click="removeReconciliationMedicationRow(index)"
+                                >
+                                    Remove
+                                </button>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <AfyaInput
+                                    v-model="med.medication_name"
+                                    label="Medication Name"
+                                    required
+                                    :error="reconciliationForm.errors[`medications.${index}.medication_name`]"
+                                    wrapper-class="col-span-2"
+                                />
+                                <AfyaInput v-model="med.dosage" label="Dosage" />
+                                <AfyaInput v-model="med.frequency" label="Frequency" />
+                                <AfyaInput v-model="med.route" label="Route" />
+                                <div class="space-y-1">
+                                    <label class="block text-xs font-semibold text-foreground">Action Taken</label>
+                                    <select v-model="med.action_taken" class="w-full h-8.5 text-xs rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/90 px-3">
+                                        <option value="Continue">Continue</option>
+                                        <option value="Discontinue">Discontinue</option>
+                                        <option value="Substitute">Substitute</option>
+                                        <option value="ModifyDose">Modify Dose</option>
+                                        <option value="Hold">Hold</option>
+                                    </select>
+                                    <InputError :message="reconciliationForm.errors[`medications.${index}.action_taken`]" />
+                                </div>
+                                <AfyaInput
+                                    v-if="med.action_taken === 'Substitute'"
+                                    v-model="med.substitute_medication_name"
+                                    label="Substitute Medication"
+                                    wrapper-class="col-span-2"
+                                />
+                                <AfyaInput
+                                    v-if="med.action_taken === 'ModifyDose'"
+                                    v-model="med.new_dosage_instructions"
+                                    label="New Dosage Instructions"
+                                    wrapper-class="col-span-2"
+                                />
+                                <AfyaInput
+                                    v-model="med.clinical_rationale"
+                                    label="Clinical Rationale"
+                                    wrapper-class="col-span-2"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <Button type="button" variant="outline" size="sm" @click="addReconciliationMedicationRow">
+                        <Plus class="w-3.5 h-3.5 mr-1" /> Add Another Medication
+                    </Button>
+
+                    <div class="flex justify-end gap-2 pt-2 border-t border-border/60">
+                        <Button type="button" variant="outline" size="sm" @click="showReconciliationModal = false">Cancel</Button>
+                        <Button type="submit" size="sm" :disabled="reconciliationForm.processing">
+                            {{ reconciliationForm.processing ? 'Saving…' : 'Save Reconciliation' }}
+                        </Button>
+                    </div>
+                </form>
+            </div>
+        </Modal>
     </AfyaShell>
 </template>

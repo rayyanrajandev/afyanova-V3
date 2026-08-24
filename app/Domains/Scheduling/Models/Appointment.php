@@ -8,6 +8,7 @@ use App\Core\Traits\HasUuidv7;
 use App\Domains\Identity\Models\User;
 use App\Domains\Patient\Models\Patient;
 use App\Domains\Tenancy\Models\Department;
+use App\Domains\Tenancy\Models\Facility;
 use App\Domains\Tenancy\Models\Tenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -28,6 +29,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Department|null $department
+ * @property-read Facility $facility
  * @property-read Patient $patient
  * @property-read User|null $practitioner
  * @property-read User|null $provider
@@ -96,5 +98,13 @@ class Appointment extends Model
     public function department(): BelongsTo
     {
         return $this->belongsTo(Department::class);
+    }
+
+    /**
+     * @return BelongsTo<Facility, $this>
+     */
+    public function facility(): BelongsTo
+    {
+        return $this->belongsTo(Facility::class);
     }
 }

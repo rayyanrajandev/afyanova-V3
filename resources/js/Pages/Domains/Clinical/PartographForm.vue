@@ -21,6 +21,10 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
+    can: {
+        type: Object,
+        default: () => ({}),
+    },
 });
 
 const successMessage = ref('');
@@ -193,7 +197,7 @@ const formatTime = (dateStr) => {
             </div>
 
             <div class="flex justify-end pt-1">
-                <Button type="submit" variant="default" size="sm" :disabled="form.processing" class="h-8 px-4 gap-1 shadow-2xs font-semibold">
+                <Button v-if="can.recordPartograph" type="submit" variant="default" size="sm" :disabled="form.processing" class="h-8 px-4 gap-1 shadow-2xs font-semibold">
                     <Loader2 v-if="form.processing" class="w-3.5 h-3.5 animate-spin mr-1" />
                     <Save v-else class="w-3.5 h-3.5" />
                     <span>{{ form.processing ? 'Plotting...' : 'Plot Partograph Entry' }}</span>

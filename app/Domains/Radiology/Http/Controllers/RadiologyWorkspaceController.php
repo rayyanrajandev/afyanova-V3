@@ -2,7 +2,9 @@
 
 namespace App\Domains\Radiology\Http\Controllers;
 
+use App\Core\Traits\AuthorizesWorkspaceAccess;
 use App\Domains\Clinical\Models\Encounter;
+use App\Domains\Identity\Services\AuthorizationService;
 use App\Domains\Radiology\Actions\AmendRadiologyReportAction;
 use App\Domains\Radiology\Actions\OrderImagingAction;
 use App\Domains\Radiology\Actions\SignRadiologyReportAction;
@@ -17,10 +19,17 @@ use InvalidArgumentException;
 
 class RadiologyWorkspaceController extends Controller
 {
-    use AuthorizesRequests;
+    use AuthorizesRequests, AuthorizesWorkspaceAccess;
 
-    public function index(Request $request): Response
+    public function index(Request $request, AuthorizationService $authService): Response
     {
+        $this->authorizeAnyWorkspacePermission($request->user(), $authService, ['radiology.order.view']);
+
+        $can = $this->buildSectionCanMap($request->user(), $authService, [
+            'signReport' => 'radiology.report.sign',
+            'amendReport' => 'radiology.report.amend',
+        ]);
+
         $orders = RadiologyOrder::with(['patient', 'encounter', 'orderingProvider', 'studies', 'reports.radiologist'])
             ->latest('created_at')
             ->take(100)
@@ -38,6 +47,7 @@ class RadiologyWorkspaceController extends Controller
         ];
 
         return Inertia::render('Workspace/RadiologyWorkspace', [
+            'can' => $can,
             'orders' => $orders,
             'pendingOrders' => $pendingOrders,
             'reportingOrders' => $reportingOrders,

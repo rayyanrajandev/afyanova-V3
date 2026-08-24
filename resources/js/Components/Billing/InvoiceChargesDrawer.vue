@@ -48,6 +48,10 @@ const props = defineProps({
         type: Boolean,
         default: false,
     },
+    can: {
+        type: Object,
+        default: () => ({}),
+    },
 });
 
 const emit = defineEmits(['close', 'pay', 'refund']);
@@ -199,7 +203,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown));
                                     </Button>
 
                                     <Button
-                                        v-if="!isPaidInFull"
+                                        v-if="!isPaidInFull && can.pay"
                                         variant="default"
                                         size="sm"
                                         class="h-7 px-3 text-[11px] gap-1.5 shadow-2xs font-semibold"
@@ -210,7 +214,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown));
                                     </Button>
 
                                     <Button
-                                        v-else
+                                        v-else-if="isPaidInFull && can.refund"
                                         variant="subtle"
                                         size="sm"
                                         class="h-7 px-2.5 text-[11px] gap-1.5 text-muted-foreground hover:text-foreground"
@@ -247,7 +251,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown));
                                 </div>
 
                                 <Button
-                                    v-if="invoice.status !== 'Paid'"
+                                    v-if="invoice.status !== 'Paid' && can.addItem"
                                     variant="outline"
                                     size="sm"
                                     class="h-6 px-2 text-[10px] gap-1 shadow-2xs"

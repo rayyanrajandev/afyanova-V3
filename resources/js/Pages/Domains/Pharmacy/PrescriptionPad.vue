@@ -54,6 +54,10 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
+    can: {
+        type: Object,
+        default: () => ({}),
+    },
 });
 
 const form = useForm({
@@ -90,7 +94,7 @@ const isMedicationAlreadyPrescribed = (medId) => {
 // Auto-calculate Total Quantity based on Frequency and Duration
 const calculateQuantity = () => {
     const duration = parseInt(form.duration_days) || 0;
-    let multiplier = 1;
+    let multiplier;
 
     switch (form.frequency) {
         case 'OD': multiplier = 1; break;
@@ -366,11 +370,12 @@ const cancelAllergyOrder = () => {
 
                 <!-- 8. Submit Action (3 cols) -->
                 <div class="sm:col-span-2 lg:col-span-3 flex items-end">
-                    <Button 
-                        type="submit" 
-                        variant="default" 
-                        size="sm" 
-                        :disabled="form.processing || !form.medication_id" 
+                    <Button
+                        v-if="can.prescribe"
+                        type="submit"
+                        variant="default"
+                        size="sm"
+                        :disabled="form.processing || !form.medication_id"
                         class="w-full h-8 gap-1.5 text-xs font-semibold shadow-2xs"
                     >
                         <Loader2 v-if="form.processing" class="w-3.5 h-3.5 animate-spin" />

@@ -2,7 +2,9 @@
 
 namespace App\Domains\Insurance\Http\Controllers;
 
+use App\Core\Traits\AuthorizesWorkspaceAccess;
 use App\Domains\Clinical\Models\Encounter;
+use App\Domains\Identity\Services\AuthorizationService;
 use App\Domains\Insurance\Actions\AdjudicateClaimAction;
 use App\Domains\Insurance\Actions\GenerateClaimFromEncounterAction;
 use App\Domains\Insurance\Actions\RequestPreAuthAction;
@@ -19,10 +21,20 @@ use Inertia\Inertia;
 
 class InsuranceWorkspaceController extends Controller
 {
-    use AuthorizesRequests;
+    use AuthorizesRequests, AuthorizesWorkspaceAccess;
 
-    public function index()
+    public function index(Request $request, AuthorizationService $authService)
     {
+        $this->authorizeAnyWorkspacePermission($request->user(), $authService, ['insurance.claim.view']);
+
+        $can = $this->buildSectionCanMap($request->user(), $authService, [
+            'generateClaim' => 'insurance.claim.create',
+            'batchSubmit' => 'insurance.claim.submit',
+            'verifyPolicy' => 'insurance.policy.verify',
+            'storePreAuth' => 'insurance.preauth.create',
+            'adjudicate' => 'insurance.claim.adjudicate',
+        ]);
+
         $claimsQueue = InsuranceClaim::with(['patient', 'policy.provider', 'policy.scheme', 'encounter.diagnoses', 'items'])
             ->whereIn('status', ['Draft', 'Vetted'])
             ->orderBy('created_at', 'desc')
@@ -62,6 +74,7 @@ class InsuranceWorkspaceController extends Controller
         ];
 
         return Inertia::render('Workspace/InsuranceWorkspace', [
+            'can' => $can,
             'claimsQueue' => $claimsQueue,
             'submittedClaims' => $submittedClaims,
             'preAuthorizations' => $preAuthorizations,
@@ -72,8 +85,10 @@ class InsuranceWorkspaceController extends Controller
         ]);
     }
 
-    public function generateClaim(Request $request, GenerateClaimFromEncounterAction $action)
+    public function generateClaim(Request $request, GenerateClaimFromEncounterAction $action, AuthorizationService $authService)
     {
+        abort_unless($authService->hasPermission($request->user(), 'insurance.claim.create'), 403);
+
         $validated = $request->validate([
             'encounter_id' => 'required|string|exists:encounters,id',
             'patient_policy_id' => 'nullable|string|exists:patient_policies,id',
@@ -95,8 +110,10 @@ class InsuranceWorkspaceController extends Controller
         }
     }
 
-    public function verifyPolicy(PatientPolicy $policy, VerifyPolicyEligibilityAction $action)
+    public function verifyPolicy(PatientPolicy $policy, VerifyPolicyEligibilityAction $action, Request $request, AuthorizationService $authService)
     {
+        abort_unless($authService->hasPermission($request->user(), 'insurance.policy.verify'), 403);
+
         try {
             $action->execute($policy, true);
 
@@ -106,8 +123,10 @@ class InsuranceWorkspaceController extends Controller
         }
     }
 
-    public function storePreAuth(Request $request, RequestPreAuthAction $action)
+    public function storePreAuth(Request $request, RequestPreAuthAction $action, AuthorizationService $authService)
     {
+        abort_unless($authService->hasPermission($request->user(), 'insurance.preauth.create'), 403);
+
         $validated = $request->validate([
             'patient_policy_id' => 'required|string|exists:patient_policies,id',
             'encounter_id' => 'nullable|string|exists:encounters,id',
@@ -152,8 +171,10 @@ class InsuranceWorkspaceController extends Controller
         }
     }
 
-    public function batchSubmit(Request $request, SubmitClaimBatchAction $action)
+    public function batchSubmit(Request $request, SubmitClaimBatchAction $action, AuthorizationService $authService)
     {
+        abort_unless($authService->hasPermission($request->user(), 'insurance.claim.submit'), 403);
+
         $validated = $request->validate([
             'claim_ids' => 'required|array|min:1',
             'claim_ids.*' => 'required|string|exists:insurance_claims,id',

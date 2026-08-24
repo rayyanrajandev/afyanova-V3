@@ -54,6 +54,8 @@ abstract class TestCase extends BaseTestCase
         // one of these guarded actions.
         $baselinePermissions = [
             'clinical.notes.sign' => ['name' => 'Sign Clinical Notes', 'domain' => 'Clinical'],
+            'clinical.notes.create' => ['name' => 'Add Clinical Note', 'domain' => 'Clinical'],
+            'clinical.vitals.record' => ['name' => 'Record Vital Signs', 'domain' => 'Clinical'],
             'clinical.encounter.create' => ['name' => 'Start Encounter', 'domain' => 'Clinical'],
             'lab.order.create' => ['name' => 'Order Lab Investigations', 'domain' => 'Clinical'],
             'procedure.order.create' => ['name' => 'Order Procedures', 'domain' => 'Procedure'],
@@ -68,6 +70,14 @@ abstract class TestCase extends BaseTestCase
             'radiology.order.create' => ['name' => 'Order Diagnostic Imaging', 'domain' => 'Radiology'],
             'radiology.report.sign' => ['name' => 'Sign Radiology Report', 'domain' => 'Radiology'],
             'radiology.report.amend' => ['name' => 'Amend Radiology Report', 'domain' => 'Radiology'],
+            'patient.registry.view' => ['name' => 'View Patient Registry', 'domain' => 'Patient'],
+            'billing.invoice.view' => ['name' => 'View Invoices', 'domain' => 'Billing'],
+            'clinical.encounter.view' => ['name' => 'View Encounters', 'domain' => 'Clinical'],
+            'inpatient.ward.view' => ['name' => 'View Ward & Bed Status', 'domain' => 'Inpatient'],
+            'identity.user.manage' => ['name' => 'Manage Staff Accounts', 'domain' => 'Identity'],
+            'identity.role.manage' => ['name' => 'Manage Roles & Permissions', 'domain' => 'Identity'],
+            'lab.order.view' => ['name' => 'View Lab Orders & Results', 'domain' => 'Laboratory'],
+            'insurance.claim.view' => ['name' => 'View Insurance Claims', 'domain' => 'Insurance'],
         ];
 
         foreach ($baselinePermissions as $slug => $attrs) {

@@ -57,6 +57,10 @@ import AfyaPatientIdentity from '@/Components/Afya/AfyaPatientIdentity.vue';
 import { useWorkspacePreferences } from '@/Composables/useWorkspacePreferences';
 
 const props = defineProps({
+    can: {
+        type: Object,
+        default: () => ({}),
+    },
     wards: {
         type: Array,
         default: () => [],
@@ -432,9 +436,10 @@ const formatCurrency = (val) => {
                                 <ShieldCheck class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                                 <span>Occupancy: <strong>{{ censusMetrics.rate }}%</strong></span>
                             </span>
-                            <Button 
-                                variant="default" 
-                                size="sm" 
+                            <Button
+                                v-if="can.admit"
+                                variant="default"
+                                size="sm"
                                 class="h-7.5 px-3 text-xs font-semibold gap-1.5 shadow-2xs"
                                 @click="openAdmitForBed()"
                             >
@@ -586,7 +591,7 @@ const formatCurrency = (val) => {
                                         </span>
 
                                         <Button
-                                            v-if="bed.status === 'Available'"
+                                            v-if="bed.status === 'Available' && can.admit"
                                             variant="default"
                                             size="sm"
                                             class="h-5 px-2 text-[10px] font-semibold shadow-2xs"
@@ -596,7 +601,7 @@ const formatCurrency = (val) => {
                                         </Button>
 
                                         <Button
-                                            v-else-if="bed.status === 'Cleaning'"
+                                            v-else-if="bed.status === 'Cleaning' && can.updateBedStatus"
                                             variant="outline"
                                             size="sm"
                                             class="h-5 px-2 text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800"
@@ -672,17 +677,19 @@ const formatCurrency = (val) => {
                                             </TableCell>
                                             <TableCell class="py-1 px-3 text-right">
                                                 <div class="flex items-center justify-end gap-1">
-                                                    <Button 
-                                                        variant="outline" 
-                                                        size="sm" 
+                                                    <Button
+                                                        v-if="can.transfer"
+                                                        variant="outline"
+                                                        size="sm"
                                                         class="h-6 px-2 text-[10.5px] font-semibold"
                                                         @click.stop="openTransferForAdmission(adm)"
                                                     >
                                                         Transfer
                                                     </Button>
-                                                    <Button 
-                                                        variant="default" 
-                                                        size="sm" 
+                                                    <Button
+                                                        v-if="can.discharge"
+                                                        variant="default"
+                                                        size="sm"
                                                         class="h-6 px-2 text-[10.5px] font-semibold"
                                                         @click.stop="openDischargeForAdmission(adm)"
                                                     >
@@ -841,8 +848,9 @@ const formatCurrency = (val) => {
                                     <Pill class="w-3.5 h-3.5 text-primary" />
                                     <span>Nursing e-MAR & Doses</span>
                                 </div>
-                                <button 
-                                    @click="openMarForAdmission(selectedAdmission)" 
+                                <button
+                                    v-if="can.administerMar"
+                                    @click="openMarForAdmission(selectedAdmission)"
                                     class="text-[10px] font-bold text-primary hover:underline flex items-center gap-0.5"
                                 >
                                     <Plus class="w-3 h-3" />
@@ -884,8 +892,9 @@ const formatCurrency = (val) => {
 
                         <!-- Actions Bar -->
                         <div class="space-y-1.5 pt-1.5">
-                            <Button 
-                                variant="default" 
+                            <Button
+                                v-if="can.administerMar"
+                                variant="default"
                                 class="w-full h-8 text-xs font-semibold justify-center gap-1.5 bg-primary/90 hover:bg-primary text-primary-foreground shadow-2xs"
                                 @click="openMarForAdmission(selectedAdmission)"
                             >
@@ -893,8 +902,9 @@ const formatCurrency = (val) => {
                                 <span>Chart & Dispense Dose (e-MAR)</span>
                             </Button>
 
-                            <Button 
-                                variant="outline" 
+                            <Button
+                                v-if="can.transfer"
+                                variant="outline"
                                 class="w-full h-8 text-xs font-semibold justify-center gap-1.5 shadow-2xs"
                                 @click="openTransferForAdmission(selectedAdmission)"
                             >
@@ -902,8 +912,9 @@ const formatCurrency = (val) => {
                                 <span>Transfer Bed / Ward</span>
                             </Button>
 
-                            <Button 
-                                variant="default" 
+                            <Button
+                                v-if="can.discharge"
+                                variant="default"
                                 class="w-full h-8 text-xs font-semibold justify-center gap-1.5 bg-rose-700 hover:bg-rose-800 text-white shadow-2xs"
                                 @click="openDischargeForAdmission(selectedAdmission)"
                             >
@@ -937,14 +948,14 @@ const formatCurrency = (val) => {
                             </div>
                         </div>
 
-                        <div v-if="selectedBed.status === 'Available'" class="pt-1">
+                        <div v-if="selectedBed.status === 'Available' && can.admit" class="pt-1">
                             <Button variant="default" class="w-full h-8 text-xs font-semibold gap-1.5 shadow-2xs" @click="openAdmitForBed(selectedBed)">
                                 <Plus class="w-3.5 h-3.5" />
                                 <span>Admit Patient to {{ selectedBed.bed_number }}</span>
                             </Button>
                         </div>
 
-                        <div v-else-if="selectedBed.status === 'Cleaning'" class="pt-1">
+                        <div v-else-if="selectedBed.status === 'Cleaning' && can.updateBedStatus" class="pt-1">
                             <Button variant="outline" class="w-full h-8 text-xs font-semibold text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800 shadow-2xs" @click="markBedCleaned(selectedBed)">
                                 <Check class="w-3.5 h-3.5 mr-1" />
                                 <span>Mark Bed Sanitized & Ready</span>

@@ -33,6 +33,10 @@ const props = defineProps({
         type: Object,
         default: () => ({}),
     },
+    can: {
+        type: Object,
+        default: () => ({}),
+    },
 });
 
 const emit = defineEmits(['close']);
@@ -155,7 +159,7 @@ const handleCloseShift = () => {
 
             <div class="flex items-center justify-end gap-2 pt-3 border-t border-border">
                 <Button variant="outline" size="sm" @click="emit('close')" :disabled="isSubmittingOpen">Cancel</Button>
-                <Button variant="default" size="sm" @click="handleOpenShift" :disabled="isSubmittingOpen">
+                <Button v-if="can.openShift" variant="default" size="sm" @click="handleOpenShift" :disabled="isSubmittingOpen">
                     <Loader2 v-if="isSubmittingOpen" class="w-3.5 h-3.5 animate-spin mr-1.5" />
                     <span>Open Shift Session</span>
                 </Button>
@@ -255,7 +259,7 @@ const handleCloseShift = () => {
 
             <div class="flex items-center justify-end gap-2 pt-3 border-t border-border">
                 <Button variant="outline" size="sm" @click="emit('close')" :disabled="isSubmittingClose">Cancel</Button>
-                <Button variant="destructive" size="sm" @click="handleCloseShift" :disabled="isSubmittingClose || closingCashCounted === ''">
+                <Button v-if="can.closeShift" variant="destructive" size="sm" @click="handleCloseShift" :disabled="isSubmittingClose || closingCashCounted === ''">
                     <Loader2 v-if="isSubmittingClose" class="w-3.5 h-3.5 animate-spin mr-1.5" />
                     <span>Confirm Shift Close & Handover</span>
                 </Button>

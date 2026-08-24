@@ -51,6 +51,10 @@ import AfyaPatientIdentity from '@/Components/Afya/AfyaPatientIdentity.vue';
 import { useWorkspacePreferences } from '@/Composables/useWorkspacePreferences';
 
 const props = defineProps({
+    can: {
+        type: Object,
+        default: () => ({}),
+    },
     labTests: {
         type: Array,
         default: () => [],
@@ -429,10 +433,10 @@ const formatCurrency = (val) => Number(val || 0).toLocaleString('en-US');
                                 <span>{{ metrics.critical_alerts }} Panic Critical Value Alerts</span>
                             </span>
 
-                            <Button 
-                                v-if="activeSection === 'catalogue'"
-                                variant="default" 
-                                size="sm" 
+                            <Button
+                                v-if="activeSection === 'catalogue' && can.storeTest"
+                                variant="default"
+                                size="sm"
                                 class="h-7.5 px-3 text-xs font-semibold gap-1.5 shadow-2xs"
                                 @click="openAddTestModal()"
                             >
@@ -561,6 +565,7 @@ const formatCurrency = (val) => Number(val || 0).toLocaleString('en-US');
                                             </TableCell>
                                             <TableCell class="py-1 px-3 text-right">
                                                 <Button
+                                                    v-if="can.collectSample"
                                                     variant="default"
                                                     size="sm"
                                                     class="h-6 px-2 text-[10.5px] font-semibold gap-1 shadow-2xs"
@@ -638,6 +643,7 @@ const formatCurrency = (val) => Number(val || 0).toLocaleString('en-US');
                                             </TableCell>
                                             <TableCell class="py-1 px-3 text-right">
                                                 <Button
+                                                    v-if="can.saveResults"
                                                     variant="default"
                                                     size="sm"
                                                     class="h-6 px-2 text-[10.5px] font-semibold gap-1 shadow-2xs"
@@ -733,7 +739,7 @@ const formatCurrency = (val) => Number(val || 0).toLocaleString('en-US');
                                             </TableCell>
                                             <TableCell class="py-1 px-3 text-right">
                                                 <Button
-                                                    v-if="!item.verified_by_id"
+                                                    v-if="!item.verified_by_id && can.verifyResults"
                                                     variant="outline"
                                                     size="sm"
                                                     class="h-6 px-2 text-[10px] font-semibold gap-1 text-primary border-primary/30"
@@ -918,7 +924,7 @@ const formatCurrency = (val) => Number(val || 0).toLocaleString('en-US');
                         <!-- Action Triggers -->
                         <div class="space-y-1.5 pt-1">
                             <Button
-                                v-if="selectedItem.status === 'Pending' || selectedItem.status === 'Ordered'"
+                                v-if="(selectedItem.status === 'Pending' || selectedItem.status === 'Ordered') && can.collectSample"
                                 variant="default"
                                 class="w-full h-8 text-xs font-semibold justify-center gap-1.5 shadow-2xs"
                                 @click="openCollectModal(selectedItem)"
@@ -928,7 +934,7 @@ const formatCurrency = (val) => Number(val || 0).toLocaleString('en-US');
                             </Button>
 
                             <Button
-                                v-else-if="selectedItem.status === 'Sample Collected' || selectedItem.status === 'Testing'"
+                                v-else-if="(selectedItem.status === 'Sample Collected' || selectedItem.status === 'Testing') && can.saveResults"
                                 variant="default"
                                 class="w-full h-8 text-xs font-semibold justify-center gap-1.5 shadow-2xs"
                                 @click="openResultsModal(selectedItem)"
@@ -938,7 +944,7 @@ const formatCurrency = (val) => Number(val || 0).toLocaleString('en-US');
                             </Button>
 
                             <Button
-                                v-else-if="selectedItem.status === 'Completed' && !selectedItem.verified_by_id"
+                                v-else-if="selectedItem.status === 'Completed' && !selectedItem.verified_by_id && can.verifyResults"
                                 variant="outline"
                                 class="w-full h-8 text-xs font-semibold justify-center gap-1.5 text-primary border-primary/30 shadow-2xs"
                                 @click="openVerifyModal(selectedItem)"

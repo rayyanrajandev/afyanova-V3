@@ -2,6 +2,8 @@
 
 namespace App\Domains\Inventory\Http\Controllers;
 
+use App\Core\Traits\AuthorizesWorkspaceAccess;
+use App\Domains\Identity\Services\AuthorizationService;
 use App\Domains\Inventory\Actions\ApproveDepartmentRequisitionAction;
 use App\Domains\Inventory\Actions\ApprovePurchaseOrderAction;
 use App\Domains\Inventory\Actions\ConfirmDepartmentRequisitionAction;
@@ -9,6 +11,7 @@ use App\Domains\Inventory\Actions\ConfirmStockTransferAction;
 use App\Domains\Inventory\Actions\CreateDepartmentRequisitionAction;
 use App\Domains\Inventory\Actions\CreatePurchaseOrderAction;
 use App\Domains\Inventory\Actions\CreateStockTransferAction;
+use App\Domains\Inventory\Actions\GeneratePredictiveReordersAction;
 use App\Domains\Inventory\Actions\IssueDepartmentRequisitionAction;
 use App\Domains\Inventory\Actions\ProcessGoodsReceiptAction;
 use App\Domains\Inventory\Actions\ReconcileStocktakeSessionAction;
@@ -40,12 +43,57 @@ use Inertia\Response;
 
 class InventoryWorkspaceController extends Controller
 {
-    use AuthorizesRequests;
+    use AuthorizesRequests, AuthorizesWorkspaceAccess;
 
-    public function index(Request $request): Response
+    private const SECTION_SLUGS = [
+        'stock' => 'inventory.stock.view',
+        'catalog' => 'inventory.catalog.view',
+        'requisition' => 'inventory.requisition.view',
+        'transfer' => 'inventory.transfer.view',
+        'po' => 'inventory.po.view',
+        'predictive' => 'inventory.predictive.view',
+        'grn' => 'inventory.grn.view',
+        'dda' => 'inventory.dda.view',
+        'gas' => 'inventory.gas.view',
+        'stocktake' => 'inventory.stocktake.view',
+    ];
+
+    // View permission and write permission are separate slugs (e.g.
+    // inventory.requisition.view vs .create) — a role can hold one without
+    // the other, so button visibility needs its own map, not a reuse of
+    // SECTION_SLUGS.
+    private const ACTION_SLUGS = [
+        'storeItem' => 'inventory.catalog.manage',
+        'storeRequisition' => 'inventory.requisition.create',
+        'approveRequisition' => 'inventory.requisition.approve',
+        'issueRequisition' => 'inventory.requisition.issue',
+        'confirmRequisition' => 'inventory.requisition.confirm',
+        'storeTransfer' => 'inventory.transfer.dispatch',
+        'confirmTransfer' => 'inventory.transfer.confirm',
+        'storePurchaseOrder' => 'inventory.po.create',
+        'approvePurchaseOrder' => 'inventory.po.approve',
+        'storeGoodsReceipt' => 'inventory.grn.receive',
+        'storeStocktake' => 'inventory.stocktake.approve',
+        'storeDdaLog' => 'inventory.dda.record',
+        'generatePredictiveReorder' => 'inventory.predictive.generate',
+    ];
+
+    public function index(Request $request, AuthorizationService $authService): Response
     {
+        $this->authorizeAnyWorkspacePermission($request->user(), $authService, array_values(self::SECTION_SLUGS));
+
+        $can = array_merge(
+            $this->buildSectionCanMap($request->user(), $authService, self::SECTION_SLUGS),
+            $this->buildSectionCanMap($request->user(), $authService, self::ACTION_SLUGS)
+        );
+
         $tenantId = auth()->user()?->tenant_id ?? Tenant::first()?->id;
 
+        // Shared reference/lookup data (facility list, item names, supplier
+        // list, units of measure) needed across multiple sections' forms —
+        // not gated per-section, since e.g. the requisition-creation form
+        // needs the item picker regardless of whether the user can also see
+        // the standalone catalog tab.
         $locations = InventoryLocation::with('facility')
             ->where('tenant_id', $tenantId)
             ->where('is_active', true)
@@ -53,52 +101,7 @@ class InventoryWorkspaceController extends Controller
 
         $selectedLocationId = $request->get('location_id', $locations->first()?->id);
 
-        $stockBalances = InventoryStockBalance::with(['medication', 'batch', 'location'])
-            ->where('tenant_id', $tenantId)
-            ->when($selectedLocationId, fn ($q) => $q->where('location_id', $selectedLocationId))
-            ->get();
-
         $itemMasters = ItemMaster::with(['baseUom', 'purchasingUom', 'medication'])
-            ->where('tenant_id', $tenantId)
-            ->get();
-
-        $requisitions = DepartmentRequisition::with(['department', 'sourceLocation', 'destinationLocation', 'items.item', 'requestedBy', 'approvedBy', 'dispatchedBy', 'receivedBy'])
-            ->where('tenant_id', $tenantId)
-            ->latest()
-            ->limit(40)
-            ->get();
-
-        $transfers = StockTransfer::with(['sourceLocation', 'destinationLocation', 'items.medication', 'items.batch', 'dispatchedBy', 'receivedBy'])
-            ->where('tenant_id', $tenantId)
-            ->latest()
-            ->limit(30)
-            ->get();
-
-        $purchaseOrders = PurchaseOrder::with(['supplier', 'facility', 'destinationLocation', 'items.medication', 'orderedBy', 'approvedBy'])
-            ->where('tenant_id', $tenantId)
-            ->latest()
-            ->limit(30)
-            ->get();
-
-        $goodsReceiptNotes = GoodsReceiptNote::with(['supplier', 'facility', 'location', 'purchaseOrder', 'items.medication', 'items.batch', 'receivedBy'])
-            ->where('tenant_id', $tenantId)
-            ->latest()
-            ->limit(30)
-            ->get();
-
-        $stocktakeSessions = StocktakeSession::with(['facility', 'location', 'items.medication', 'items.batch', 'initiatedBy', 'approvedBy'])
-            ->where('tenant_id', $tenantId)
-            ->latest()
-            ->limit(20)
-            ->get();
-
-        $ddaLogs = DdaRegisterLog::with(['item', 'batch', 'patient', 'prescriber', 'administeringNurse', 'witness'])
-            ->where('tenant_id', $tenantId)
-            ->latest()
-            ->limit(30)
-            ->get();
-
-        $gasCylinders = MedicalGasCylinder::with('currentLocation')
             ->where('tenant_id', $tenantId)
             ->get();
 
@@ -109,22 +112,96 @@ class InventoryWorkspaceController extends Controller
         $unitsOfMeasure = UnitOfMeasure::where('tenant_id', $tenantId)->get();
         $batches = InventoryBatch::with('medication')->where('tenant_id', $tenantId)->where('status', 'Active')->get();
 
-        // Metrics
-        $totalStockValue = $stockBalances->sum(function ($b) {
-            $cost = $b->batch ? (float) $b->batch->unit_cost : 0;
+        $stockBalances = $can['stock']
+            ? InventoryStockBalance::with(['medication', 'batch', 'location'])
+                ->where('tenant_id', $tenantId)
+                ->when($selectedLocationId, fn ($q) => $q->where('location_id', $selectedLocationId))
+                ->get()
+            : collect();
 
-            return $b->quantity_on_hand * $cost;
-        });
+        $requisitions = $can['requisition']
+            ? DepartmentRequisition::with(['department', 'sourceLocation', 'destinationLocation', 'items.item', 'requestedBy', 'approvedBy', 'dispatchedBy', 'receivedBy'])
+                ->where('tenant_id', $tenantId)
+                ->latest()
+                ->limit(40)
+                ->get()
+            : collect();
 
-        $inTransitCount = $transfers->where('status', 'Dispatched_In_Transit')->count() + $requisitions->where('status', 'Dispatched_In_Transit')->count();
-        $pendingRequisitionsCount = $requisitions->where('status', 'Submitted')->count();
-        $pendingPoCount = $purchaseOrders->whereIn('status', ['Draft', 'Submitted'])->count();
-        $reorderAlertsCount = $stockBalances->filter(fn ($b) => $b->quantity_on_hand <= $b->reorder_level)->count();
+        $transfers = $can['transfer']
+            ? StockTransfer::with(['sourceLocation', 'destinationLocation', 'items.medication', 'items.batch', 'dispatchedBy', 'receivedBy'])
+                ->where('tenant_id', $tenantId)
+                ->latest()
+                ->limit(30)
+                ->get()
+            : collect();
 
-        $predictiveData = (new \App\Domains\Inventory\Actions\GeneratePredictiveReordersAction)
-            ->execute($tenantId, $facilities->first()?->id ?? 'default', false);
+        $purchaseOrders = $can['po']
+            ? PurchaseOrder::with(['supplier', 'facility', 'destinationLocation', 'items.medication', 'orderedBy', 'approvedBy'])
+                ->where('tenant_id', $tenantId)
+                ->latest()
+                ->limit(30)
+                ->get()
+            : collect();
+
+        $goodsReceiptNotes = $can['grn']
+            ? GoodsReceiptNote::with(['supplier', 'facility', 'location', 'purchaseOrder', 'items.medication', 'items.batch', 'receivedBy'])
+                ->where('tenant_id', $tenantId)
+                ->latest()
+                ->limit(30)
+                ->get()
+            : collect();
+
+        $stocktakeSessions = $can['stocktake']
+            ? StocktakeSession::with(['facility', 'location', 'items.medication', 'items.batch', 'initiatedBy', 'approvedBy'])
+                ->where('tenant_id', $tenantId)
+                ->latest()
+                ->limit(20)
+                ->get()
+            : collect();
+
+        $ddaLogs = $can['dda']
+            ? DdaRegisterLog::with(['item', 'batch', 'patient', 'prescriber', 'administeringNurse', 'witness'])
+                ->where('tenant_id', $tenantId)
+                ->latest()
+                ->limit(30)
+                ->get()
+            : collect();
+
+        $gasCylinders = $can['gas']
+            ? MedicalGasCylinder::with('currentLocation')
+                ->where('tenant_id', $tenantId)
+                ->get()
+            : collect();
+
+        // Metrics — each key only computed from a section the user can see,
+        // so an aggregate number never leaks a count derived from rows the
+        // user isn't allowed to view individually.
+        $totalStockValue = $can['stock']
+            ? $stockBalances->sum(function ($b) {
+                $cost = $b->batch ? (float) $b->batch->unit_cost : 0;
+
+                return $b->quantity_on_hand * $cost;
+            })
+            : null;
+
+        $inTransitCount = null;
+        if ($can['transfer'] || $can['requisition']) {
+            $inTransitCount = ($can['transfer'] ? $transfers->where('status', 'Dispatched_In_Transit')->count() : 0)
+                + ($can['requisition'] ? $requisitions->where('status', 'Dispatched_In_Transit')->count() : 0);
+        }
+
+        $pendingRequisitionsCount = $can['requisition'] ? $requisitions->where('status', 'Submitted')->count() : null;
+        $pendingPoCount = $can['po'] ? $purchaseOrders->whereIn('status', ['Draft', 'Submitted'])->count() : null;
+        $reorderAlertsCount = $can['stock'] ? $stockBalances->filter(fn ($b) => $b->quantity_on_hand <= $b->reorder_level)->count() : null;
+
+        $predictiveData = null;
+        if ($can['predictive']) {
+            $predictiveData = (new GeneratePredictiveReordersAction)
+                ->execute($tenantId, $facilities->first()?->id ?? 'default', false);
+        }
 
         return Inertia::render('Workspace/InventoryWorkspace', [
+            'can' => $can,
             'locations' => $locations,
             'selectedLocationId' => $selectedLocationId,
             'stockBalances' => $stockBalances,
@@ -150,14 +227,16 @@ class InventoryWorkspaceController extends Controller
                 'pending_purchase_orders' => $pendingPoCount,
                 'reorder_alerts_count' => $reorderAlertsCount,
                 'total_locations' => $locations->count(),
-                'total_items_catalog' => $itemMasters->count(),
-                'predictive_reorders_needed' => $predictiveData['items_needing_reorder_count'] ?? 0,
+                'total_items_catalog' => $can['catalog'] ? $itemMasters->count() : null,
+                'predictive_reorders_needed' => $can['predictive'] ? ($predictiveData['items_needing_reorder_count'] ?? 0) : null,
             ],
         ]);
     }
 
     public function storeItem(Request $request): RedirectResponse
     {
+        $this->authorize('manageCatalog', InventoryLocation::class);
+
         $tenantId = auth()->user()?->tenant_id ?? Tenant::first()?->id;
 
         $validated = $request->validate([
@@ -183,6 +262,8 @@ class InventoryWorkspaceController extends Controller
 
     public function storeRequisition(Request $request, CreateDepartmentRequisitionAction $action): RedirectResponse
     {
+        $this->authorize('createRequisition', [InventoryLocation::class, $request->input('facility_id')]);
+
         $validated = $request->validate([
             'facility_id' => 'required|string',
             'department_id' => 'nullable|string',
@@ -211,6 +292,9 @@ class InventoryWorkspaceController extends Controller
 
     public function approveRequisition(Request $request, string $id, ApproveDepartmentRequisitionAction $action): RedirectResponse
     {
+        $requisition = DepartmentRequisition::findOrFail($id);
+        $this->authorize('approveRequisition', [InventoryLocation::class, $requisition->facility_id]);
+
         $validated = $request->validate([
             'approved_quantities' => 'nullable|array',
             'notes' => 'nullable|string',
@@ -223,6 +307,9 @@ class InventoryWorkspaceController extends Controller
 
     public function issueRequisition(Request $request, string $id, IssueDepartmentRequisitionAction $action): RedirectResponse
     {
+        $requisition = DepartmentRequisition::findOrFail($id);
+        $this->authorize('issueRequisition', [InventoryLocation::class, $requisition->facility_id]);
+
         $validated = $request->validate([
             'allocations' => 'nullable|array',
             'notes' => 'nullable|string',
@@ -235,6 +322,9 @@ class InventoryWorkspaceController extends Controller
 
     public function confirmRequisition(Request $request, string $id, ConfirmDepartmentRequisitionAction $action): RedirectResponse
     {
+        $requisition = DepartmentRequisition::findOrFail($id);
+        $this->authorize('confirmRequisition', [InventoryLocation::class, $requisition->facility_id]);
+
         $validated = $request->validate([
             'received_quantities' => 'nullable|array',
             'notes' => 'nullable|string',
@@ -283,6 +373,9 @@ class InventoryWorkspaceController extends Controller
 
     public function storeTransfer(Request $request, CreateStockTransferAction $action): RedirectResponse
     {
+        $sourceLocation = InventoryLocation::findOrFail($request->input('source_location_id'));
+        $this->authorize('dispatchTransfer', $sourceLocation);
+
         $validated = $request->validate([
             'source_location_id' => 'required|string',
             'destination_location_id' => 'required|string|different:source_location_id',
@@ -306,6 +399,9 @@ class InventoryWorkspaceController extends Controller
 
     public function confirmTransfer(Request $request, string $id, ConfirmStockTransferAction $action): RedirectResponse
     {
+        $transfer = StockTransfer::with('destinationLocation')->findOrFail($id);
+        $this->authorize('confirmTransfer', $transfer->destinationLocation);
+
         $validated = $request->validate([
             'received_items' => 'nullable|array',
             'notes' => 'nullable|string',
@@ -323,6 +419,8 @@ class InventoryWorkspaceController extends Controller
 
     public function storePurchaseOrder(Request $request, CreatePurchaseOrderAction $action): RedirectResponse
     {
+        $this->authorize('createPurchaseOrder', [InventoryLocation::class, $request->input('facility_id')]);
+
         $validated = $request->validate([
             'supplier_id' => 'required|string',
             'facility_id' => 'required|string',
@@ -362,6 +460,8 @@ class InventoryWorkspaceController extends Controller
 
     public function storeGoodsReceipt(Request $request, ProcessGoodsReceiptAction $action): RedirectResponse
     {
+        $this->authorize('receiveGoods', [InventoryLocation::class, $request->input('facility_id')]);
+
         $validated = $request->validate([
             'purchase_order_id' => 'nullable|string',
             'supplier_id' => 'required|string',
@@ -401,6 +501,9 @@ class InventoryWorkspaceController extends Controller
 
     public function storeStocktake(Request $request, ReconcileStocktakeSessionAction $action): RedirectResponse
     {
+        $session = StocktakeSession::findOrFail($request->input('session_id'));
+        $this->authorize('reconcileStocktake', [InventoryLocation::class, $session->facility_id]);
+
         $validated = $request->validate([
             'session_id' => 'required|string',
             'counts' => 'required|array|min:1',
@@ -468,6 +571,8 @@ class InventoryWorkspaceController extends Controller
     {
         $tenantId = auth()->user()?->tenant_id ?? Tenant::first()?->id;
         $facilityId = auth()->user()?->facility_id ?? Facility::where('tenant_id', $tenantId)->first()?->id ?? 'default';
+
+        $this->authorize('generatePredictiveReorder', [InventoryLocation::class, $facilityId]);
 
         $result = $action->execute($tenantId, $facilityId, true);
 
