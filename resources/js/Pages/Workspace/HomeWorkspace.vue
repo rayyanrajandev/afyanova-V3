@@ -350,7 +350,7 @@ const formatCurrency = (amount) => {
                                 </Link>
                             </div>
 
-                            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
+                            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
                                 
                                 <!-- Desk 1: Triage & Doctor -->
                                 <component
@@ -358,7 +358,7 @@ const formatCurrency = (amount) => {
                                     :href="getDeskRoute('Triage')"
                                     class="block"
                                 >
-                                    <div class="p-2.5 rounded-lg border border-border/80 bg-card hover:bg-muted/40 transition-all flex items-center justify-between shadow-2xs group cursor-pointer">
+                                    <div class="p-3 rounded-lg border border-border/80 bg-card hover:bg-muted/40 transition-all flex items-center justify-between shadow-2xs group cursor-pointer">
                                         <div class="flex items-center gap-2 min-w-0">
                                             <div class="w-7.5 h-7.5 rounded-md bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
                                                 <Stethoscope class="w-4 h-4" />
@@ -383,7 +383,7 @@ const formatCurrency = (amount) => {
                                     :href="getDeskRoute('Procedure')"
                                     class="block"
                                 >
-                                    <div class="p-2.5 rounded-lg border border-rose-200 dark:border-rose-900/60 bg-card hover:bg-rose-50/20 transition-all flex items-center justify-between shadow-2xs group cursor-pointer">
+                                    <div class="p-3 rounded-lg border border-rose-200 dark:border-rose-900/60 bg-card hover:bg-rose-50/20 transition-all flex items-center justify-between shadow-2xs group cursor-pointer">
                                         <div class="flex items-center gap-2 min-w-0">
                                             <div class="w-7.5 h-7.5 rounded-md bg-rose-100 dark:bg-rose-950/40 flex items-center justify-center text-rose-600 flex-shrink-0">
                                                 <Syringe class="w-4 h-4" />
@@ -408,7 +408,7 @@ const formatCurrency = (amount) => {
                                     :href="getDeskRoute('Lab')"
                                     class="block"
                                 >
-                                    <div class="p-2.5 rounded-lg border border-sky-200 dark:border-sky-900/60 bg-card hover:bg-sky-50/20 transition-all flex items-center justify-between shadow-2xs group cursor-pointer">
+                                    <div class="p-3 rounded-lg border border-sky-200 dark:border-sky-900/60 bg-card hover:bg-sky-50/20 transition-all flex items-center justify-between shadow-2xs group cursor-pointer">
                                         <div class="flex items-center gap-2 min-w-0">
                                             <div class="w-7.5 h-7.5 rounded-md bg-sky-100 dark:bg-sky-950/40 flex items-center justify-center text-sky-600 flex-shrink-0">
                                                 <FlaskConical class="w-4 h-4" />
@@ -433,7 +433,7 @@ const formatCurrency = (amount) => {
                                     :href="getDeskRoute('Pharmacy')"
                                     class="block"
                                 >
-                                    <div class="p-2.5 rounded-lg border border-amber-200 dark:border-amber-900/60 bg-card hover:bg-amber-50/20 transition-all flex items-center justify-between shadow-2xs group cursor-pointer">
+                                    <div class="p-3 rounded-lg border border-amber-200 dark:border-amber-900/60 bg-card hover:bg-amber-50/20 transition-all flex items-center justify-between shadow-2xs group cursor-pointer">
                                         <div class="flex items-center gap-2 min-w-0">
                                             <div class="w-7.5 h-7.5 rounded-md bg-amber-100 dark:bg-amber-950/40 flex items-center justify-center text-amber-600 flex-shrink-0">
                                                 <Pill class="w-4 h-4" />
@@ -458,7 +458,7 @@ const formatCurrency = (amount) => {
                                     :href="getDeskRoute('Cashier')"
                                     class="block"
                                 >
-                                    <div class="p-2.5 rounded-lg border border-emerald-200 dark:border-emerald-900/60 bg-card hover:bg-emerald-50/20 transition-all flex items-center justify-between shadow-2xs group cursor-pointer">
+                                    <div class="p-3 rounded-lg border border-emerald-200 dark:border-emerald-900/60 bg-card hover:bg-emerald-50/20 transition-all flex items-center justify-between shadow-2xs group cursor-pointer">
                                         <div class="flex items-center gap-2 min-w-0">
                                             <div class="w-7.5 h-7.5 rounded-md bg-emerald-100 dark:bg-emerald-950/40 flex items-center justify-center text-emerald-600 flex-shrink-0">
                                                 <Receipt class="w-4 h-4" />
@@ -745,7 +745,7 @@ const formatCurrency = (amount) => {
 
                     <!-- Appointment Context Inspector -->
                     <div v-else-if="selectedRecord?.type === 'appointment'" class="space-y-3 text-xs">
-                        <div class="p-2.5 rounded-lg bg-card border border-border/80 space-y-2">
+                        <div class="p-3 rounded-lg bg-card border border-border/80 space-y-2">
                             <div class="flex items-center justify-between">
                                 <span class="text-[10px] font-bold text-muted-foreground uppercase">Scheduled Slot</span>
                                 <AfyaStatusBadge :status="selectedRecord.data.status" dot />
@@ -758,7 +758,7 @@ const formatCurrency = (amount) => {
                             </div>
                         </div>
 
-                        <div v-if="selectedRecord.data.patient" class="p-2.5 rounded-lg bg-muted/30 border border-border/60 space-y-1">
+                        <div v-if="selectedRecord.data.patient" class="p-3 rounded-lg bg-muted/30 border border-border/60 space-y-1">
                             <div class="text-[10px] font-bold text-muted-foreground uppercase">Patient</div>
                             <div class="font-bold text-xs text-foreground">{{ selectedRecord.data.patient.first_name }} {{ selectedRecord.data.patient.last_name }}</div>
                             <div class="font-mono text-[10px] text-muted-foreground">MRN: {{ selectedRecord.data.patient.primary_mrn }}</div>

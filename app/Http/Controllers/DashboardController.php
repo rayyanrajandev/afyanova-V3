@@ -14,6 +14,7 @@ use App\Domains\Procedure\Models\ProcedureCatalog;
 use App\Domains\Scheduling\Enums\QueueTicketStatus;
 use App\Domains\Scheduling\Models\Appointment;
 use App\Domains\Scheduling\Models\QueueTicket;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -22,9 +23,14 @@ class DashboardController extends Controller
 {
     use AuthorizesWorkspaceAccess;
 
-    public function index(Request $request, AuthorizationService $authService): Response
+    public function index(Request $request, AuthorizationService $authService): Response|RedirectResponse
     {
         $user = $request->user();
+
+        // 1. Platform Superadmins land directly on the Multi-Tenant SaaS Control Plane (unless actively in support impersonation)
+        if (($authService->isSuperAdmin($user) || $authService->hasPermission($user, 'platform.superadmin.access')) && ! $request->session()->has('impersonation')) {
+            return redirect()->route('superadmin.workspace');
+        }
 
         $can = $this->buildSectionCanMap($user, $authService, [
             'clinical' => 'clinical.encounter.view',

@@ -101,3 +101,44 @@ test('audit logging captures cryptographic hashes for model events', function ()
         ->and($log->action)->toBe('CREATE')
         ->and($log->hash_signature)->not->toBeEmpty();
 });
+
+test('superadmin workspace renders global telemetry metrics without errors', function () {
+    $env = $this->setupTenantEnvironment();
+    $tenant = $env['tenant'];
+    $user = $env['user'];
+
+    $superRole = Role::create([
+        'tenant_id' => $tenant->id,
+        'name' => 'Platform Superadmin',
+        'slug' => 'super-admin',
+    ]);
+
+    $perm = Permission::firstOrCreate([
+        'name' => 'Superadmin Access',
+        'slug' => 'platform.superadmin.access',
+        'domain' => 'Platform',
+    ]);
+
+    $superRole->permissions()->attach($perm->id);
+
+    DB::table('role_assignments')->insert([
+        'id' => Uuid::uuid7()->toString(),
+        'user_id' => $user->id,
+        'role_id' => $superRole->id,
+        'facility_id' => null,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    app(\App\Domains\Identity\Services\AuthorizationService::class)->clearUserCache($user);
+
+    $response = $this->actingAs($user)->get(route('superadmin.workspace'));
+
+    $response->assertOk();
+    $response->assertInertia(fn ($page) => $page
+        ->component('Workspace/SuperadminWorkspace')
+        ->has('telemetry')
+        ->has('tenants')
+        ->has('recentLogs')
+    );
+});

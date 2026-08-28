@@ -2,14 +2,17 @@
 
 namespace App\Domains\Tenancy\Http\Controllers;
 
+use App\Domains\Clinical\Models\LabTest;
 use App\Domains\Identity\Models\User;
 use App\Domains\Identity\Services\AuthorizationService;
+use App\Domains\Pharmacy\Models\MedicationFormulary;
 use App\Domains\Tenancy\Actions\ExitImpersonationAction;
 use App\Domains\Tenancy\Actions\ImpersonateTenantUserAction;
 use App\Domains\Tenancy\Actions\ProvisionTenantAction;
 use App\Domains\Tenancy\Actions\SyncMasterDictionaryAction;
 use App\Domains\Tenancy\Actions\UpdateTenantSubscriptionAction;
 use App\Domains\Tenancy\Models\ImpersonationLog;
+use App\Domains\Tenancy\Models\SubscriptionPlan;
 use App\Domains\Tenancy\Models\Tenant;
 use App\Domains\Tenancy\Services\PlatformTelemetryService;
 use Illuminate\Http\Request;
@@ -30,7 +33,10 @@ class SuperadminWorkspaceController extends Controller
 
         $telemetry = $telemetryService->getGlobalMetrics();
 
-        $tenants = Tenant::with(['facilities', 'users'])
+        $tenants = Tenant::with([
+            'facilities' => fn ($q) => $q->withoutGlobalScopes(),
+            'users' => fn ($q) => $q->withoutGlobalScopes()->with(['roleAssignments' => fn ($ra) => $ra->withoutGlobalScopes()->with('role')]),
+        ])
             ->latest('created_at')
             ->get()
             ->map(function ($t) {
@@ -53,18 +59,32 @@ class SuperadminWorkspaceController extends Controller
                     'created_at' => $t->created_at?->toIso8601String(),
                     'facilities_count' => $t->facilities->count(),
                     'users_count' => $t->users->count(),
+                    'facilities' => $t->facilities->map(fn ($f) => [
+                        'id' => $f->id,
+                        'name' => $f->name,
+                        'code' => $f->code,
+                        'type' => $f->type ?? 'Facility Branch',
+                        'city' => $f->city ?? 'N/A',
+                        'region' => $f->region ?? 'N/A',
+                        'is_active' => (bool) $f->is_active,
+                    ]),
                     'users' => $t->users->map(fn ($u) => [
                         'id' => $u->id,
                         'name' => "{$u->first_name} {$u->last_name}",
                         'email' => $u->email,
+                        'status' => $u->status,
                         'role' => $u->roleAssignments->first()?->role?->name ?? 'Staff User',
                     ]),
                 ];
             });
 
-        $recentLogs = ImpersonationLog::with(['superadmin', 'impersonatedUser', 'tenant'])
+        $recentLogs = ImpersonationLog::with([
+            'superadmin' => fn ($q) => $q->withoutGlobalScopes(),
+            'impersonatedUser' => fn ($q) => $q->withoutGlobalScopes(),
+            'tenant',
+        ])
             ->latest('started_at')
-            ->take(30)
+            ->take(50)
             ->get()
             ->map(fn ($log) => [
                 'id' => $log->id,
@@ -80,9 +100,62 @@ class SuperadminWorkspaceController extends Controller
                 'is_active' => is_null($log->ended_at),
             ]);
 
+        $subscriptionPlans = SubscriptionPlan::orderBy('sort_order')->get();
+
+        // Master Clinical Catalog Items for Live Explorer
+        $masterMedicines = [
+            ['name' => 'Amoxicillin 500mg Caps', 'generic_name' => 'Amoxicillin', 'category' => 'Antibacterial', 'form' => 'Capsule', 'strength' => '500mg', 'source' => 'WHO / MSD NEMLIT'],
+            ['name' => 'Paracetamol 500mg Tabs', 'generic_name' => 'Paracetamol', 'category' => 'Analgesics / Antipyretics', 'form' => 'Tablet', 'strength' => '500mg', 'source' => 'WHO / MSD NEMLIT'],
+            ['name' => 'Artemether / Lumefantrine (ALu) 20/120mg', 'generic_name' => 'Artemether + Lumefantrine', 'category' => 'Antimalarials', 'form' => 'Tablet', 'strength' => '20/120mg', 'source' => 'MoH National Guideline'],
+            ['name' => 'Metformin 500mg Tabs', 'generic_name' => 'Metformin HCl', 'category' => 'Oral Hypoglycaemic', 'form' => 'Tablet', 'strength' => '500mg', 'source' => 'WHO / MSD NEMLIT'],
+            ['name' => 'Amlodipine 5mg Tabs', 'generic_name' => 'Amlodipine Besylate', 'category' => 'Antihypertensives', 'form' => 'Tablet', 'strength' => '5mg', 'source' => 'WHO / MSD NEMLIT'],
+            ['name' => 'Ceftriaxone 1g Inj', 'generic_name' => 'Ceftriaxone Sodium', 'category' => 'Antibacterial', 'form' => 'Injection', 'strength' => '1g', 'source' => 'WHO / MSD NEMLIT'],
+            ['name' => 'Oral Rehydration Salts (ORS) Sachet', 'generic_name' => 'ORS Formula', 'category' => 'Electrolyte Solution', 'form' => 'Powder', 'strength' => 'Standard', 'source' => 'WHO Essential'],
+            ['name' => 'Zinc Sulfate 20mg Dispersible', 'generic_name' => 'Zinc Sulfate', 'category' => 'Mineral Supplements', 'form' => 'Dispersible Tablet', 'strength' => '20mg', 'source' => 'WHO Essential'],
+            ['name' => 'Omeprazole 20mg Caps', 'generic_name' => 'Omeprazole', 'category' => 'Antiulcer / PPI', 'form' => 'Capsule', 'strength' => '20mg', 'source' => 'WHO / MSD NEMLIT'],
+            ['name' => 'Azithromycin 500mg Tabs', 'generic_name' => 'Azithromycin', 'category' => 'Macrolide Antibacterial', 'form' => 'Tablet', 'strength' => '500mg', 'source' => 'WHO / MSD NEMLIT'],
+            ['name' => 'Salbutamol Inhaler 100mcg', 'generic_name' => 'Salbutamol Sulfate', 'category' => 'Antiasthmatic', 'form' => 'Inhaler', 'strength' => '100mcg/dose', 'source' => 'WHO / MSD NEMLIT'],
+            ['name' => 'Insulin Soluble (Human Regular) 100IU/ml', 'generic_name' => 'Insulin Regular', 'category' => 'Insulin & Antidiabetic', 'form' => 'Vial Inj', 'strength' => '100IU/ml', 'source' => 'WHO Essential'],
+        ];
+
+        $masterLabTests = [
+            ['code' => 'LAB-MRDT', 'name' => 'Malaria Rapid Diagnostic Test (mRDT)', 'category' => 'Parasitology', 'turnaround' => 15, 'loinc' => '51567-6'],
+            ['code' => 'LAB-FBP', 'name' => 'Full Blood Picture (FBP / CBC with Diff)', 'category' => 'Hematology', 'turnaround' => 30, 'loinc' => '58410-2'],
+            ['code' => 'LAB-URI', 'name' => 'Urinalysis Multi-Stix & Microscopy', 'category' => 'Biochemistry', 'turnaround' => 20, 'loinc' => '24356-8'],
+            ['code' => 'LAB-ABO', 'name' => 'Blood Grouping & Crossmatch (ABO / Rhesus)', 'category' => 'Immunology', 'turnaround' => 25, 'loinc' => '883-9'],
+            ['code' => 'LAB-RBS', 'name' => 'Random Blood Glucose (RBS)', 'category' => 'Biochemistry', 'turnaround' => 10, 'loinc' => '2345-7'],
+            ['code' => 'LAB-CREAT', 'name' => 'Serum Creatinine & eGFR', 'category' => 'Renal Profile', 'turnaround' => 45, 'loinc' => '2160-0'],
+            ['code' => 'LAB-LFT', 'name' => 'Liver Function Tests (ALT, AST, ALP, Bilirubin)', 'category' => 'Hepatic Profile', 'turnaround' => 60, 'loinc' => '24325-3'],
+            ['code' => 'LAB-LIPID', 'name' => 'Lipid Profile (Cholesterol, HDL, LDL, Triglycerides)', 'category' => 'Cardiovascular', 'turnaround' => 60, 'loinc' => '24331-1'],
+            ['code' => 'LAB-HBA1C', 'name' => 'Glycated Hemoglobin (HbA1c)', 'category' => 'Endocrinology', 'turnaround' => 40, 'loinc' => '4548-4'],
+            ['code' => 'LAB-TYPHOID', 'name' => 'Widal / Typhoid Antibody Agglutination', 'category' => 'Serology', 'turnaround' => 30, 'loinc' => '22587-0'],
+        ];
+
+        $masterDiagnoses = [
+            ['code' => 'B54', 'name' => 'Unspecified malaria', 'chapter' => 'Infectious and parasitic diseases'],
+            ['code' => 'I10', 'name' => 'Essential (primary) hypertension', 'chapter' => 'Diseases of the circulatory system'],
+            ['code' => 'E11', 'name' => 'Type 2 diabetes mellitus', 'chapter' => 'Endocrine, nutritional and metabolic diseases'],
+            ['code' => 'J06.9', 'name' => 'Acute upper respiratory infection, unspecified', 'chapter' => 'Diseases of the respiratory system'],
+            ['code' => 'K29.7', 'name' => 'Gastritis, unspecified / Peptic Ulcer', 'chapter' => 'Diseases of the digestive system'],
+            ['code' => 'N39.0', 'name' => 'Urinary tract infection, site not specified', 'chapter' => 'Diseases of the genitourinary system'],
+            ['code' => 'A09', 'name' => 'Infectious gastroenteritis and colitis, unspecified', 'chapter' => 'Infectious and parasitic diseases'],
+            ['code' => 'J18.9', 'name' => 'Pneumonia, unspecified organism', 'chapter' => 'Diseases of the respiratory system'],
+        ];
+
+        $masterCatalogs = [
+            'medicines' => $masterMedicines,
+            'lab_tests' => $masterLabTests,
+            'diagnoses' => $masterDiagnoses,
+            'total_medicines' => count($masterMedicines),
+            'total_lab_tests' => count($masterLabTests),
+            'total_diagnoses' => count($masterDiagnoses),
+        ];
+
         return Inertia::render('Workspace/SuperadminWorkspace', [
             'telemetry' => $telemetry,
             'tenants' => $tenants,
+            'subscriptionPlans' => $subscriptionPlans,
+            'masterCatalogs' => $masterCatalogs,
             'recentLogs' => $recentLogs,
             'currentUser' => [
                 'id' => $user->id,
@@ -91,6 +164,78 @@ class SuperadminWorkspaceController extends Controller
                 'is_superadmin' => true,
             ],
         ]);
+    }
+
+    public function storePlan(Request $request)
+    {
+        $user = $request->user();
+        abort_unless($this->authService->isSuperAdmin($user) || $this->authService->hasPermission($user, 'platform.superadmin.access'), 403);
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:100',
+            'code' => 'required|string|max:50|unique:subscription_plans,code',
+            'description' => 'nullable|string',
+            'price_monthly_tzs' => 'required|integer|min:0',
+            'price_annual_tzs' => 'required|integer|min:0',
+            'max_facilities' => 'required|integer|min:1|max:500',
+            'max_users' => 'required|integer|min:1|max:5000',
+            'storage_quota_mb' => 'required|integer|min:1024',
+            'feature_flags' => 'required|array',
+            'is_active' => 'boolean',
+            'is_popular' => 'boolean',
+        ]);
+
+        $plan = SubscriptionPlan::create($validated);
+
+        return back()->with('success', "New Plan Tier '{$plan->name}' created successfully.");
+    }
+
+    public function updatePlan(Request $request, SubscriptionPlan $plan)
+    {
+        $user = $request->user();
+        abort_unless($this->authService->isSuperAdmin($user) || $this->authService->hasPermission($user, 'platform.superadmin.access'), 403);
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:100',
+            'description' => 'nullable|string',
+            'price_monthly_tzs' => 'required|integer|min:0',
+            'price_annual_tzs' => 'required|integer|min:0',
+            'max_facilities' => 'required|integer|min:1|max:500',
+            'max_users' => 'required|integer|min:1|max:5000',
+            'storage_quota_mb' => 'required|integer|min:1024',
+            'feature_flags' => 'required|array',
+            'is_active' => 'boolean',
+            'is_popular' => 'boolean',
+        ]);
+
+        $plan->update($validated);
+
+        if ($request->boolean('propagate_to_tenants')) {
+            $count = Tenant::where('subscription_tier', $plan->code)->update([
+                'feature_flags' => $plan->feature_flags,
+                'max_facilities' => $plan->max_facilities,
+                'max_users' => $plan->max_users,
+                'storage_quota_mb' => $plan->storage_quota_mb,
+            ]);
+            return back()->with('success', "Plan '{$plan->name}' blueprint updated and synced to {$count} active hospital tenants.");
+        }
+
+        return back()->with('success', "Plan '{$plan->name}' blueprint updated successfully.");
+    }
+
+    public function propagatePlanToTenants(Request $request, SubscriptionPlan $plan)
+    {
+        $user = $request->user();
+        abort_unless($this->authService->isSuperAdmin($user) || $this->authService->hasPermission($user, 'platform.superadmin.access'), 403);
+
+        $updatedCount = Tenant::where('subscription_tier', $plan->code)->update([
+            'feature_flags' => $plan->feature_flags,
+            'max_facilities' => $plan->max_facilities,
+            'max_users' => $plan->max_users,
+            'storage_quota_mb' => $plan->storage_quota_mb,
+        ]);
+
+        return back()->with('success', "Propagated plan features & quotas across {$updatedCount} hospital tenant organizations.");
     }
 
     public function storeTenant(Request $request, ProvisionTenantAction $action)

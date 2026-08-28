@@ -204,7 +204,7 @@ const getCategoryColor = (cat) => {
                         </div>
                     </template>
 
-                    <div class="w-full p-4 space-y-3">
+                    <div class="w-full space-y-3">
                         
                         <!-- Search & Filter Toolbar -->
                         <div class="p-3 bg-card rounded-xl border border-border/60 shadow-2xs flex flex-wrap items-center gap-2">

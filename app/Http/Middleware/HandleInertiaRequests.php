@@ -45,6 +45,9 @@ class HandleInertiaRequests extends Middleware
                 'permissions' => fn () => $request->user()
                     ? app(AuthorizationService::class)->getUserPermissions($request->user())
                     : [],
+                'is_superadmin' => fn () => $request->user()
+                    ? (app(AuthorizationService::class)->isSuperAdmin($request->user()) || app(AuthorizationService::class)->hasPermission($request->user(), 'platform.superadmin.access'))
+                    : false,
             ],
             'flash' => fn () => [
                 'success' => $request->session()->get('success'),

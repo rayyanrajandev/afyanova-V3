@@ -270,6 +270,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/superadmin/tenants/{tenant}/impersonate/{user}', [SuperadminWorkspaceController::class, 'impersonate'])->name('superadmin.tenants.impersonate');
     Route::post('/superadmin/exit-impersonation', [SuperadminWorkspaceController::class, 'exitImpersonation'])->name('superadmin.exit-impersonation');
     Route::post('/superadmin/sync-dictionary', [SuperadminWorkspaceController::class, 'syncDictionary'])->name('superadmin.sync-dictionary');
+    Route::post('/superadmin/plans', [SuperadminWorkspaceController::class, 'storePlan'])->name('superadmin.plans.store');
+    Route::put('/superadmin/plans/{plan}', [SuperadminWorkspaceController::class, 'updatePlan'])->name('superadmin.plans.update');
+    Route::post('/superadmin/plans/{plan}/propagate', [SuperadminWorkspaceController::class, 'propagatePlanToTenants'])->name('superadmin.plans.propagate');
 });
 
 

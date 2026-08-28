@@ -24,18 +24,18 @@ class PlatformTelemetryService
         $trialTenants = Tenant::where('subscription_status', 'trial')->count();
         $suspendedTenants = Tenant::where('subscription_status', 'suspended')->orWhere('status', 'suspended')->count();
 
-        $totalFacilities = Facility::count();
-        $totalUsers = User::count();
-        $activeCliniciansToday = User::where('is_active', true)->count();
-        $totalBeds = Bed::count();
-        $totalPatients = Patient::count();
+        $totalFacilities = Facility::withoutGlobalScopes()->count();
+        $totalUsers = User::withoutGlobalScopes()->count();
+        $activeCliniciansToday = User::withoutGlobalScopes()->where('status', 'active')->count();
+        $totalBeds = Bed::withoutGlobalScopes()->count();
+        $totalPatients = Patient::withoutGlobalScopes()->count();
 
         $today = Carbon::today()->toDateString();
-        $encountersToday = Encounter::whereDate('created_at', $today)->count();
-        $totalEncounters = Encounter::count();
+        $encountersToday = Encounter::withoutGlobalScopes()->whereDate('created_at', $today)->count();
+        $totalEncounters = Encounter::withoutGlobalScopes()->count();
 
-        $totalBilledTzs = floatval(Invoice::sum('total_amount'));
-        $totalCollectedTzs = floatval(Invoice::sum('paid_amount'));
+        $totalBilledTzs = floatval(Invoice::withoutGlobalScopes()->sum('total_amount'));
+        $totalCollectedTzs = floatval(Invoice::withoutGlobalScopes()->sum('paid_amount'));
 
         // System Health Stats
         $phpVersion = PHP_VERSION;
