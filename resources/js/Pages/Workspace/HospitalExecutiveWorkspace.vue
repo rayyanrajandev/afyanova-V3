@@ -37,7 +37,7 @@ const props = defineProps({
 });
 
 const activeTab = ref('overview');
-const { openContext } = useWorkspacePreferences();
+const { preferences, cycleSidebarState, setSidebarState, toggleContext, openContext } = useWorkspacePreferences();
 
 const tenant = computed(() => props.executive.tenant || {});
 const quotas = computed(() => props.executive.quotas || {});
@@ -71,46 +71,58 @@ const reloadData = () => {
     <Head title="Executive Command Center" />
 
     <AfyaShell active-module="dashboard">
-        <AfyaWorkspace>
-            <!-- Left Executive Navigation Sidebar (180px) -->
-            <template #sidebar>
-                <AfyaSidebar>
-                    <div class="px-2.5 py-1.5 text-[9.5px] font-bold text-muted-foreground uppercase tracking-wider">
-                        Executive Control
+        <AfyaWorkspace :show-sidebar="true" :show-context="true">
+            <!-- 1. LEFT SIDEBAR: Executive Control Navigation (Collapsible) -->
+            <template #sidebar="{ state, width, cycle, setState }">
+                <AfyaSidebar
+                    title="Executive Control"
+                    :icon="Building2"
+                    :state="state"
+                    :width="width"
+                    @cycle-state="cycle"
+                    @set-state="setState"
+                >
+                    <div v-if="state !== 'collapsed'" class="px-2.5 py-1.5 text-[9.5px] font-bold text-muted-foreground uppercase tracking-wider">
+                        Executive Operations
                     </div>
                     <AfyaSidebarItem
                         :icon="LayoutDashboard"
                         label="Executive Overview"
                         :active="activeTab === 'overview'"
+                        :collapsed="state === 'collapsed'"
                         @click="activeTab = 'overview'"
                     />
                     <AfyaSidebarItem
                         :icon="TrendingUp"
                         label="Department Load"
                         :active="activeTab === 'workload'"
+                        :collapsed="state === 'collapsed'"
                         @click="activeTab = 'workload'"
                     />
                     <AfyaSidebarItem
                         :icon="Receipt"
                         label="Revenue & Ledger"
                         :active="activeTab === 'finance'"
+                        :collapsed="state === 'collapsed'"
                         @click="activeTab = 'finance'"
                     />
                     <AfyaSidebarItem
                         :icon="Building2"
                         label="Hospital Branches"
-                        :count="facilities.length"
+                        :badge="facilities.length.toString()"
                         :active="activeTab === 'branches'"
+                        :collapsed="state === 'collapsed'"
                         @click="activeTab = 'branches'"
                     />
                     <AfyaSidebarItem
                         :icon="ShieldCheck"
                         label="Security & Audit"
                         :active="activeTab === 'audit'"
+                        :collapsed="state === 'collapsed'"
                         @click="activeTab = 'audit'"
                     />
 
-                    <div class="mt-3 pt-2.5 border-t border-border/50 px-1.5 space-y-0.5">
+                    <div v-if="state !== 'collapsed'" class="mt-3 pt-2.5 border-t border-border/50 px-1.5 space-y-0.5">
                         <div class="text-[9px] font-bold text-muted-foreground uppercase tracking-wider px-1">
                             Quick Operations
                         </div>
@@ -130,7 +142,7 @@ const reloadData = () => {
                 </AfyaSidebar>
             </template>
 
-            <!-- Center Primary Main Panel -->
+            <!-- 2. CENTER PANEL: Primary Executive Workspace -->
             <AfyaWorkspaceMain>
                 <div class="space-y-2.5 max-w-7xl mx-auto p-1 text-xs">
                     <!-- Top Compact Executive Banner -->
@@ -516,9 +528,15 @@ const reloadData = () => {
                 </div>
             </AfyaWorkspaceMain>
 
-            <!-- Right Executive Inspector Panel (300px) -->
-            <template #context>
-                <AfyaContextPanel title="Executive Inspector" subtitle="Organization & Governance">
+            <!-- 3. RIGHT PANEL: Executive Inspector Panel (Collapsible) -->
+            <template #context="{ open, width, close }">
+                <AfyaContextPanel
+                    title="Executive Inspector"
+                    :icon="Building2"
+                    :open="open"
+                    :width="width"
+                    @close="close"
+                >
                     <div class="p-3 space-y-3.5 text-xs">
                         <!-- Organization Quick Info -->
                         <div class="space-y-1 pb-2.5 border-b border-border/50">
