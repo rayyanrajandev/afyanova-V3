@@ -172,3 +172,44 @@ test('superadmin can provision new hospital organization under RLS policies', fu
         ->and($facility->name)->toBe('Main DSK Wing');
 });
 
+test('superadmin can add facility branch to existing tenant within quota', function () {
+    $env = $this->setupTenantEnvironment();
+    $tenant = $env['tenant'];
+    $user = $env['user'];
+
+    $superRole = Role::create([
+        'tenant_id' => $tenant->id,
+        'name' => 'Platform Superadmin',
+        'slug' => 'super-admin',
+    ]);
+    $perm = Permission::firstOrCreate([
+        'name' => 'Superadmin Access',
+        'slug' => 'platform.superadmin.access',
+        'domain' => 'Platform',
+    ]);
+    $superRole->permissions()->attach($perm->id);
+    DB::table('role_assignments')->insert([
+        'id' => Uuid::uuid7()->toString(),
+        'user_id' => $user->id,
+        'role_id' => $superRole->id,
+        'facility_id' => null,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    app(\App\Domains\Identity\Services\AuthorizationService::class)->clearUserCache($user);
+
+    $response = $this->actingAs($user)->post(route('superadmin.tenants.facilities.store', $tenant->id), [
+        'name' => 'Mikocheni Health Center',
+        'code' => 'MIK-01',
+        'facility_type' => 'Health Center',
+        'city' => 'Dar es Salaam',
+        'region' => 'Dar es Salaam',
+    ]);
+
+    $response->assertRedirect();
+    $branch = Facility::withoutGlobalScopes()->where('tenant_id', $tenant->id)->where('code', 'MIK-01')->first();
+    expect($branch)->not->toBeNull()
+        ->and($branch->name)->toBe('Mikocheni Health Center');
+});
+

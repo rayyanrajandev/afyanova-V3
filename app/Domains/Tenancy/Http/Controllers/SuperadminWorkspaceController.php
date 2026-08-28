@@ -11,6 +11,8 @@ use App\Domains\Tenancy\Actions\ImpersonateTenantUserAction;
 use App\Domains\Tenancy\Actions\ProvisionTenantAction;
 use App\Domains\Tenancy\Actions\SyncMasterDictionaryAction;
 use App\Domains\Tenancy\Actions\UpdateTenantSubscriptionAction;
+use App\Domains\Tenancy\Models\Department;
+use App\Domains\Tenancy\Models\Facility;
 use App\Domains\Tenancy\Models\ImpersonationLog;
 use App\Domains\Tenancy\Models\SubscriptionPlan;
 use App\Domains\Tenancy\Models\Tenant;
@@ -333,5 +335,77 @@ class SuperadminWorkspaceController extends Controller
         $result = $action->execute($type, $tenantId);
 
         return back()->with('success', "Master Clinical Dictionary Synced: {$result['records_synced']} records broadcast across {$result['tenants_synced']} tenant databases.");
+    }
+
+    public function storeFacility(Request $request, Tenant $tenant)
+    {
+        $user = $request->user();
+        abort_unless($this->authService->isSuperAdmin($user) || $this->authService->hasPermission($user, 'platform.superadmin.access'), 403);
+
+        $currentCount = Facility::withoutGlobalScopes()->where('tenant_id', $tenant->id)->count();
+        if ($currentCount >= $tenant->max_facilities) {
+            return back()->withErrors([
+                'name' => "Quota exceeded: '{$tenant->name}' has already reached its maximum branch quota ({$currentCount}/{$tenant->max_facilities}). Upgrade plan tier or adjust quota first.",
+            ]);
+        }
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'code' => 'nullable|string|max:50',
+            'facility_type' => 'required|string|max:100',
+            'city' => 'nullable|string|max:100',
+            'region' => 'nullable|string|max:100',
+            'physical_address' => 'nullable|string|max:255',
+            'contact_email' => 'nullable|email|max:255',
+            'contact_phone' => 'nullable|string|max:50',
+        ]);
+
+        $code = $validated['code'] ?? strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $validated['name']), 0, 4)) . '-' . ($currentCount + 1);
+
+        $previousTenantId = null;
+        if (\Illuminate\Support\Facades\DB::getDriverName() === 'pgsql') {
+            $previousTenantId = \Illuminate\Support\Facades\DB::scalar("SELECT current_setting('app.current_tenant_id', true)");
+            \Illuminate\Support\Facades\DB::statement('SELECT set_config(?, ?, false)', ['app.current_tenant_id', $tenant->id]);
+        }
+
+        try {
+            $facility = Facility::create([
+                'tenant_id' => $tenant->id,
+                'name' => $validated['name'],
+                'code' => $code,
+                'facility_type' => $validated['facility_type'],
+                'city' => $validated['city'] ?? 'Dar es Salaam',
+                'region' => $validated['region'] ?? 'Dar es Salaam',
+                'physical_address' => $validated['physical_address'] ?? 'Hospital Street',
+                'contact_email' => $validated['contact_email'] ?? null,
+                'contact_phone' => $validated['contact_phone'] ?? null,
+                'is_active' => true,
+            ]);
+
+            // Seed default clinical departments for this branch
+            $standardDepts = [
+                ['name' => 'Outpatient Department (OPD)', 'code' => 'OPD'],
+                ['name' => 'Main Pharmacy', 'code' => 'PHARM'],
+                ['name' => 'Clinical Pathology Laboratory', 'code' => 'LAB'],
+                ['name' => 'Billing & Cashier Accounts', 'code' => 'BILL'],
+            ];
+
+            foreach ($standardDepts as $dept) {
+                Department::create([
+                    'tenant_id' => $tenant->id,
+                    'facility_id' => $facility->id,
+                    'name' => $dept['name'],
+                    'code' => $dept['code'],
+                    'is_clinical' => $dept['code'] !== 'BILL',
+                    'is_active' => true,
+                ]);
+            }
+        } finally {
+            if (\Illuminate\Support\Facades\DB::getDriverName() === 'pgsql' && $previousTenantId !== null) {
+                \Illuminate\Support\Facades\DB::statement('SELECT set_config(?, ?, false)', ['app.current_tenant_id', $previousTenantId]);
+            }
+        }
+
+        return back()->with('success', "New facility branch '{$facility->name}' added to '{$tenant->name}' successfully.");
     }
 }

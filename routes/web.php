@@ -273,6 +273,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/superadmin/plans', [SuperadminWorkspaceController::class, 'storePlan'])->name('superadmin.plans.store');
     Route::put('/superadmin/plans/{plan}', [SuperadminWorkspaceController::class, 'updatePlan'])->name('superadmin.plans.update');
     Route::post('/superadmin/plans/{plan}/propagate', [SuperadminWorkspaceController::class, 'propagatePlanToTenants'])->name('superadmin.plans.propagate');
+    Route::post('/superadmin/tenants/{tenant}/facilities', [SuperadminWorkspaceController::class, 'storeFacility'])->name('superadmin.tenants.facilities.store');
 });
 
 

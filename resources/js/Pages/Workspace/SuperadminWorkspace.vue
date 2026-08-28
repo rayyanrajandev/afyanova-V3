@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import {
     Globe,
@@ -43,7 +43,12 @@ import {
     FlaskConical,
     Pill,
     Stethoscope,
-    Share2
+    Share2,
+    Save,
+    RotateCcw,
+    Trash2,
+    FileEdit,
+    FolderPlus
 } from 'lucide-vue-next';
 import AfyaShell from '@/Layouts/AfyaShell.vue';
 import AfyaWorkspace from '@/Components/Workspace/AfyaWorkspace.vue';
@@ -107,6 +112,7 @@ const showEditSubscriptionModal = ref(false);
 const showImpersonateModal = ref(false);
 const showSyncModal = ref(false);
 const showPlanModal = ref(false);
+const showAddFacilityModal = ref(false);
 const isEditingPlan = ref(false);
 
 const tenantToEdit = ref(null);
@@ -149,8 +155,14 @@ const filteredMasterDiagnoses = computed(() => {
     );
 });
 
-// Forms
-const provisionForm = useForm({
+// ==========================================
+// 📝 DRAFT MECHANISM: HOSPITAL PROVISIONING
+// ==========================================
+const PROVISION_DRAFT_KEY = 'afyanova_provision_hospital_draft';
+const savedProvisionDraft = ref(null);
+const draftLastSavedAt = ref(null);
+
+const defaultProvisionData = {
     name: '',
     slug: '',
     domain: '',
@@ -167,18 +179,173 @@ const provisionForm = useForm({
     admin_email: '',
     admin_phone: '',
     admin_password: '',
-});
+};
+
+const provisionForm = useForm({ ...defaultProvisionData });
+
+const loadSavedProvisionDraft = () => {
+    try {
+        const raw = localStorage.getItem(PROVISION_DRAFT_KEY);
+        if (raw) {
+            savedProvisionDraft.value = JSON.parse(raw);
+        } else {
+            savedProvisionDraft.value = null;
+        }
+    } catch (e) {
+        savedProvisionDraft.value = null;
+    }
+};
+
+const saveProvisionDraft = () => {
+    const draftPayload = {
+        data: provisionForm.data(),
+        updated_at: new Date().toISOString(),
+    };
+    localStorage.setItem(PROVISION_DRAFT_KEY, JSON.stringify(draftPayload));
+    savedProvisionDraft.value = draftPayload;
+    draftLastSavedAt.value = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+};
+
+const restoreProvisionDraft = () => {
+    if (savedProvisionDraft.value?.data) {
+        Object.assign(provisionForm, savedProvisionDraft.value.data);
+    }
+};
+
+const discardProvisionDraft = () => {
+    localStorage.removeItem(PROVISION_DRAFT_KEY);
+    savedProvisionDraft.value = null;
+    draftLastSavedAt.value = null;
+    provisionForm.reset();
+};
+
+const openProvisionWizard = () => {
+    loadSavedProvisionDraft();
+    showProvisionModal.value = true;
+};
+
+// Auto-save draft when form changes (with debounce/watch)
+watch(
+    () => ({ ...provisionForm.data() }),
+    (newVal) => {
+        if (!showProvisionModal.value) return;
+        // Only auto-save if at least name or email is partially typed
+        if (newVal.name || newVal.admin_email || newVal.main_facility_name) {
+            saveProvisionDraft();
+        }
+    },
+    { deep: true }
+);
 
 const submitProvision = () => {
     provisionForm.post(route('superadmin.tenants.store'), {
         preserveScroll: true,
         onSuccess: () => {
+            discardProvisionDraft();
             showProvisionModal.value = false;
-            provisionForm.reset();
         },
     });
 };
 
+// ==========================================
+// 🏢 DRAFT MECHANISM: ADD FACILITY BRANCH
+// ==========================================
+const FACILITY_DRAFT_PREFIX = 'afyanova_facility_draft_';
+const savedFacilityDraft = ref(null);
+const facilityDraftSavedAt = ref(null);
+
+const defaultFacilityData = {
+    name: '',
+    code: '',
+    facility_type: 'Polyclinic',
+    city: 'Dar es Salaam',
+    region: 'Dar es Salaam',
+    physical_address: '',
+    contact_email: '',
+    contact_phone: '',
+};
+
+const facilityForm = useForm({ ...defaultFacilityData });
+
+const getFacilityDraftKey = () => {
+    return selectedTenant.value ? `${FACILITY_DRAFT_PREFIX}${selectedTenant.value.id}` : null;
+};
+
+const loadSavedFacilityDraft = () => {
+    const key = getFacilityDraftKey();
+    if (!key) return;
+    try {
+        const raw = localStorage.getItem(key);
+        if (raw) {
+            savedFacilityDraft.value = JSON.parse(raw);
+        } else {
+            savedFacilityDraft.value = null;
+        }
+    } catch (e) {
+        savedFacilityDraft.value = null;
+    }
+};
+
+const saveFacilityDraft = () => {
+    const key = getFacilityDraftKey();
+    if (!key) return;
+    const draftPayload = {
+        data: facilityForm.data(),
+        tenant_name: selectedTenant.value?.name,
+        updated_at: new Date().toISOString(),
+    };
+    localStorage.setItem(key, JSON.stringify(draftPayload));
+    savedFacilityDraft.value = draftPayload;
+    facilityDraftSavedAt.value = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+};
+
+const restoreFacilityDraft = () => {
+    if (savedFacilityDraft.value?.data) {
+        Object.assign(facilityForm, savedFacilityDraft.value.data);
+    }
+};
+
+const discardFacilityDraft = () => {
+    const key = getFacilityDraftKey();
+    if (key) localStorage.removeItem(key);
+    savedFacilityDraft.value = null;
+    facilityDraftSavedAt.value = null;
+    facilityForm.reset();
+};
+
+const openAddFacilityModal = () => {
+    if (!selectedTenant.value) return;
+    loadSavedFacilityDraft();
+    showAddFacilityModal.value = true;
+};
+
+watch(
+    () => ({ ...facilityForm.data() }),
+    (newVal) => {
+        if (!showAddFacilityModal.value) return;
+        if (newVal.name || newVal.physical_address || newVal.code) {
+            saveFacilityDraft();
+        }
+    },
+    { deep: true }
+);
+
+const submitAddFacility = () => {
+    if (!selectedTenant.value) return;
+    facilityForm.post(route('superadmin.tenants.facilities.store', selectedTenant.value.id), {
+        preserveScroll: true,
+        onSuccess: () => {
+            discardFacilityDraft();
+            showAddFacilityModal.value = false;
+        },
+    });
+};
+
+onMounted(() => {
+    loadSavedProvisionDraft();
+});
+
+// Edit Tenant Subscription Form
 const editSubForm = useForm({
     subscription_tier: 'growth',
     subscription_status: 'active',
@@ -465,6 +632,18 @@ const formatDate = (iso) => {
                     <!-- TOP ACTIONS BAR -->
                     <template #actions>
                         <div class="flex items-center gap-2">
+                            <!-- Draft indicator chip if saved draft exists -->
+                            <button
+                                v-if="savedProvisionDraft"
+                                type="button"
+                                class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium bg-amber-50 text-amber-800 border border-amber-300 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-700 hover:bg-amber-100 transition-colors"
+                                title="You have an unsaved hospital provisioning draft"
+                                @click="openProvisionWizard"
+                            >
+                                <FileEdit class="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                                <span>Resume Draft ({{ savedProvisionDraft.data?.name || 'Untitled' }})</span>
+                            </button>
+
                             <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-purple-50 text-purple-800 border border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800">
                                 <ShieldCheck class="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
                                 <span>RLS Strict Fleet Isolation</span>
@@ -483,7 +662,7 @@ const formatDate = (iso) => {
                             <Button
                                 size="sm"
                                 class="h-7 px-2.5 text-xs font-bold gap-1 shadow-2xs bg-purple-600 hover:bg-purple-700 text-white"
-                                @click="showProvisionModal = true"
+                                @click="openProvisionWizard"
                             >
                                 <Plus class="w-3.5 h-3.5" />
                                 <span>Provision Hospital Group</span>
@@ -1141,7 +1320,12 @@ const formatDate = (iso) => {
 
                         <!-- Resource Quotas -->
                         <div class="space-y-2">
-                            <h4 class="font-bold text-foreground uppercase tracking-wider text-[10px]">Resource Quotas</h4>
+                            <div class="flex items-center justify-between">
+                                <h4 class="font-bold text-foreground uppercase tracking-wider text-[10px]">Resource Quotas</h4>
+                                <span class="text-[9.5px] font-mono text-purple-600 font-bold">
+                                    {{ selectedTenant.facilities_count }}/{{ selectedTenant.max_facilities }} Branches
+                                </span>
+                            </div>
                             <div class="space-y-1">
                                 <div class="flex justify-between text-[10.5px]">
                                     <span class="text-muted-foreground">Facilities</span>
@@ -1163,13 +1347,25 @@ const formatDate = (iso) => {
                             </div>
                         </div>
 
-                        <!-- Facility Branches List -->
+                        <!-- Facility Branches List & Add Button -->
                         <div class="space-y-1.5">
                             <div class="flex items-center justify-between">
                                 <h4 class="font-bold text-foreground uppercase tracking-wider text-[10px]">Facility Branches</h4>
-                                <span class="text-[9.5px] font-mono text-muted-foreground">{{ (selectedTenant.facilities || []).length }} registered</span>
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    class="h-5 px-1.5 text-[9.5px] font-bold text-purple-600 border-purple-500/30 hover:bg-purple-500/10 gap-0.5"
+                                    :disabled="selectedTenant.facilities_count >= selectedTenant.max_facilities"
+                                    :title="selectedTenant.facilities_count >= selectedTenant.max_facilities ? 'Branch quota limit reached' : 'Add new physical branch to this hospital organization'"
+                                    @click="openAddFacilityModal"
+                                >
+                                    <Plus class="w-2.5 h-2.5" />
+                                    <span>Add Branch</span>
+                                </Button>
                             </div>
-                            <div class="space-y-1 max-h-32 overflow-y-auto">
+
+                            <!-- Facility Branch List Scroll Area -->
+                            <div class="space-y-1 max-h-32 overflow-y-auto pr-0.5">
                                 <div 
                                     v-for="fac in (selectedTenant.facilities || [])" 
                                     :key="fac.id"
@@ -1198,7 +1394,7 @@ const formatDate = (iso) => {
                                 <h4 class="font-bold text-foreground uppercase tracking-wider text-[10px]">Staff Accounts</h4>
                                 <span class="text-[9.5px] font-mono text-muted-foreground">{{ (selectedTenant.users || []).length }} users</span>
                             </div>
-                            <div class="space-y-1 max-h-32 overflow-y-auto">
+                            <div class="space-y-1 max-h-32 overflow-y-auto pr-0.5">
                                 <div 
                                     v-for="usr in (selectedTenant.users || [])" 
                                     :key="usr.id"
@@ -1379,16 +1575,23 @@ const formatDate = (iso) => {
         </form>
     </Modal>
 
-    <!-- 2. MODAL: PROVISION HOSPITAL GROUP -->
+    <!-- 2. MODAL: PROVISION HOSPITAL GROUP WITH DRAFT SUPPORT -->
     <Modal :show="showProvisionModal" @close="showProvisionModal = false" max-width="2xl">
         <form @submit.prevent="submitProvision" class="p-5 space-y-3.5">
+            <!-- Header with Draft Status -->
             <div class="flex items-center justify-between border-b border-border pb-2.5">
                 <div class="flex items-center gap-2">
                     <div class="p-1.5 rounded-lg bg-purple-500/10 text-purple-600">
                         <Building2 class="w-4 h-4" />
                     </div>
                     <div>
-                        <h3 class="font-bold text-sm text-foreground">Provision New Hospital Group</h3>
+                        <div class="flex items-center gap-2">
+                            <h3 class="font-bold text-sm text-foreground">Provision New Hospital Group</h3>
+                            <span v-if="draftLastSavedAt" class="text-[9.5px] font-mono px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 flex items-center gap-1">
+                                <Save class="w-2.5 h-2.5" />
+                                <span>Draft auto-saved {{ draftLastSavedAt }}</span>
+                            </span>
+                        </div>
                         <p class="text-[11px] text-muted-foreground">Setup tenant organization, primary facility branch, and root admin credentials.</p>
                     </div>
                 </div>
@@ -1397,22 +1600,58 @@ const formatDate = (iso) => {
                 </button>
             </div>
 
+            <!-- Draft Notice & Quick Restore / Clear Banner -->
+            <div v-if="savedProvisionDraft && !provisionForm.name" class="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-between text-xs">
+                <div class="flex items-center gap-2 text-amber-800 dark:text-amber-300">
+                    <FileEdit class="w-4 h-4 text-amber-600 shrink-0" />
+                    <div>
+                        <span class="font-bold">Unfinished Provisioning Draft Detected</span>
+                        <div class="text-[10.5px] text-muted-foreground">
+                            {{ savedProvisionDraft.data?.name || 'Untitled Organization' }} (Saved {{ formatDate(savedProvisionDraft.updated_at) }})
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <Button 
+                        type="button" 
+                        size="sm" 
+                        class="h-6 px-2 text-[10.5px] font-bold bg-amber-600 hover:bg-amber-700 text-white gap-1"
+                        @click="restoreProvisionDraft"
+                    >
+                        <RotateCcw class="w-3 h-3" />
+                        <span>Restore Draft</span>
+                    </Button>
+                    <Button 
+                        type="button" 
+                        variant="ghost" 
+                        size="sm" 
+                        class="h-6 px-1.5 text-[10.5px] text-rose-600 hover:text-rose-700 gap-1"
+                        @click="discardProvisionDraft"
+                    >
+                        <Trash2 class="w-3 h-3" />
+                        <span>Discard</span>
+                    </Button>
+                </div>
+            </div>
+
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                 <div class="space-y-1 sm:col-span-2">
-                    <label class="font-bold text-foreground text-[11px]">Hospital Organization Name *</label>
-                    <Input v-model="provisionForm.name" placeholder="e.g. Regency Medical Center Group" class="h-8" required />
+                    <label class="font-bold text-foreground text-[11px]">
+                        Hospital Organization Name * <span class="text-muted-foreground font-normal">(Parent Tenant Company)</span>
+                    </label>
+                    <Input v-model="provisionForm.name" placeholder="e.g. Aga Khan Health Services Tanzania" class="h-8" required />
                     <InputError :message="provisionForm.errors.name" />
                 </div>
 
                 <div class="space-y-1">
                     <label class="font-bold text-foreground text-[11px]">Tenant Slug</label>
-                    <Input v-model="provisionForm.slug" placeholder="e.g. regency-medical" class="h-8" />
+                    <Input v-model="provisionForm.slug" placeholder="e.g. aga-khan-tz" class="h-8 font-mono" />
                     <InputError :message="provisionForm.errors.slug" />
                 </div>
 
                 <div class="space-y-1">
                     <label class="font-bold text-foreground text-[11px]">Custom FQDN Domain</label>
-                    <Input v-model="provisionForm.domain" placeholder="e.g. emr.regency.co.tz" class="h-8" />
+                    <Input v-model="provisionForm.domain" placeholder="e.g. emr.agakhan.co.tz" class="h-8 font-mono" />
                     <InputError :message="provisionForm.errors.domain" />
                 </div>
 
@@ -1434,8 +1673,10 @@ const formatDate = (iso) => {
                 </div>
 
                 <div class="space-y-1">
-                    <label class="font-bold text-foreground text-[11px]">Primary Facility Name</label>
-                    <Input v-model="provisionForm.main_facility_name" placeholder="e.g. Main Hospital Wing" class="h-8" />
+                    <label class="font-bold text-foreground text-[11px]">
+                        Primary Facility Branch Name * <span class="text-muted-foreground font-normal">(1st Physical Building)</span>
+                    </label>
+                    <Input v-model="provisionForm.main_facility_name" placeholder="e.g. Ocean Road Main Hospital" class="h-8" />
                 </div>
 
                 <div class="space-y-1">
@@ -1471,18 +1712,153 @@ const formatDate = (iso) => {
                 </div>
             </div>
 
-            <div class="flex items-center justify-end gap-2 pt-3 border-t border-border">
-                <Button type="button" variant="outline" size="sm" class="h-7.5 text-xs" @click="showProvisionModal = false">
-                    Cancel
-                </Button>
-                <Button type="submit" size="sm" class="h-7.5 text-xs bg-purple-600 hover:bg-purple-700 text-white font-bold" :disabled="provisionForm.processing">
-                    Provision Organization
-                </Button>
+            <div class="flex items-center justify-between pt-3 border-t border-border">
+                <div class="flex items-center gap-1.5">
+                    <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm" 
+                        class="h-7.5 text-xs gap-1"
+                        @click="saveProvisionDraft"
+                    >
+                        <Save class="w-3.5 h-3.5 text-muted-foreground" />
+                        <span>Save as Draft</span>
+                    </Button>
+                    <Button 
+                        v-if="savedProvisionDraft"
+                        type="button" 
+                        variant="ghost" 
+                        size="sm" 
+                        class="h-7.5 text-xs text-rose-600 hover:text-rose-700 gap-1"
+                        @click="discardProvisionDraft"
+                    >
+                        <Trash2 class="w-3.5 h-3.5" />
+                        <span>Discard Draft</span>
+                    </Button>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <Button type="button" variant="outline" size="sm" class="h-7.5 text-xs" @click="showProvisionModal = false">
+                        Cancel
+                    </Button>
+                    <Button type="submit" size="sm" class="h-7.5 text-xs bg-purple-600 hover:bg-purple-700 text-white font-bold" :disabled="provisionForm.processing">
+                        Provision Organization
+                    </Button>
+                </div>
             </div>
         </form>
     </Modal>
 
-    <!-- 3. MODAL: EDIT TENANT SUBSCRIPTION & QUOTAS -->
+    <!-- 3. MODAL: ADD FACILITY BRANCH TO EXISTING TENANT WITH DRAFT SUPPORT -->
+    <Modal :show="showAddFacilityModal" @close="showAddFacilityModal = false" max-width="lg">
+        <form @submit.prevent="submitAddFacility" class="p-5 space-y-3.5">
+            <div class="flex items-center justify-between border-b border-border pb-2.5">
+                <div class="flex items-center gap-2">
+                    <div class="p-1.5 rounded-lg bg-blue-500/10 text-blue-600">
+                        <FolderPlus class="w-4 h-4" />
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h3 class="font-bold text-sm text-foreground">Add Physical Facility Branch</h3>
+                            <span v-if="facilityDraftSavedAt" class="text-[9.5px] font-mono px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 flex items-center gap-1">
+                                <Save class="w-2.5 h-2.5" />
+                                <span>Draft {{ facilityDraftSavedAt }}</span>
+                            </span>
+                        </div>
+                        <p class="text-[11px] text-muted-foreground">Under {{ selectedTenant?.name }} (Quota: {{ selectedTenant?.facilities_count }}/{{ selectedTenant?.max_facilities }})</p>
+                    </div>
+                </div>
+                <button type="button" @click="showAddFacilityModal = false" class="text-muted-foreground hover:text-foreground">
+                    <X class="w-4 h-4" />
+                </button>
+            </div>
+
+            <!-- Draft Restorer if exists -->
+            <div v-if="savedFacilityDraft && !facilityForm.name" class="p-2 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-between text-xs">
+                <div class="flex items-center gap-1.5 text-amber-800 dark:text-amber-300 text-[11px]">
+                    <FileEdit class="w-3.5 h-3.5 text-amber-600" />
+                    <span>Unsaved branch draft: <strong>{{ savedFacilityDraft.data?.name || 'Untitled' }}</strong></span>
+                </div>
+                <div class="flex items-center gap-1">
+                    <Button type="button" size="sm" class="h-5.5 px-2 text-[10px] bg-amber-600 text-white font-bold" @click="restoreFacilityDraft">
+                        Restore
+                    </Button>
+                    <Button type="button" variant="ghost" size="sm" class="h-5.5 px-1.5 text-[10px] text-rose-600" @click="discardFacilityDraft">
+                        Discard
+                    </Button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div class="space-y-1 sm:col-span-2">
+                    <label class="font-bold text-foreground text-[11px]">Branch / Campus Facility Name *</label>
+                    <Input v-model="facilityForm.name" placeholder="e.g. Regency Clinic Mikocheni" class="h-8" required />
+                    <InputError :message="facilityForm.errors.name" />
+                </div>
+
+                <div class="space-y-1">
+                    <label class="font-bold text-foreground text-[11px]">Branch Code</label>
+                    <Input v-model="facilityForm.code" placeholder="e.g. RMC-MIK" class="h-8 font-mono" />
+                </div>
+
+                <div class="space-y-1">
+                    <label class="font-bold text-foreground text-[11px]">Facility Classification *</label>
+                    <select v-model="facilityForm.facility_type" class="w-full h-8 px-2.5 rounded-md border border-border bg-background text-xs font-medium">
+                        <option value="Polyclinic">Polyclinic / Outpatient Center</option>
+                        <option value="District Hospital">District Hospital Wing</option>
+                        <option value="Specialized Center">Specialized Dialysis / Diagnostics</option>
+                        <option value="Health Center">Health Center</option>
+                        <option value="Dispensary">Dispensary</option>
+                    </select>
+                </div>
+
+                <div class="space-y-1">
+                    <label class="font-bold text-foreground text-[11px]">City / District</label>
+                    <Input v-model="facilityForm.city" placeholder="e.g. Dar es Salaam" class="h-8" />
+                </div>
+
+                <div class="space-y-1">
+                    <label class="font-bold text-foreground text-[11px]">Region</label>
+                    <Input v-model="facilityForm.region" placeholder="e.g. Dar es Salaam" class="h-8" />
+                </div>
+
+                <div class="space-y-1 sm:col-span-2">
+                    <label class="font-bold text-foreground text-[11px]">Physical Street Address</label>
+                    <Input v-model="facilityForm.physical_address" placeholder="e.g. Mwai Kibaki Road, Mikocheni B" class="h-8" />
+                </div>
+
+                <div class="space-y-1">
+                    <label class="font-bold text-foreground text-[11px]">Branch Contact Email</label>
+                    <Input v-model="facilityForm.contact_email" type="email" placeholder="mikocheni@hospital.co.tz" class="h-8" />
+                </div>
+
+                <div class="space-y-1">
+                    <label class="font-bold text-foreground text-[11px]">Branch Phone Number</label>
+                    <Input v-model="facilityForm.contact_phone" placeholder="+255 7XX XXX XXX" class="h-8" />
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between pt-3 border-t border-border">
+                <div class="flex items-center gap-1.5">
+                    <Button type="button" variant="outline" size="sm" class="h-7 text-xs gap-1" @click="saveFacilityDraft">
+                        <Save class="w-3 h-3 text-muted-foreground" />
+                        <span>Save Draft</span>
+                    </Button>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <Button type="button" variant="outline" size="sm" class="h-7 text-xs" @click="showAddFacilityModal = false">
+                        Cancel
+                    </Button>
+                    <Button type="submit" size="sm" class="h-7 text-xs bg-blue-600 hover:bg-blue-700 text-white font-bold" :disabled="facilityForm.processing">
+                        Create Facility Branch
+                    </Button>
+                </div>
+            </div>
+        </form>
+    </Modal>
+
+    <!-- 4. MODAL: EDIT TENANT SUBSCRIPTION & QUOTAS -->
     <Modal :show="showEditSubscriptionModal" @close="showEditSubscriptionModal = false" max-width="xl">
         <form @submit.prevent="submitUpdateSubscription" class="p-5 space-y-3.5">
             <div class="flex items-center justify-between border-b border-border pb-2.5">
@@ -1565,7 +1941,7 @@ const formatDate = (iso) => {
         </form>
     </Modal>
 
-    <!-- 4. MODAL: AUDITED SUPPORT IMPERSONATION -->
+    <!-- 5. MODAL: AUDITED SUPPORT IMPERSONATION -->
     <Modal :show="showImpersonateModal" @close="showImpersonateModal = false" max-width="md">
         <form @submit.prevent="submitImpersonate" class="p-5 space-y-3">
             <div class="flex items-center justify-between border-b border-border pb-2.5">
@@ -1632,7 +2008,7 @@ const formatDate = (iso) => {
         </form>
     </Modal>
 
-    <!-- 5. MODAL: MASTER CLINICAL DATA BROADCAST -->
+    <!-- 6. MODAL: MASTER CLINICAL DATA BROADCAST -->
     <Modal :show="showSyncModal" @close="showSyncModal = false" max-width="md">
         <form @submit.prevent="submitSyncDictionary" class="p-5 space-y-3">
             <div class="flex items-center justify-between border-b border-border pb-2.5">
