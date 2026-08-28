@@ -76,20 +76,3 @@ const panelStyle = computed(() => ({
         </div>
     </aside>
 </template>
-
-<style scoped>
-/* Ultra-thin scrollbar for narrow inspector panel */
-div::-webkit-scrollbar {
-    width: 4px;
-}
-div::-webkit-scrollbar-track {
-    background: transparent;
-}
-div::-webkit-scrollbar-thumb {
-    background: hsl(var(--border) / 0.8);
-    border-radius: 4px;
-}
-div::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--muted-foreground) / 0.5);
-}
-</style>
