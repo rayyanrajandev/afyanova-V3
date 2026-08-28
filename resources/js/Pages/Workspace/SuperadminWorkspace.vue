@@ -48,7 +48,8 @@ import {
     RotateCcw,
     Trash2,
     FileEdit,
-    FolderPlus
+    FolderPlus,
+    Loader2
 } from 'lucide-vue-next';
 import AfyaShell from '@/Layouts/AfyaShell.vue';
 import AfyaWorkspace from '@/Components/Workspace/AfyaWorkspace.vue';
@@ -86,6 +87,17 @@ const filterTier = ref('all');
 const filterStatus = ref('all');
 
 const selectedTenant = ref(props.tenants[0] || null);
+const isReloading = ref(false);
+const isPropagatingId = ref(null);
+
+const reloadWorkspace = () => {
+    isReloading.value = true;
+    router.reload({
+        onFinish: () => {
+            isReloading.value = false;
+        },
+    });
+};
 
 const inspectTenant = (tenant) => {
     selectedTenant.value = tenant;
@@ -471,7 +483,13 @@ const togglePlanFeature = (key) => {
 
 const propagatePlan = (plan) => {
     if (confirm(`Propagate '${plan.name}' feature flags and quotas to all active hospitals on this tier?`)) {
-        router.post(route('superadmin.plans.propagate', plan.id), {}, { preserveScroll: true });
+        isPropagatingId.value = plan.id;
+        router.post(route('superadmin.plans.propagate', plan.id), {}, { 
+            preserveScroll: true,
+            onFinish: () => {
+                isPropagatingId.value = null;
+            }
+        });
     }
 };
 
@@ -672,9 +690,10 @@ const formatDate = (iso) => {
                                 variant="outline" 
                                 size="sm" 
                                 class="h-7 px-2 text-xs font-semibold gap-1 bg-card shadow-2xs"
-                                @click="router.reload()"
+                                :disabled="isReloading"
+                                @click="reloadWorkspace"
                             >
-                                <RefreshCw class="w-3 h-3 text-muted-foreground" />
+                                <RefreshCw class="w-3 h-3 text-muted-foreground" :class="{ 'animate-spin': isReloading }" />
                             </Button>
                         </div>
                     </template>
@@ -1083,11 +1102,13 @@ const formatDate = (iso) => {
                                             variant="ghost"
                                             size="sm"
                                             class="h-6.5 text-[10.5px] text-muted-foreground hover:text-foreground gap-1"
+                                            :loading="isPropagatingId === plan.id"
+                                            :disabled="isPropagatingId === plan.id"
                                             title="Sync this plan's feature flags & quotas to all hospitals on this tier"
                                             @click="propagatePlan(plan)"
                                         >
-                                            <Share2 class="w-3 h-3" />
-                                            <span>Sync Fleet</span>
+                                            <Share2 v-if="isPropagatingId !== plan.id" class="w-3 h-3" />
+                                            <span>{{ isPropagatingId === plan.id ? 'Syncing...' : 'Sync Fleet' }}</span>
                                         </Button>
                                     </div>
                                 </div>
@@ -1568,8 +1589,14 @@ const formatDate = (iso) => {
                 <Button type="button" variant="outline" size="sm" class="h-7.5 text-xs" @click="showPlanModal = false">
                     Cancel
                 </Button>
-                <Button type="submit" size="sm" class="h-7.5 text-xs bg-purple-600 hover:bg-purple-700 text-white font-bold" :disabled="planForm.processing">
-                    {{ isEditingPlan ? 'Save Plan Blueprint' : 'Create Plan Tier' }}
+                <Button 
+                    type="submit" 
+                    size="sm" 
+                    class="h-7.5 text-xs bg-purple-600 hover:bg-purple-700 text-white font-bold" 
+                    :loading="planForm.processing"
+                    :disabled="planForm.processing"
+                >
+                    {{ planForm.processing ? 'Saving Blueprint...' : (isEditingPlan ? 'Save Plan Blueprint' : 'Create Plan Tier') }}
                 </Button>
             </div>
         </form>
@@ -1741,8 +1768,14 @@ const formatDate = (iso) => {
                     <Button type="button" variant="outline" size="sm" class="h-7.5 text-xs" @click="showProvisionModal = false">
                         Cancel
                     </Button>
-                    <Button type="submit" size="sm" class="h-7.5 text-xs bg-purple-600 hover:bg-purple-700 text-white font-bold" :disabled="provisionForm.processing">
-                        Provision Organization
+                    <Button 
+                        type="submit" 
+                        size="sm" 
+                        class="h-7.5 text-xs bg-purple-600 hover:bg-purple-700 text-white font-bold" 
+                        :loading="provisionForm.processing"
+                        :disabled="provisionForm.processing"
+                    >
+                        {{ provisionForm.processing ? 'Provisioning Hospital...' : 'Provision Organization' }}
                     </Button>
                 </div>
             </div>
@@ -1850,8 +1883,14 @@ const formatDate = (iso) => {
                     <Button type="button" variant="outline" size="sm" class="h-7 text-xs" @click="showAddFacilityModal = false">
                         Cancel
                     </Button>
-                    <Button type="submit" size="sm" class="h-7 text-xs bg-blue-600 hover:bg-blue-700 text-white font-bold" :disabled="facilityForm.processing">
-                        Create Facility Branch
+                    <Button 
+                        type="submit" 
+                        size="sm" 
+                        class="h-7 text-xs bg-blue-600 hover:bg-blue-700 text-white font-bold" 
+                        :loading="facilityForm.processing"
+                        :disabled="facilityForm.processing"
+                    >
+                        {{ facilityForm.processing ? 'Creating Branch...' : 'Create Facility Branch' }}
                     </Button>
                 </div>
             </div>
@@ -1934,8 +1973,14 @@ const formatDate = (iso) => {
                 <Button type="button" variant="outline" size="sm" class="h-7.5 text-xs" @click="showEditSubscriptionModal = false">
                     Cancel
                 </Button>
-                <Button type="submit" size="sm" class="h-7.5 text-xs bg-purple-600 hover:bg-purple-700 text-white font-bold" :disabled="editSubForm.processing">
-                    Save Changes
+                <Button 
+                    type="submit" 
+                    size="sm" 
+                    class="h-7.5 text-xs bg-purple-600 hover:bg-purple-700 text-white font-bold" 
+                    :loading="editSubForm.processing"
+                    :disabled="editSubForm.processing"
+                >
+                    {{ editSubForm.processing ? 'Saving Changes...' : 'Save Changes' }}
                 </Button>
             </div>
         </form>
@@ -2000,9 +2045,10 @@ const formatDate = (iso) => {
                     type="submit" 
                     size="sm" 
                     class="h-7.5 text-xs bg-purple-600 hover:bg-purple-700 text-white font-bold" 
+                    :loading="impersonateForm.processing"
                     :disabled="impersonateForm.processing || (impersonateForm.justification_reason || '').length < 10"
                 >
-                    Start Support Session
+                    {{ impersonateForm.processing ? 'Connecting Session...' : 'Start Support Session' }}
                 </Button>
             </div>
         </form>
@@ -2051,8 +2097,14 @@ const formatDate = (iso) => {
                 <Button type="button" variant="outline" size="sm" class="h-7.5 text-xs" @click="showSyncModal = false">
                     Cancel
                 </Button>
-                <Button type="submit" size="sm" class="h-7.5 text-xs bg-purple-600 hover:bg-purple-700 text-white font-bold" :disabled="syncForm.processing">
-                    Execute Broadcast
+                <Button 
+                    type="submit" 
+                    size="sm" 
+                    class="h-7.5 text-xs bg-purple-600 hover:bg-purple-700 text-white font-bold" 
+                    :loading="syncForm.processing"
+                    :disabled="syncForm.processing"
+                >
+                    {{ syncForm.processing ? 'Broadcasting Dictionaries...' : 'Execute Broadcast' }}
                 </Button>
             </div>
         </form>
