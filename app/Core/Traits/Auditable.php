@@ -27,9 +27,21 @@ trait Auditable
 
     protected static function logAudit(Model $model, string $action): void
     {
+        // The model's own tenant_id is the row actually being written —
+        // always authoritative. TenantContext (request-start PHP state) is
+        // only a fallback for models with no tenant_id of their own,
+        // because it goes stale mid-request whenever code changes the
+        // Postgres RLS session var directly (set_config) without also
+        // updating this singleton — e.g. ProvisionTenantAction, which
+        // switches session context to a newly-created tenant for its own
+        // subsequent inserts. Preferring TenantContext here (the previous
+        // order) meant every audit-logged create/update/delete after that
+        // point silently reset the Postgres session back to the *original*
+        // tenant via AuditLogger::log()'s own set_config call, breaking RLS
+        // for everything inserted afterward in the same request.
         /** @var TenantContext $context */
         $context = App::make(TenantContext::class);
-        $tenantId = $context->getTenantId() ?? $model->getAttribute('tenant_id');
+        $tenantId = $model->getAttribute('tenant_id') ?? $context->getTenantId();
 
         if (! $tenantId) {
             return;
