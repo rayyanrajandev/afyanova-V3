@@ -143,44 +143,33 @@ const reloadData = () => {
             </template>
 
             <!-- 2. CENTER PANEL: Primary Executive Workspace -->
-            <AfyaWorkspaceMain :breadcrumbs="[{ label: 'Executive Command Center', active: true }]">
+            <AfyaWorkspaceMain
+                :title="tenant.name"
+                :subtitle="`Hospital Executive Operations & Governance Command Center · ${tenant.slug}`"
+            >
+                <template #header>
+                    <span class="text-[9px] font-mono uppercase font-bold px-1.5 py-0.2 rounded bg-primary/10 text-primary border border-primary/20">
+                        {{ tenant.plan }}
+                    </span>
+                    <span class="text-[9px] font-semibold px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                        Active Operations
+                    </span>
+                </template>
+
+                <template #actions>
+                    <Button variant="outline" size="sm" @click="reloadData" class="h-6 px-2 text-[11px] gap-1">
+                        <RefreshCw class="w-3 h-3" />
+                        <span>Refresh</span>
+                    </Button>
+                    <Link :href="route('reports.workspace')">
+                        <Button size="sm" class="h-6 px-2 text-[11px] gap-1">
+                            <TrendingUp class="w-3 h-3" />
+                            <span>BI Reports</span>
+                        </Button>
+                    </Link>
+                </template>
+
                 <div class="w-full space-y-4 text-xs">
-                    <!-- Top Compact Executive Banner -->
-                    <div class="flex items-center justify-between bg-card border border-border/60 rounded-lg px-3 py-2 shadow-2xs">
-                        <div class="flex items-center gap-2.5 min-w-0">
-                            <div class="w-7 h-7 rounded-md bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold shrink-0">
-                                <Building2 class="w-4 h-4" />
-                            </div>
-                            <div class="min-w-0">
-                                <div class="flex items-center gap-1.5 flex-wrap">
-                                    <h1 class="text-xs font-bold text-foreground truncate">{{ tenant.name }}</h1>
-                                    <span class="text-[9px] font-mono uppercase font-bold px-1.5 py-0.2 rounded bg-primary/10 text-primary border border-primary/20">
-                                        {{ tenant.plan }}
-                                    </span>
-                                    <span class="text-[9px] font-semibold px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                                        Active Operations
-                                    </span>
-                                </div>
-                                <p class="text-[10.5px] text-muted-foreground truncate">
-                                    Hospital Executive Operations & Governance Command Center · {{ tenant.slug }}
-                                </p>
-                            </div>
-                        </div>
-
-                        <div class="flex items-center gap-1.5 shrink-0">
-                            <Button variant="outline" size="sm" @click="reloadData" class="h-6 px-2 text-[11px] gap-1">
-                                <RefreshCw class="w-3 h-3" />
-                                <span>Refresh</span>
-                            </Button>
-                            <Link :href="route('reports.workspace')">
-                                <Button size="sm" class="h-6 px-2 text-[11px] gap-1">
-                                    <TrendingUp class="w-3 h-3" />
-                                    <span>BI Reports</span>
-                                </Button>
-                            </Link>
-                        </div>
-                    </div>
-
                     <!-- 4 Compact High-Density KPI Metric Cards -->
                     <div class="grid grid-cols-2 lg:grid-cols-4 gap-2">
                         <!-- Revenue Card -->
