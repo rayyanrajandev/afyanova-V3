@@ -365,41 +365,48 @@ class SuperadminWorkspaceController extends Controller
         $previousTenantId = null;
         if (\Illuminate\Support\Facades\DB::getDriverName() === 'pgsql') {
             $previousTenantId = \Illuminate\Support\Facades\DB::scalar("SELECT current_setting('app.current_tenant_id', true)");
-            \Illuminate\Support\Facades\DB::statement('SELECT set_config(?, ?, false)', ['app.current_tenant_id', $tenant->id]);
         }
 
         try {
-            $facility = Facility::create([
-                'tenant_id' => $tenant->id,
-                'name' => $validated['name'],
-                'code' => $code,
-                'facility_type' => $validated['facility_type'],
-                'city' => $validated['city'] ?? 'Dar es Salaam',
-                'region' => $validated['region'] ?? 'Dar es Salaam',
-                'physical_address' => $validated['physical_address'] ?? 'Hospital Street',
-                'contact_email' => $validated['contact_email'] ?? null,
-                'contact_phone' => $validated['contact_phone'] ?? null,
-                'is_active' => true,
-            ]);
+            $facility = \Illuminate\Support\Facades\DB::transaction(function () use ($tenant, $validated, $code) {
+                if (\Illuminate\Support\Facades\DB::getDriverName() === 'pgsql') {
+                    \Illuminate\Support\Facades\DB::statement('SELECT set_config(?, ?, false)', ['app.current_tenant_id', $tenant->id]);
+                }
 
-            // Seed default clinical departments for this branch
-            $standardDepts = [
-                ['name' => 'Outpatient Department (OPD)', 'code' => 'OPD'],
-                ['name' => 'Main Pharmacy', 'code' => 'PHARM'],
-                ['name' => 'Clinical Pathology Laboratory', 'code' => 'LAB'],
-                ['name' => 'Billing & Cashier Accounts', 'code' => 'BILL'],
-            ];
-
-            foreach ($standardDepts as $dept) {
-                Department::create([
+                $facility = Facility::create([
                     'tenant_id' => $tenant->id,
-                    'facility_id' => $facility->id,
-                    'name' => $dept['name'],
-                    'code' => $dept['code'],
-                    'is_clinical' => $dept['code'] !== 'BILL',
+                    'name' => $validated['name'],
+                    'code' => $code,
+                    'facility_type' => $validated['facility_type'],
+                    'city' => $validated['city'] ?? 'Dar es Salaam',
+                    'region' => $validated['region'] ?? 'Dar es Salaam',
+                    'physical_address' => $validated['physical_address'] ?? 'Hospital Street',
+                    'contact_email' => $validated['contact_email'] ?? null,
+                    'contact_phone' => $validated['contact_phone'] ?? null,
                     'is_active' => true,
                 ]);
-            }
+
+                // Seed default clinical departments for this branch
+                $standardDepts = [
+                    ['name' => 'Outpatient Department (OPD)', 'code' => 'OPD'],
+                    ['name' => 'Main Pharmacy', 'code' => 'PHARM'],
+                    ['name' => 'Clinical Pathology Laboratory', 'code' => 'LAB'],
+                    ['name' => 'Billing & Cashier Accounts', 'code' => 'BILL'],
+                ];
+
+                foreach ($standardDepts as $dept) {
+                    Department::create([
+                        'tenant_id' => $tenant->id,
+                        'facility_id' => $facility->id,
+                        'name' => $dept['name'],
+                        'code' => $dept['code'],
+                        'is_clinical' => $dept['code'] !== 'BILL',
+                        'is_active' => true,
+                    ]);
+                }
+
+                return $facility;
+            });
         } finally {
             if (\Illuminate\Support\Facades\DB::getDriverName() === 'pgsql' && $previousTenantId !== null) {
                 \Illuminate\Support\Facades\DB::statement('SELECT set_config(?, ?, false)', ['app.current_tenant_id', $previousTenantId]);

@@ -4,9 +4,10 @@ namespace App\Domains\Tenancy\Actions;
 
 use App\Domains\Audit\Services\AuditLogger;
 use App\Domains\Billing\Models\LedgerAccount;
+use App\Domains\Identity\Models\Permission;
 use App\Domains\Identity\Models\Role;
 use App\Domains\Identity\Models\User;
-use App\Domains\Identity\Models\UserRoleAssignment;
+use App\Domains\Identity\Models\RoleAssignment;
 use App\Domains\Tenancy\Models\Department;
 use App\Domains\Tenancy\Models\Facility;
 use App\Domains\Tenancy\Models\SubscriptionPlan;
@@ -24,67 +25,70 @@ class ProvisionTenantAction
 
     public function execute(array $data): Tenant
     {
-        return DB::transaction(function () use ($data) {
-            $slug = Str::slug($data['slug'] ?? $data['name']);
-            if (Tenant::where('slug', $slug)->exists()) {
-                throw new InvalidArgumentException("A hospital organization with the slug '{$slug}' already exists.");
-            }
+        $previousTenantId = null;
+        if (DB::getDriverName() === 'pgsql') {
+            $previousTenantId = DB::scalar("SELECT current_setting('app.current_tenant_id', true)");
+        }
 
-            $tier = $data['subscription_tier'] ?? 'growth';
-            $planBlueprint = SubscriptionPlan::where('code', $tier)->first();
-            
-            $maxFacilities = $planBlueprint?->max_facilities ?? match ($tier) {
-                'starter' => 1,
-                'growth' => 5,
-                'enterprise' => 50,
-                default => 5,
-            };
-            $maxUsers = $planBlueprint?->max_users ?? match ($tier) {
-                'starter' => 15,
-                'growth' => 75,
-                'enterprise' => 500,
-                default => 50,
-            };
-            $storageQuota = $planBlueprint?->storage_quota_mb ?? 10240;
-            $defaultFeatures = $planBlueprint?->feature_flags ?? match ($tier) {
-                'starter' => ['billing', 'pharmacy', 'laboratory', 'inpatient', 'sms'],
-                'growth' => ['billing', 'pharmacy', 'laboratory', 'inpatient', 'theatre', 'insurance', 'sms', 'mpesa', 'bi_analytics'],
-                'enterprise' => ['billing', 'pharmacy', 'laboratory', 'inpatient', 'theatre', 'insurance', 'radiology', 'sms', 'mpesa', 'bi_analytics', 'fhir', 'dicom'],
-                default => ['billing', 'pharmacy', 'laboratory', 'inpatient', 'sms', 'mpesa'],
-            };
+        try {
+            return DB::transaction(function () use ($data) {
+                $slug = Str::slug($data['slug'] ?? $data['name']);
+                if (Tenant::where('slug', $slug)->exists()) {
+                    throw new InvalidArgumentException("A hospital organization with the slug '{$slug}' already exists.");
+                }
 
-            // 1. Create Tenant
-            $tenant = Tenant::create([
-                'name' => $data['name'],
-                'slug' => $slug,
-                'domain' => $data['domain'] ?? ($slug . '.afyanova.local'),
-                'status' => 'active',
-                'plan' => $tier,
-                'subscription_tier' => $tier,
-                'subscription_status' => $data['subscription_status'] ?? 'active',
-                'max_facilities' => $data['max_facilities'] ?? $maxFacilities,
-                'max_users' => $data['max_users'] ?? $maxUsers,
-                'storage_quota_mb' => $data['storage_quota_mb'] ?? $storageQuota,
-                'feature_flags' => $data['feature_flags'] ?? $defaultFeatures,
-                'billing_cycle' => $data['billing_cycle'] ?? 'monthly',
-                'billing_contact_email' => $data['admin_email'] ?? ($data['billing_contact_email'] ?? null),
-                'billing_contact_phone' => $data['admin_phone'] ?? ($data['billing_contact_phone'] ?? null),
-                'trial_ends_at' => ($data['subscription_status'] ?? '') === 'trial' ? now()->addDays(30) : null,
-                'settings' => [
-                    'currency' => 'TZS',
-                    'timezone' => 'Africa/Dar_es_Salaam',
-                    'country' => 'Tanzania',
-                ],
-            ]);
+                $tier = $data['subscription_tier'] ?? 'growth';
+                $planBlueprint = SubscriptionPlan::where('code', $tier)->first();
+                
+                $maxFacilities = $planBlueprint?->max_facilities ?? match ($tier) {
+                    'starter' => 1,
+                    'growth' => 5,
+                    'enterprise' => 50,
+                    default => 5,
+                };
+                $maxUsers = $planBlueprint?->max_users ?? match ($tier) {
+                    'starter' => 15,
+                    'growth' => 75,
+                    'enterprise' => 500,
+                    default => 50,
+                };
+                $storageQuota = $planBlueprint?->storage_quota_mb ?? 10240;
+                $defaultFeatures = $planBlueprint?->feature_flags ?? match ($tier) {
+                    'starter' => ['billing', 'pharmacy', 'laboratory', 'inpatient', 'sms'],
+                    'growth' => ['billing', 'pharmacy', 'laboratory', 'inpatient', 'theatre', 'insurance', 'sms', 'mpesa', 'bi_analytics'],
+                    'enterprise' => ['billing', 'pharmacy', 'laboratory', 'inpatient', 'theatre', 'insurance', 'radiology', 'sms', 'mpesa', 'bi_analytics', 'fhir', 'dicom'],
+                    default => ['billing', 'pharmacy', 'laboratory', 'inpatient', 'sms', 'mpesa'],
+                };
 
-            // Dynamically set PostgreSQL session tenant_id so RLS policy WITH CHECK passes for child rows
-            $previousTenantId = null;
-            if (DB::getDriverName() === 'pgsql') {
-                $previousTenantId = DB::scalar("SELECT current_setting('app.current_tenant_id', true)");
-                DB::statement('SELECT set_config(?, ?, false)', ['app.current_tenant_id', $tenant->id]);
-            }
+                // 1. Create Tenant
+                $tenant = Tenant::create([
+                    'name' => $data['name'],
+                    'slug' => $slug,
+                    'domain' => $data['domain'] ?? ($slug . '.afyanova.local'),
+                    'status' => 'active',
+                    'plan' => $tier,
+                    'subscription_tier' => $tier,
+                    'subscription_status' => $data['subscription_status'] ?? 'active',
+                    'max_facilities' => $data['max_facilities'] ?? $maxFacilities,
+                    'max_users' => $data['max_users'] ?? $maxUsers,
+                    'storage_quota_mb' => $data['storage_quota_mb'] ?? $storageQuota,
+                    'feature_flags' => $data['feature_flags'] ?? $defaultFeatures,
+                    'billing_cycle' => $data['billing_cycle'] ?? 'monthly',
+                    'billing_contact_email' => $data['admin_email'] ?? ($data['billing_contact_email'] ?? null),
+                    'billing_contact_phone' => $data['admin_phone'] ?? ($data['billing_contact_phone'] ?? null),
+                    'trial_ends_at' => ($data['subscription_status'] ?? '') === 'trial' ? now()->addDays(30) : null,
+                    'settings' => [
+                        'currency' => 'TZS',
+                        'timezone' => 'Africa/Dar_es_Salaam',
+                        'country' => 'Tanzania',
+                    ],
+                ]);
 
-            try {
+                // Dynamically set PostgreSQL session tenant_id so RLS policy WITH CHECK passes for child rows
+                if (DB::getDriverName() === 'pgsql') {
+                    DB::statement('SELECT set_config(?, ?, false)', ['app.current_tenant_id', $tenant->id]);
+                }
+
                 // 2. Create Primary Main Facility Branch
                 $facility = Facility::create([
                     'tenant_id' => $tenant->id,
@@ -133,17 +137,30 @@ class ProvisionTenantAction
                     'email_verified_at' => now(),
                 ]);
 
-                // Assign tenant-admin role
-                $adminRole = Role::where('slug', 'tenant-admin')->first();
-                if ($adminRole) {
-                    UserRoleAssignment::create([
+                // Create and assign tenant-admin role
+                $adminRole = Role::firstOrCreate(
+                    [
                         'tenant_id' => $tenant->id,
-                        'user_id' => $adminUser->id,
-                        'role_id' => $adminRole->id,
-                        'facility_id' => null, // Global tenant scope
-                        'department_id' => null,
-                    ]);
+                        'slug' => 'tenant-admin',
+                    ],
+                    [
+                        'name' => 'Hospital Administrator',
+                        'is_system' => true,
+                        'description' => 'Full administrative access across all facilities, departments, and clinical settings.',
+                    ]
+                );
+
+                $permissions = Permission::all();
+                if ($permissions->isNotEmpty()) {
+                    $adminRole->permissions()->sync($permissions->pluck('id')->toArray());
                 }
+
+                RoleAssignment::firstOrCreate([
+                    'user_id' => $adminUser->id,
+                    'role_id' => $adminRole->id,
+                    'facility_id' => null, // Global tenant scope
+                    'department_id' => null,
+                ]);
 
                 // 5. Seed Default Chart of Accounts for Billing Ledger
                 $standardAccounts = [
@@ -190,11 +207,11 @@ class ProvisionTenantAction
                 ]);
 
                 return $tenant;
-            } finally {
-                if (DB::getDriverName() === 'pgsql' && $previousTenantId !== null) {
-                    DB::statement('SELECT set_config(?, ?, false)', ['app.current_tenant_id', $previousTenantId]);
-                }
+            });
+        } finally {
+            if (DB::getDriverName() === 'pgsql' && $previousTenantId !== null) {
+                DB::statement('SELECT set_config(?, ?, false)', ['app.current_tenant_id', $previousTenantId]);
             }
-        });
+        }
     }
 }
