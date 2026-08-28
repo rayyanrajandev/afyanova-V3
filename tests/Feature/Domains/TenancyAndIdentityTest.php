@@ -140,5 +140,35 @@ test('superadmin workspace renders global telemetry metrics without errors', fun
         ->has('telemetry')
         ->has('tenants')
         ->has('recentLogs')
+        ->has('subscriptionPlans')
+        ->has('masterCatalogs')
     );
 });
+
+test('superadmin can provision new hospital organization under RLS policies', function () {
+    $action = app(\App\Domains\Tenancy\Actions\ProvisionTenantAction::class);
+
+    $tenant = $action->execute([
+        'name' => 'DSK Dispensary & Clinic',
+        'slug' => 'dsk-dispensary',
+        'subscription_tier' => 'starter',
+        'subscription_status' => 'active',
+        'main_facility_name' => 'Main DSK Wing',
+        'facility_type' => 'Dispensary',
+        'city' => 'Dar es Salaam',
+        'region' => 'Dar es Salaam',
+        'admin_first_name' => 'Juma',
+        'admin_last_name' => 'Rashid',
+        'admin_email' => 'admin@dskdispensary.co.tz',
+        'admin_password' => 'Password123!',
+    ]);
+
+    expect($tenant)->toBeInstanceOf(Tenant::class)
+        ->and($tenant->name)->toBe('DSK Dispensary & Clinic')
+        ->and($tenant->slug)->toBe('dsk-dispensary');
+
+    $facility = Facility::withoutGlobalScopes()->where('tenant_id', $tenant->id)->first();
+    expect($facility)->not->toBeNull()
+        ->and($facility->name)->toBe('Main DSK Wing');
+});
+
