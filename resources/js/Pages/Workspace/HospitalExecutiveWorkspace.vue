@@ -7,7 +7,6 @@ import AfyaSidebar from '@/Components/Workspace/AfyaSidebar.vue';
 import AfyaSidebarItem from '@/Components/Workspace/AfyaSidebarItem.vue';
 import AfyaWorkspaceMain from '@/Components/Workspace/AfyaWorkspaceMain.vue';
 import AfyaContextPanel from '@/Components/Workspace/AfyaContextPanel.vue';
-import AfyaStatusBadge from '@/Components/Afya/AfyaStatusBadge.vue';
 import Button from '@/Components/ui/Button.vue';
 import {
     LayoutDashboard,
@@ -16,21 +15,16 @@ import {
     Users,
     Bed,
     Stethoscope,
-    Shield,
-    AlertTriangle,
+    ShieldCheck,
     Receipt,
     Pill,
     FlaskConical,
     Scissors,
     Clock,
     DollarSign,
-    ShieldCheck,
     HardDrive,
     ArrowUpRight,
-    Sparkles,
-    CheckCircle2,
     Lock,
-    Eye,
     RefreshCw
 } from '@lucide/vue';
 import { useWorkspacePreferences } from '@/Composables/useWorkspacePreferences';
@@ -81,7 +75,7 @@ const reloadData = () => {
             <!-- Left Executive Navigation Sidebar (180px) -->
             <template #sidebar>
                 <AfyaSidebar>
-                    <div class="px-3 py-2 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                    <div class="px-2.5 py-1.5 text-[9.5px] font-bold text-muted-foreground uppercase tracking-wider">
                         Executive Control
                     </div>
                     <AfyaSidebarItem
@@ -116,20 +110,20 @@ const reloadData = () => {
                         @click="activeTab = 'audit'"
                     />
 
-                    <div class="mt-4 pt-3 border-t border-border/50 px-2 space-y-1">
+                    <div class="mt-3 pt-2.5 border-t border-border/50 px-1.5 space-y-0.5">
                         <div class="text-[9px] font-bold text-muted-foreground uppercase tracking-wider px-1">
                             Quick Operations
                         </div>
-                        <Link :href="route('access-control.workspace')" class="flex items-center gap-2 px-2 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted rounded transition">
-                            <Users class="w-3.5 h-3.5" />
+                        <Link :href="route('access-control.workspace')" class="flex items-center gap-1.5 px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted rounded transition">
+                            <Users class="w-3 h-3" />
                             <span>Staff Accounts</span>
                         </Link>
-                        <Link :href="route('reports.workspace')" class="flex items-center gap-2 px-2 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted rounded transition">
-                            <TrendingUp class="w-3.5 h-3.5" />
+                        <Link :href="route('reports.workspace')" class="flex items-center gap-1.5 px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted rounded transition">
+                            <TrendingUp class="w-3 h-3" />
                             <span>BI & Analytics</span>
                         </Link>
-                        <Link :href="route('patients.index')" class="flex items-center gap-2 px-2 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted rounded transition">
-                            <Stethoscope class="w-3.5 h-3.5" />
+                        <Link :href="route('patients.index')" class="flex items-center gap-1.5 px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted rounded transition">
+                            <Stethoscope class="w-3 h-3" />
                             <span>Patient Registry</span>
                         </Link>
                     </div>
@@ -138,116 +132,115 @@ const reloadData = () => {
 
             <!-- Center Primary Main Panel -->
             <AfyaWorkspaceMain>
-                <div class="space-y-4 max-w-7xl mx-auto p-1">
-                    <!-- Top Executive Banner -->
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-card border border-border/60 rounded-xl p-4 shadow-2xs">
-                        <div class="flex items-center gap-3.5">
-                            <div class="w-11 h-11 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold text-lg shrink-0">
-                                <Building2 class="w-6 h-6" />
+                <div class="space-y-2.5 max-w-7xl mx-auto p-1 text-xs">
+                    <!-- Top Compact Executive Banner -->
+                    <div class="flex items-center justify-between bg-card border border-border/60 rounded-lg px-3 py-2 shadow-2xs">
+                        <div class="flex items-center gap-2.5 min-w-0">
+                            <div class="w-7 h-7 rounded-md bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold shrink-0">
+                                <Building2 class="w-4 h-4" />
                             </div>
-                            <div>
-                                <div class="flex items-center gap-2 flex-wrap">
-                                    <h1 class="text-base font-bold text-foreground">{{ tenant.name }}</h1>
-                                    <span class="text-[10px] font-mono uppercase font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                            <div class="min-w-0">
+                                <div class="flex items-center gap-1.5 flex-wrap">
+                                    <h1 class="text-xs font-bold text-foreground truncate">{{ tenant.name }}</h1>
+                                    <span class="text-[9px] font-mono uppercase font-bold px-1.5 py-0.2 rounded bg-primary/10 text-primary border border-primary/20">
                                         {{ tenant.plan }}
                                     </span>
-                                    <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                                    <span class="text-[9px] font-semibold px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                                         Active Operations
                                     </span>
                                 </div>
-                                <p class="text-xs text-muted-foreground mt-0.5">
-                                    Hospital Executive Operations & Governance Command Center · Scoped to {{ tenant.slug }}
+                                <p class="text-[10.5px] text-muted-foreground truncate">
+                                    Hospital Executive Operations & Governance Command Center · {{ tenant.slug }}
                                 </p>
                             </div>
                         </div>
 
-                        <div class="flex items-center gap-2">
-                            <Button variant="outline" size="sm" @click="reloadData" class="h-8 gap-1.5 text-xs">
-                                <RefreshCw class="w-3.5 h-3.5" />
+                        <div class="flex items-center gap-1.5 shrink-0">
+                            <Button variant="outline" size="sm" @click="reloadData" class="h-6 px-2 text-[11px] gap-1">
+                                <RefreshCw class="w-3 h-3" />
                                 <span>Refresh</span>
                             </Button>
                             <Link :href="route('reports.workspace')">
-                                <Button size="sm" class="h-8 gap-1.5 text-xs">
-                                    <TrendingUp class="w-3.5 h-3.5" />
-                                    <span>Hospital BI Reports</span>
+                                <Button size="sm" class="h-6 px-2 text-[11px] gap-1">
+                                    <TrendingUp class="w-3 h-3" />
+                                    <span>BI Reports</span>
                                 </Button>
                             </Link>
                         </div>
                     </div>
 
-                    <!-- 4 High-Impact KPI Summary Cards Strip -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                    <!-- 4 Compact High-Density KPI Metric Cards -->
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-2">
                         <!-- Revenue Card -->
-                        <div class="bg-card border border-border/60 rounded-xl p-3.5 shadow-2xs relative overflow-hidden">
+                        <div class="bg-card border border-border/60 rounded-lg p-2.5 shadow-2xs relative">
                             <div class="flex items-center justify-between">
-                                <span class="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Today's Revenue</span>
-                                <div class="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-                                    <DollarSign class="w-4 h-4" />
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Today's Revenue</span>
+                                <div class="w-5 h-5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                                    <DollarSign class="w-3 h-3" />
                                 </div>
                             </div>
-                            <div class="mt-2">
-                                <div class="text-xl font-bold text-foreground font-mono">
+                            <div class="mt-1">
+                                <div class="text-base font-bold text-foreground font-mono leading-none">
                                     {{ formatCurrency(finance.today_revenue) }}
                                 </div>
-                                <div class="flex items-center gap-1.5 mt-1.5 text-[11px] text-muted-foreground">
+                                <div class="flex items-center gap-1 mt-1 text-[10px] text-muted-foreground truncate">
                                     <span class="text-amber-600 dark:text-amber-400 font-semibold font-mono">{{ finance.unpaid_invoices_count }}</span> unpaid bills ({{ formatCurrency(finance.unpaid_invoices_amount) }})
                                 </div>
                             </div>
                         </div>
 
                         <!-- Bed Census Card -->
-                        <div class="bg-card border border-border/60 rounded-xl p-3.5 shadow-2xs relative overflow-hidden">
+                        <div class="bg-card border border-border/60 rounded-lg p-2.5 shadow-2xs relative">
                             <div class="flex items-center justify-between">
-                                <span class="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Inpatient Bed Census</span>
-                                <div class="w-7 h-7 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
-                                    <Bed class="w-4 h-4" />
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Bed Census</span>
+                                <div class="w-5 h-5 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                                    <Bed class="w-3 h-3" />
                                 </div>
                             </div>
-                            <div class="mt-2">
-                                <div class="flex items-baseline gap-2">
-                                    <span class="text-xl font-bold text-foreground font-mono">{{ census.occupied_beds }} / {{ census.total_beds }}</span>
-                                    <span class="text-xs font-bold text-blue-600 dark:text-blue-400 font-mono">{{ census.occupancy_rate }}%</span>
+                            <div class="mt-1">
+                                <div class="flex items-baseline gap-1.5 leading-none">
+                                    <span class="text-base font-bold text-foreground font-mono">{{ census.occupied_beds }} / {{ census.total_beds }}</span>
+                                    <span class="text-[10.5px] font-bold text-blue-600 dark:text-blue-400 font-mono">({{ census.occupancy_rate }}%)</span>
                                 </div>
-                                <!-- Progress Bar -->
-                                <div class="w-full h-1.5 bg-muted rounded-full overflow-hidden mt-2">
+                                <div class="w-full h-1 bg-muted rounded-full overflow-hidden mt-1.5">
                                     <div class="h-full bg-blue-500 rounded-full transition-all duration-500" :style="{ width: `${Math.min(100, census.occupancy_rate)}%` }"></div>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Encounters Today Card -->
-                        <div class="bg-card border border-border/60 rounded-xl p-3.5 shadow-2xs relative overflow-hidden">
+                        <div class="bg-card border border-border/60 rounded-lg p-2.5 shadow-2xs relative">
                             <div class="flex items-center justify-between">
-                                <span class="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Clinical Encounters</span>
-                                <div class="w-7 h-7 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center">
-                                    <Stethoscope class="w-4 h-4" />
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Clinical Encounters</span>
+                                <div class="w-5 h-5 rounded bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+                                    <Stethoscope class="w-3 h-3" />
                                 </div>
                             </div>
-                            <div class="mt-2">
-                                <div class="text-xl font-bold text-foreground font-mono">
+                            <div class="mt-1">
+                                <div class="text-base font-bold text-foreground font-mono leading-none">
                                     {{ workload.today_encounters }}
                                 </div>
-                                <div class="flex items-center gap-2 mt-1.5 text-[11px] text-muted-foreground">
-                                    <span class="text-purple-600 dark:text-purple-400 font-semibold">{{ workload.active_encounters }} active now</span>
+                                <div class="flex items-center gap-1 mt-1 text-[10px] text-muted-foreground truncate">
+                                    <span class="text-purple-600 dark:text-purple-400 font-semibold">{{ workload.active_encounters }} active</span>
                                     <span>·</span>
-                                    <span>{{ workload.today_admissions }} admissions</span>
+                                    <span>{{ workload.today_admissions }} IPD</span>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Queue Pressure Card -->
-                        <div class="bg-card border border-border/60 rounded-xl p-3.5 shadow-2xs relative overflow-hidden">
+                        <div class="bg-card border border-border/60 rounded-lg p-2.5 shadow-2xs relative">
                             <div class="flex items-center justify-between">
-                                <span class="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Facility Queue Load</span>
-                                <div class="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
-                                    <Clock class="w-4 h-4" />
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Queue Load</span>
+                                <div class="w-5 h-5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                                    <Clock class="w-3 h-3" />
                                 </div>
                             </div>
-                            <div class="mt-2">
-                                <div class="text-xl font-bold text-foreground font-mono">
+                            <div class="mt-1">
+                                <div class="text-base font-bold text-foreground font-mono leading-none">
                                     {{ Object.values(workload.point_counts || {}).reduce((a, b) => a + b, 0) }}
                                 </div>
-                                <div class="flex items-center gap-1.5 mt-1.5 text-[11px] text-muted-foreground truncate">
+                                <div class="flex items-center gap-1 mt-1 text-[10px] text-muted-foreground truncate">
                                     <span>Dr: {{ workload.point_counts?.Doctor || 0 }}</span>
                                     <span>·</span>
                                     <span>Lab: {{ workload.point_counts?.Lab || 0 }}</span>
@@ -259,215 +252,198 @@ const reloadData = () => {
                     </div>
 
                     <!-- Main Tab Content -->
-                    <div v-if="activeTab === 'overview'" class="space-y-4">
-                        <!-- Real-time Department Operations Matrix -->
-                        <div class="bg-card border border-border/60 rounded-xl p-4 shadow-2xs">
-                            <div class="flex items-center justify-between mb-3 border-b border-border/50 pb-2.5">
-                                <div class="flex items-center gap-2">
-                                    <LayoutDashboard class="w-4 h-4 text-primary" />
-                                    <h2 class="text-xs font-bold text-foreground uppercase tracking-wider">Hospital Department Throughput</h2>
+                    <div v-if="activeTab === 'overview'" class="space-y-2.5">
+                        <!-- Compact Real-time Department Operations Matrix -->
+                        <div class="bg-card border border-border/60 rounded-lg p-3 shadow-2xs">
+                            <div class="flex items-center justify-between mb-2 pb-1.5 border-b border-border/50">
+                                <div class="flex items-center gap-1.5">
+                                    <LayoutDashboard class="w-3.5 h-3.5 text-primary" />
+                                    <h2 class="text-[11px] font-bold text-foreground uppercase tracking-wider">Hospital Department Throughput</h2>
                                 </div>
-                                <span class="text-[10px] text-muted-foreground">Click any department to inspect workspace</span>
+                                <span class="text-[9.5px] text-muted-foreground">Click any department to switch</span>
                             </div>
 
-                            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
                                 <!-- OPD & Clinical -->
-                                <Link :href="route('workspace.clinical')" class="p-3 rounded-lg border border-border/60 bg-muted/20 hover:bg-muted/50 hover:border-primary/40 transition group">
+                                <Link :href="route('workspace.clinical')" class="p-2 rounded-md border border-border/60 bg-muted/20 hover:bg-muted/50 hover:border-primary/40 transition group flex flex-col justify-between">
                                     <div class="flex items-center justify-between">
-                                        <div class="flex items-center gap-2">
-                                            <div class="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold">
-                                                <Stethoscope class="w-4 h-4" />
-                                            </div>
-                                            <div>
-                                                <div class="font-bold text-xs text-foreground group-hover:text-primary transition">Clinical Consultations</div>
-                                                <div class="text-[10px] text-muted-foreground">OPD & Specialist Clinics</div>
-                                            </div>
+                                        <div class="w-6 h-6 rounded bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold">
+                                            <Stethoscope class="w-3.5 h-3.5" />
                                         </div>
-                                        <ArrowUpRight class="w-4 h-4 text-muted-foreground group-hover:text-primary transition" />
+                                        <ArrowUpRight class="w-3 h-3 text-muted-foreground group-hover:text-primary transition" />
                                     </div>
-                                    <div class="mt-3 flex items-center justify-between text-xs pt-2 border-t border-border/40">
-                                        <span class="text-muted-foreground text-[11px]">Patients Waiting:</span>
+                                    <div class="mt-2">
+                                        <div class="font-bold text-[11px] text-foreground group-hover:text-primary transition truncate">Consultations</div>
+                                        <div class="text-[9.5px] text-muted-foreground">OPD Suites</div>
+                                    </div>
+                                    <div class="mt-1.5 pt-1 border-t border-border/40 flex items-center justify-between text-[10px]">
+                                        <span class="text-muted-foreground">Waiting:</span>
                                         <span class="font-bold font-mono text-purple-600 dark:text-purple-400">{{ workload.point_counts?.Doctor || 0 }}</span>
                                     </div>
                                 </Link>
 
                                 <!-- Inpatient Wards -->
-                                <Link :href="route('inpatient.workspace')" class="p-3 rounded-lg border border-border/60 bg-muted/20 hover:bg-muted/50 hover:border-primary/40 transition group">
+                                <Link :href="route('inpatient.workspace')" class="p-2 rounded-md border border-border/60 bg-muted/20 hover:bg-muted/50 hover:border-primary/40 transition group flex flex-col justify-between">
                                     <div class="flex items-center justify-between">
-                                        <div class="flex items-center gap-2">
-                                            <div class="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold">
-                                                <Bed class="w-4 h-4" />
-                                            </div>
-                                            <div>
-                                                <div class="font-bold text-xs text-foreground group-hover:text-primary transition">Inpatient Wards</div>
-                                                <div class="text-[10px] text-muted-foreground">Bed Census & Admissions</div>
-                                            </div>
+                                        <div class="w-6 h-6 rounded bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold">
+                                            <Bed class="w-3.5 h-3.5" />
                                         </div>
-                                        <ArrowUpRight class="w-4 h-4 text-muted-foreground group-hover:text-primary transition" />
+                                        <ArrowUpRight class="w-3 h-3 text-muted-foreground group-hover:text-primary transition" />
                                     </div>
-                                    <div class="mt-3 flex items-center justify-between text-xs pt-2 border-t border-border/40">
-                                        <span class="text-muted-foreground text-[11px]">Occupancy:</span>
-                                        <span class="font-bold font-mono text-blue-600 dark:text-blue-400">{{ census.occupied_beds }} / {{ census.total_beds }} ({{ census.occupancy_rate }}%)</span>
+                                    <div class="mt-2">
+                                        <div class="font-bold text-[11px] text-foreground group-hover:text-primary transition truncate">Inpatient Wards</div>
+                                        <div class="text-[9.5px] text-muted-foreground">Bed Census</div>
+                                    </div>
+                                    <div class="mt-1.5 pt-1 border-t border-border/40 flex items-center justify-between text-[10px]">
+                                        <span class="text-muted-foreground">Occupied:</span>
+                                        <span class="font-bold font-mono text-blue-600 dark:text-blue-400">{{ census.occupied_beds }}/{{ census.total_beds }}</span>
                                     </div>
                                 </Link>
 
                                 <!-- Pharmacy -->
-                                <Link :href="route('pharmacy.queue')" class="p-3 rounded-lg border border-border/60 bg-muted/20 hover:bg-muted/50 hover:border-primary/40 transition group">
+                                <Link :href="route('pharmacy.queue')" class="p-2 rounded-md border border-border/60 bg-muted/20 hover:bg-muted/50 hover:border-primary/40 transition group flex flex-col justify-between">
                                     <div class="flex items-center justify-between">
-                                        <div class="flex items-center gap-2">
-                                            <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">
-                                                <Pill class="w-4 h-4" />
-                                            </div>
-                                            <div>
-                                                <div class="font-bold text-xs text-foreground group-hover:text-primary transition">Pharmacy Dispensary</div>
-                                                <div class="text-[10px] text-muted-foreground">Rx Verification & Stock</div>
-                                            </div>
+                                        <div class="w-6 h-6 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">
+                                            <Pill class="w-3.5 h-3.5" />
                                         </div>
-                                        <ArrowUpRight class="w-4 h-4 text-muted-foreground group-hover:text-primary transition" />
+                                        <ArrowUpRight class="w-3 h-3 text-muted-foreground group-hover:text-primary transition" />
                                     </div>
-                                    <div class="mt-3 flex items-center justify-between text-xs pt-2 border-t border-border/40">
-                                        <span class="text-muted-foreground text-[11px]">Dispense Queue:</span>
+                                    <div class="mt-2">
+                                        <div class="font-bold text-[11px] text-foreground group-hover:text-primary transition truncate">Pharmacy</div>
+                                        <div class="text-[9.5px] text-muted-foreground">Dispensary</div>
+                                    </div>
+                                    <div class="mt-1.5 pt-1 border-t border-border/40 flex items-center justify-between text-[10px]">
+                                        <span class="text-muted-foreground">Rx Queue:</span>
                                         <span class="font-bold font-mono text-emerald-600 dark:text-emerald-400">{{ workload.point_counts?.Pharmacy || 0 }}</span>
                                     </div>
                                 </Link>
 
                                 <!-- Laboratory -->
-                                <Link :href="route('laboratory.workspace')" class="p-3 rounded-lg border border-border/60 bg-muted/20 hover:bg-muted/50 hover:border-primary/40 transition group">
+                                <Link :href="route('laboratory.workspace')" class="p-2 rounded-md border border-border/60 bg-muted/20 hover:bg-muted/50 hover:border-primary/40 transition group flex flex-col justify-between">
                                     <div class="flex items-center justify-between">
-                                        <div class="flex items-center gap-2">
-                                            <div class="w-8 h-8 rounded-lg bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 flex items-center justify-center font-bold">
-                                                <FlaskConical class="w-4 h-4" />
-                                            </div>
-                                            <div>
-                                                <div class="font-bold text-xs text-foreground group-hover:text-primary transition">Pathology Laboratory</div>
-                                                <div class="text-[10px] text-muted-foreground">Specimens & Diagnostic Tests</div>
-                                            </div>
+                                        <div class="w-6 h-6 rounded bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 flex items-center justify-center font-bold">
+                                            <FlaskConical class="w-3.5 h-3.5" />
                                         </div>
-                                        <ArrowUpRight class="w-4 h-4 text-muted-foreground group-hover:text-primary transition" />
+                                        <ArrowUpRight class="w-3 h-3 text-muted-foreground group-hover:text-primary transition" />
                                     </div>
-                                    <div class="mt-3 flex items-center justify-between text-xs pt-2 border-t border-border/40">
-                                        <span class="text-muted-foreground text-[11px]">Lab Queue:</span>
+                                    <div class="mt-2">
+                                        <div class="font-bold text-[11px] text-foreground group-hover:text-primary transition truncate">Laboratory</div>
+                                        <div class="text-[9.5px] text-muted-foreground">Diagnostic Lab</div>
+                                    </div>
+                                    <div class="mt-1.5 pt-1 border-t border-border/40 flex items-center justify-between text-[10px]">
+                                        <span class="text-muted-foreground">Lab Orders:</span>
                                         <span class="font-bold font-mono text-cyan-600 dark:text-cyan-400">{{ workload.point_counts?.Lab || 0 }}</span>
                                     </div>
                                 </Link>
 
                                 <!-- Procedures & Surgery -->
-                                <Link :href="route('procedures.workspace')" class="p-3 rounded-lg border border-border/60 bg-muted/20 hover:bg-muted/50 hover:border-primary/40 transition group">
+                                <Link :href="route('procedures.workspace')" class="p-2 rounded-md border border-border/60 bg-muted/20 hover:bg-muted/50 hover:border-primary/40 transition group flex flex-col justify-between">
                                     <div class="flex items-center justify-between">
-                                        <div class="flex items-center gap-2">
-                                            <div class="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center font-bold">
-                                                <Scissors class="w-4 h-4" />
-                                            </div>
-                                            <div>
-                                                <div class="font-bold text-xs text-foreground group-hover:text-primary transition">Theatre & Procedures</div>
-                                                <div class="text-[10px] text-muted-foreground">Minor Ops & Surgical Suites</div>
-                                            </div>
+                                        <div class="w-6 h-6 rounded bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center font-bold">
+                                            <Scissors class="w-3.5 h-3.5" />
                                         </div>
-                                        <ArrowUpRight class="w-4 h-4 text-muted-foreground group-hover:text-primary transition" />
+                                        <ArrowUpRight class="w-3 h-3 text-muted-foreground group-hover:text-primary transition" />
                                     </div>
-                                    <div class="mt-3 flex items-center justify-between text-xs pt-2 border-t border-border/40">
-                                        <span class="text-muted-foreground text-[11px]">Theatre Waiting:</span>
+                                    <div class="mt-2">
+                                        <div class="font-bold text-[11px] text-foreground group-hover:text-primary transition truncate">Theatre & Surgery</div>
+                                        <div class="text-[9.5px] text-muted-foreground">Procedure Suite</div>
+                                    </div>
+                                    <div class="mt-1.5 pt-1 border-t border-border/40 flex items-center justify-between text-[10px]">
+                                        <span class="text-muted-foreground">Waiting:</span>
                                         <span class="font-bold font-mono text-rose-600 dark:text-rose-400">{{ workload.point_counts?.Procedure || 0 }}</span>
                                     </div>
                                 </Link>
 
                                 <!-- Billing & POS -->
-                                <Link :href="route('billing.desk')" class="p-3 rounded-lg border border-border/60 bg-muted/20 hover:bg-muted/50 hover:border-primary/40 transition group">
+                                <Link :href="route('billing.desk')" class="p-2 rounded-md border border-border/60 bg-muted/20 hover:bg-muted/50 hover:border-primary/40 transition group flex flex-col justify-between">
                                     <div class="flex items-center justify-between">
-                                        <div class="flex items-center gap-2">
-                                            <div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold">
-                                                <Receipt class="w-4 h-4" />
-                                            </div>
-                                            <div>
-                                                <div class="font-bold text-xs text-foreground group-hover:text-primary transition">Billing & Cashier POS</div>
-                                                <div class="text-[10px] text-muted-foreground">Invoicing & Collections</div>
-                                            </div>
+                                        <div class="w-6 h-6 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold">
+                                            <Receipt class="w-3.5 h-3.5" />
                                         </div>
-                                        <ArrowUpRight class="w-4 h-4 text-muted-foreground group-hover:text-primary transition" />
+                                        <ArrowUpRight class="w-3 h-3 text-muted-foreground group-hover:text-primary transition" />
                                     </div>
-                                    <div class="mt-3 flex items-center justify-between text-xs pt-2 border-t border-border/40">
-                                        <span class="text-muted-foreground text-[11px]">Cashier Queue:</span>
+                                    <div class="mt-2">
+                                        <div class="font-bold text-[11px] text-foreground group-hover:text-primary transition truncate">Billing & Cashier</div>
+                                        <div class="text-[9.5px] text-muted-foreground">POS Tills</div>
+                                    </div>
+                                    <div class="mt-1.5 pt-1 border-t border-border/40 flex items-center justify-between text-[10px]">
+                                        <span class="text-muted-foreground">Cashier:</span>
                                         <span class="font-bold font-mono text-amber-600 dark:text-amber-400">{{ workload.point_counts?.Cashier || 0 }}</span>
                                     </div>
                                 </Link>
                             </div>
                         </div>
 
-                        <!-- 2-Column: Quota Overview & Recent Security Stream -->
-                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <!-- 2-Column: Compact Quotas & Security Audit Stream -->
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-2.5">
                             <!-- Quotas & Fleet Utilization -->
-                            <div class="bg-card border border-border/60 rounded-xl p-4 shadow-2xs space-y-3.5">
-                                <div class="flex items-center justify-between border-b border-border/50 pb-2">
-                                    <div class="flex items-center gap-2">
-                                        <HardDrive class="w-4 h-4 text-primary" />
-                                        <h3 class="text-xs font-bold text-foreground uppercase tracking-wider">Tenant Subscription Quotas</h3>
+                            <div class="bg-card border border-border/60 rounded-lg p-3 shadow-2xs space-y-2.5">
+                                <div class="flex items-center justify-between border-b border-border/50 pb-1.5">
+                                    <div class="flex items-center gap-1.5">
+                                        <HardDrive class="w-3.5 h-3.5 text-primary" />
+                                        <h3 class="text-[10.5px] font-bold text-foreground uppercase tracking-wider">Tenant Subscription Quotas</h3>
                                     </div>
-                                    <span class="text-[10px] font-mono font-bold text-muted-foreground">{{ tenant.plan }}</span>
+                                    <span class="text-[9.5px] font-mono font-bold text-muted-foreground">{{ tenant.plan }}</span>
                                 </div>
 
-                                <div class="space-y-3">
+                                <div class="space-y-2">
                                     <!-- User Accounts -->
                                     <div>
-                                        <div class="flex justify-between text-xs mb-1">
-                                            <span class="text-muted-foreground">Staff User Accounts</span>
+                                        <div class="flex justify-between text-[10.5px] mb-0.5">
+                                            <span class="text-muted-foreground">Staff Accounts</span>
                                             <span class="font-bold font-mono">{{ quotas.users_used }} / {{ quotas.max_users }}</span>
                                         </div>
-                                        <div class="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                                        <div class="w-full h-1 bg-muted rounded-full overflow-hidden">
                                             <div class="h-full bg-primary rounded-full" :style="{ width: `${Math.min(100, (quotas.users_used / (quotas.max_users || 1)) * 100)}%` }"></div>
                                         </div>
                                     </div>
 
                                     <!-- Facility Branches -->
                                     <div>
-                                        <div class="flex justify-between text-xs mb-1">
-                                            <span class="text-muted-foreground">Hospital Facility Branches</span>
+                                        <div class="flex justify-between text-[10.5px] mb-0.5">
+                                            <span class="text-muted-foreground">Facility Branches</span>
                                             <span class="font-bold font-mono">{{ quotas.facilities_used }} / {{ quotas.max_facilities }}</span>
                                         </div>
-                                        <div class="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                                        <div class="w-full h-1 bg-muted rounded-full overflow-hidden">
                                             <div class="h-full bg-emerald-500 rounded-full" :style="{ width: `${Math.min(100, (quotas.facilities_used / (quotas.max_facilities || 1)) * 100)}%` }"></div>
                                         </div>
                                     </div>
 
                                     <!-- Storage Quota -->
                                     <div>
-                                        <div class="flex justify-between text-xs mb-1">
-                                            <span class="text-muted-foreground">Clinical Document Storage</span>
+                                        <div class="flex justify-between text-[10.5px] mb-0.5">
+                                            <span class="text-muted-foreground">Document Storage</span>
                                             <span class="font-bold font-mono">{{ quotas.storage_used_mb }} MB / {{ quotas.storage_quota_mb }} MB</span>
                                         </div>
-                                        <div class="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                                        <div class="w-full h-1 bg-muted rounded-full overflow-hidden">
                                             <div class="h-full bg-blue-500 rounded-full" :style="{ width: `${Math.min(100, (quotas.storage_used_mb / (quotas.storage_quota_mb || 1)) * 100)}%` }"></div>
                                         </div>
                                     </div>
                                 </div>
-
-                                <div class="pt-2 border-t border-border/40 flex items-center justify-between text-xs">
-                                    <span class="text-muted-foreground text-[11px]">Need additional capacity?</span>
-                                    <span class="text-[11px] font-semibold text-primary">Contact Platform Superadmin</span>
-                                </div>
                             </div>
 
                             <!-- Forensic Security Audit Stream -->
-                            <div class="bg-card border border-border/60 rounded-xl p-4 shadow-2xs space-y-3">
-                                <div class="flex items-center justify-between border-b border-border/50 pb-2">
-                                    <div class="flex items-center gap-2">
-                                        <ShieldCheck class="w-4 h-4 text-emerald-500" />
-                                        <h3 class="text-xs font-bold text-foreground uppercase tracking-wider">Forensic Audit Stream</h3>
+                            <div class="bg-card border border-border/60 rounded-lg p-3 shadow-2xs space-y-2">
+                                <div class="flex items-center justify-between border-b border-border/50 pb-1.5">
+                                    <div class="flex items-center gap-1.5">
+                                        <ShieldCheck class="w-3.5 h-3.5 text-emerald-500" />
+                                        <h3 class="text-[10.5px] font-bold text-foreground uppercase tracking-wider">Forensic Audit Stream</h3>
                                     </div>
-                                    <Link :href="route('audit.workspace')" class="text-[10px] font-semibold text-primary hover:underline">
-                                        View Full Ledger →
+                                    <Link :href="route('audit.workspace')" class="text-[9.5px] font-semibold text-primary hover:underline">
+                                        Audit Ledger →
                                     </Link>
                                 </div>
 
-                                <div class="space-y-2 max-h-52 overflow-y-auto">
-                                    <div v-for="log in recentAudits" :key="log.id" class="p-2 rounded-lg bg-muted/30 border border-border/40 text-xs flex items-center justify-between gap-2">
+                                <div class="space-y-1.5 max-h-40 overflow-y-auto">
+                                    <div v-for="log in recentAudits" :key="log.id" class="p-1.5 rounded bg-muted/30 border border-border/40 text-[10px] flex items-center justify-between gap-1.5">
                                         <div class="min-w-0">
-                                            <div class="font-bold text-[11.5px] text-foreground truncate">{{ log.action }}</div>
-                                            <div class="text-[10px] text-muted-foreground truncate">{{ log.event_category }} · IP: {{ log.ip_address }}</div>
+                                            <div class="font-bold text-foreground truncate">{{ log.action }}</div>
+                                            <div class="text-[9px] text-muted-foreground truncate">{{ log.event_category }} · IP: {{ log.ip_address }}</div>
                                         </div>
-                                        <span class="text-[10px] text-muted-foreground font-mono shrink-0">{{ formatDate(log.created_at) }}</span>
+                                        <span class="text-[9px] text-muted-foreground font-mono shrink-0">{{ formatDate(log.created_at) }}</span>
                                     </div>
 
-                                    <div v-if="recentAudits.length === 0" class="text-center py-6 text-xs text-muted-foreground">
+                                    <div v-if="recentAudits.length === 0" class="text-center py-4 text-[10px] text-muted-foreground">
                                         No recent audit events logged.
                                     </div>
                                 </div>
@@ -476,43 +452,43 @@ const reloadData = () => {
                     </div>
 
                     <!-- Workload Detailed Tab -->
-                    <div v-else-if="activeTab === 'workload'" class="bg-card border border-border/60 rounded-xl p-4 shadow-2xs space-y-4">
-                        <h2 class="text-xs font-bold text-foreground uppercase tracking-wider">Live Service Point Breakdown</h2>
-                        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-                            <div v-for="(count, point) in workload.point_counts" :key="point" class="p-3 rounded-lg bg-muted/30 border border-border/50 text-center">
-                                <div class="text-[10px] font-bold text-muted-foreground uppercase">{{ point }}</div>
-                                <div class="text-2xl font-bold font-mono text-foreground mt-1">{{ count }}</div>
-                                <div class="text-[10px] text-muted-foreground mt-0.5">waiting</div>
+                    <div v-else-if="activeTab === 'workload'" class="bg-card border border-border/60 rounded-lg p-3 shadow-2xs space-y-2.5">
+                        <h2 class="text-[11px] font-bold text-foreground uppercase tracking-wider">Live Service Point Breakdown</h2>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+                            <div v-for="(count, point) in workload.point_counts" :key="point" class="p-2.5 rounded-md bg-muted/30 border border-border/50 text-center">
+                                <div class="text-[9.5px] font-bold text-muted-foreground uppercase">{{ point }}</div>
+                                <div class="text-xl font-bold font-mono text-foreground mt-0.5">{{ count }}</div>
+                                <div class="text-[9px] text-muted-foreground">waiting</div>
                             </div>
                         </div>
                     </div>
 
                     <!-- Finance Detailed Tab -->
-                    <div v-else-if="activeTab === 'finance'" class="bg-card border border-border/60 rounded-xl p-4 shadow-2xs space-y-4">
-                        <h2 class="text-xs font-bold text-foreground uppercase tracking-wider">Today's Collections by Payment Method</h2>
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                            <div v-for="(amount, method) in finance.payment_breakdown" :key="method" class="p-3.5 rounded-lg bg-muted/30 border border-border/50">
-                                <div class="text-xs font-bold text-foreground uppercase">{{ method }}</div>
-                                <div class="text-lg font-bold font-mono text-emerald-600 dark:text-emerald-400 mt-1">{{ formatCurrency(amount) }}</div>
+                    <div v-else-if="activeTab === 'finance'" class="bg-card border border-border/60 rounded-lg p-3 shadow-2xs space-y-2.5">
+                        <h2 class="text-[11px] font-bold text-foreground uppercase tracking-wider">Today's Collections by Payment Method</h2>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                            <div v-for="(amount, method) in finance.payment_breakdown" :key="method" class="p-2.5 rounded-md bg-muted/30 border border-border/50">
+                                <div class="text-[10px] font-bold text-foreground uppercase">{{ method }}</div>
+                                <div class="text-base font-bold font-mono text-emerald-600 dark:text-emerald-400 mt-0.5">{{ formatCurrency(amount) }}</div>
                             </div>
                         </div>
                     </div>
 
                     <!-- Branches Detailed Tab -->
-                    <div v-else-if="activeTab === 'branches'" class="bg-card border border-border/60 rounded-xl p-4 shadow-2xs space-y-4">
+                    <div v-else-if="activeTab === 'branches'" class="bg-card border border-border/60 rounded-lg p-3 shadow-2xs space-y-2.5">
                         <div class="flex items-center justify-between">
-                            <h2 class="text-xs font-bold text-foreground uppercase tracking-wider">Registered Hospital Facilities ({{ facilities.length }})</h2>
-                            <span class="text-xs text-muted-foreground">Quota: {{ quotas.facilities_used }} / {{ quotas.max_facilities }} used</span>
+                            <h2 class="text-[11px] font-bold text-foreground uppercase tracking-wider">Registered Hospital Facilities ({{ facilities.length }})</h2>
+                            <span class="text-[10px] text-muted-foreground">Quota: {{ quotas.facilities_used }} / {{ quotas.max_facilities }} used</span>
                         </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <div v-for="fac in facilities" :key="fac.id" class="p-3.5 rounded-lg bg-muted/20 border border-border/60 flex items-center justify-between">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            <div v-for="fac in facilities" :key="fac.id" class="p-2.5 rounded-md bg-muted/20 border border-border/60 flex items-center justify-between">
                                 <div>
-                                    <div class="font-bold text-xs text-foreground">{{ fac.name }}</div>
-                                    <div class="text-[10px] text-muted-foreground mt-0.5">Code: {{ fac.code }} · {{ fac.facility_type }} · {{ fac.city }}</div>
-                                    <div class="text-[10px] text-muted-foreground mt-0.5">{{ fac.departments_count || 0 }} clinical departments</div>
+                                    <div class="font-bold text-[11px] text-foreground">{{ fac.name }}</div>
+                                    <div class="text-[9.5px] text-muted-foreground mt-0.5">Code: {{ fac.code }} · {{ fac.facility_type }} · {{ fac.city }}</div>
+                                    <div class="text-[9.5px] text-muted-foreground">{{ fac.departments_count || 0 }} clinical departments</div>
                                 </div>
-                                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                                <span class="text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
                                     Active
                                 </span>
                             </div>
@@ -520,84 +496,84 @@ const reloadData = () => {
                     </div>
 
                     <!-- Security & Audit Tab -->
-                    <div v-else-if="activeTab === 'audit'" class="bg-card border border-border/60 rounded-xl p-4 shadow-2xs space-y-4">
+                    <div v-else-if="activeTab === 'audit'" class="bg-card border border-border/60 rounded-lg p-3 shadow-2xs space-y-2.5">
                         <div class="flex items-center justify-between">
-                            <h2 class="text-xs font-bold text-foreground uppercase tracking-wider">Forensic Audit Trail</h2>
-                            <Link :href="route('audit.workspace')" class="text-xs text-primary font-semibold hover:underline">
+                            <h2 class="text-[11px] font-bold text-foreground uppercase tracking-wider">Forensic Audit Trail</h2>
+                            <Link :href="route('audit.workspace')" class="text-[10.5px] text-primary font-semibold hover:underline">
                                 Open Forensic Audit Workspace →
                             </Link>
                         </div>
-                        <div class="space-y-2">
-                            <div v-for="log in recentAudits" :key="log.id" class="p-3 rounded-lg bg-muted/30 border border-border/40 flex items-center justify-between">
+                        <div class="space-y-1.5">
+                            <div v-for="log in recentAudits" :key="log.id" class="p-2 rounded bg-muted/30 border border-border/40 flex items-center justify-between">
                                 <div>
-                                    <div class="font-bold text-xs text-foreground">{{ log.action }} ({{ log.event_category }})</div>
-                                    <div class="text-[10px] text-muted-foreground mt-0.5">Entity: {{ log.entity_type }} · IP: {{ log.ip_address }}</div>
+                                    <div class="font-bold text-[11px] text-foreground">{{ log.action }} ({{ log.event_category }})</div>
+                                    <div class="text-[9.5px] text-muted-foreground mt-0.5">Entity: {{ log.entity_type }} · IP: {{ log.ip_address }}</div>
                                 </div>
-                                <span class="text-xs font-mono text-muted-foreground">{{ formatDate(log.created_at) }}</span>
+                                <span class="text-[10px] font-mono text-muted-foreground">{{ formatDate(log.created_at) }}</span>
                             </div>
                         </div>
                     </div>
                 </div>
             </AfyaWorkspaceMain>
 
-            <!-- Right Executive Inspector Panel (320px) -->
+            <!-- Right Executive Inspector Panel (300px) -->
             <template #context>
                 <AfyaContextPanel title="Executive Inspector" subtitle="Organization & Governance">
-                    <div class="p-4 space-y-5 text-xs">
+                    <div class="p-3 space-y-3.5 text-xs">
                         <!-- Organization Quick Info -->
-                        <div class="space-y-2 pb-3 border-b border-border/50">
-                            <div class="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Hospital Organization</div>
-                            <div class="font-bold text-sm text-foreground">{{ tenant.name }}</div>
-                            <div class="text-muted-foreground text-[11px]">Identifier: <span class="font-mono text-foreground">{{ tenant.slug }}</span></div>
-                            <div class="text-muted-foreground text-[11px]">SaaS Plan: <span class="font-semibold text-primary">{{ tenant.plan }}</span></div>
+                        <div class="space-y-1 pb-2.5 border-b border-border/50">
+                            <div class="text-[9.5px] font-bold uppercase tracking-wider text-muted-foreground">Hospital Organization</div>
+                            <div class="font-bold text-xs text-foreground">{{ tenant.name }}</div>
+                            <div class="text-muted-foreground text-[10.5px]">Identifier: <span class="font-mono text-foreground">{{ tenant.slug }}</span></div>
+                            <div class="text-muted-foreground text-[10.5px]">SaaS Plan: <span class="font-semibold text-primary">{{ tenant.plan }}</span></div>
                         </div>
 
                         <!-- Executive Shortcuts Deck -->
-                        <div class="space-y-2">
-                            <div class="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Administration Shortcuts</div>
-                            <div class="space-y-1.5">
-                                <Link :href="route('access-control.workspace')" class="w-full flex items-center justify-between p-2 rounded-lg bg-muted/30 hover:bg-muted text-foreground transition border border-border/40">
-                                    <div class="flex items-center gap-2">
-                                        <Users class="w-4 h-4 text-primary" />
-                                        <span class="font-medium text-xs">Manage Staff & RBAC</span>
+                        <div class="space-y-1.5">
+                            <div class="text-[9.5px] font-bold uppercase tracking-wider text-muted-foreground">Administration Shortcuts</div>
+                            <div class="space-y-1">
+                                <Link :href="route('access-control.workspace')" class="w-full flex items-center justify-between p-1.5 rounded-md bg-muted/30 hover:bg-muted text-foreground transition border border-border/40">
+                                    <div class="flex items-center gap-1.5">
+                                        <Users class="w-3.5 h-3.5 text-primary" />
+                                        <span class="font-medium text-[11px]">Manage Staff & RBAC</span>
                                     </div>
-                                    <ArrowUpRight class="w-3.5 h-3.5 text-muted-foreground" />
+                                    <ArrowUpRight class="w-3 h-3 text-muted-foreground" />
                                 </Link>
 
-                                <Link :href="route('reports.workspace')" class="w-full flex items-center justify-between p-2 rounded-lg bg-muted/30 hover:bg-muted text-foreground transition border border-border/40">
-                                    <div class="flex items-center gap-2">
-                                        <TrendingUp class="w-4 h-4 text-emerald-500" />
-                                        <span class="font-medium text-xs">MoH MTUHA & BI Reports</span>
+                                <Link :href="route('reports.workspace')" class="w-full flex items-center justify-between p-1.5 rounded-md bg-muted/30 hover:bg-muted text-foreground transition border border-border/40">
+                                    <div class="flex items-center gap-1.5">
+                                        <TrendingUp class="w-3.5 h-3.5 text-emerald-500" />
+                                        <span class="font-medium text-[11px]">MoH MTUHA & BI Reports</span>
                                     </div>
-                                    <ArrowUpRight class="w-3.5 h-3.5 text-muted-foreground" />
+                                    <ArrowUpRight class="w-3 h-3 text-muted-foreground" />
                                 </Link>
 
-                                <Link :href="route('insurance.workspace')" class="w-full flex items-center justify-between p-2 rounded-lg bg-muted/30 hover:bg-muted text-foreground transition border border-border/40">
-                                    <div class="flex items-center gap-2">
-                                        <ShieldCheck class="w-4 h-4 text-blue-500" />
-                                        <span class="font-medium text-xs">Tariffs & NHIF Claims</span>
+                                <Link :href="route('insurance.workspace')" class="w-full flex items-center justify-between p-1.5 rounded-md bg-muted/30 hover:bg-muted text-foreground transition border border-border/40">
+                                    <div class="flex items-center gap-1.5">
+                                        <ShieldCheck class="w-3.5 h-3.5 text-blue-500" />
+                                        <span class="font-medium text-[11px]">Tariffs & NHIF Claims</span>
                                     </div>
-                                    <ArrowUpRight class="w-3.5 h-3.5 text-muted-foreground" />
+                                    <ArrowUpRight class="w-3 h-3 text-muted-foreground" />
                                 </Link>
 
-                                <Link :href="route('inventory.workspace')" class="w-full flex items-center justify-between p-2 rounded-lg bg-muted/30 hover:bg-muted text-foreground transition border border-border/40">
-                                    <div class="flex items-center gap-2">
-                                        <HardDrive class="w-4 h-4 text-amber-500" />
-                                        <span class="font-medium text-xs">Central Warehouse</span>
+                                <Link :href="route('inventory.workspace')" class="w-full flex items-center justify-between p-1.5 rounded-md bg-muted/30 hover:bg-muted text-foreground transition border border-border/40">
+                                    <div class="flex items-center gap-1.5">
+                                        <HardDrive class="w-3.5 h-3.5 text-amber-500" />
+                                        <span class="font-medium text-[11px]">Central Warehouse</span>
                                     </div>
-                                    <ArrowUpRight class="w-3.5 h-3.5 text-muted-foreground" />
+                                    <ArrowUpRight class="w-3 h-3 text-muted-foreground" />
                                 </Link>
                             </div>
                         </div>
 
                         <!-- System Security & Integrity -->
-                        <div class="p-3 rounded-lg bg-primary/5 border border-primary/20 space-y-1.5">
-                            <div class="flex items-center gap-1.5 text-primary font-bold text-[11px]">
-                                <Lock class="w-3.5 h-3.5" />
-                                <span>Multi-Tenant Enterprise Isolation</span>
+                        <div class="p-2.5 rounded-md bg-primary/5 border border-primary/20 space-y-1">
+                            <div class="flex items-center gap-1 text-primary font-bold text-[10px]">
+                                <Lock class="w-3 h-3" />
+                                <span>Multi-Tenant RLS Protection</span>
                             </div>
-                            <p class="text-[10px] text-muted-foreground leading-relaxed">
-                                PostgreSQL Row-Level Security (RLS) and HIPAA/MoH cryptographic audit signatures are enforced across all operations.
+                            <p class="text-[9.5px] text-muted-foreground leading-relaxed">
+                                Strict database row-level security & HIPAA/MoH cryptographic audit signatures active.
                             </p>
                         </div>
                     </div>
