@@ -183,12 +183,66 @@ test('superadmin can provision new hospital organization under RLS policies', fu
         ->and($authService->hasPermission($adminUser, 'billing.invoice.view'))->toBeTrue()
         ->and($authService->hasPermission($adminUser, 'patient.registry.view'))->toBeTrue();
 
-    // Verify tenant admin can access dashboard but is 403 forbidden from superadmin platform control
+    // Verify tenant admin lands on HospitalExecutiveWorkspace
     $dashboardResponse = $this->actingAs($adminUser)->get(route('dashboard'));
-    $dashboardResponse->assertOk();
+    $dashboardResponse->assertOk()
+        ->assertInertia(fn ($page) => $page->component('Workspace/HospitalExecutiveWorkspace'));
 
     $superadminResponse = $this->actingAs($adminUser)->get(route('superadmin.workspace'));
     $superadminResponse->assertForbidden();
+});
+
+test('role-based landing routes tenant-admin to Executive Workspace and staff to Front-Desk Hub', function () {
+    $env = $this->setupTenantEnvironment();
+    $tenant = $env['tenant'];
+
+    // 1. Staff user (Doctor/Receptionist) lands on Front-Desk HomeWorkspace
+    $staffUser = User::create([
+        'tenant_id' => $tenant->id,
+        'first_name' => 'Staff',
+        'last_name' => 'Reception',
+        'email' => 'reception_unique@afyanova.local',
+        'password_hash' => \Illuminate\Support\Facades\Hash::make('Password123!'),
+        'status' => 'active',
+    ]);
+    $receptionRole = Role::firstOrCreate(
+        ['tenant_id' => $tenant->id, 'slug' => 'receptionist'],
+        ['name' => 'Receptionist']
+    );
+    $schedPerm = Permission::firstOrCreate(['slug' => 'scheduling.queue.view'], ['name' => 'View Queue', 'domain' => 'Scheduling']);
+    $receptionRole->permissions()->syncWithoutDetaching([$schedPerm->id]);
+    \App\Domains\Identity\Models\RoleAssignment::create([
+        'user_id' => $staffUser->id,
+        'role_id' => $receptionRole->id,
+        'facility_id' => null,
+    ]);
+
+    $response = $this->actingAs($staffUser)->get(route('dashboard'));
+    $response->assertOk()
+        ->assertInertia(fn ($page) => $page->component('Workspace/HomeWorkspace'));
+
+    // 2. Tenant Admin lands on Executive Workspace
+    $adminUser = User::create([
+        'tenant_id' => $tenant->id,
+        'first_name' => 'Hospital',
+        'last_name' => 'Director',
+        'email' => 'director_unique@afyanova.local',
+        'password_hash' => \Illuminate\Support\Facades\Hash::make('Password123!'),
+        'status' => 'active',
+    ]);
+    $adminRole = Role::firstOrCreate(
+        ['tenant_id' => $tenant->id, 'slug' => 'tenant-admin'],
+        ['name' => 'Hospital Admin']
+    );
+    \App\Domains\Identity\Models\RoleAssignment::create([
+        'user_id' => $adminUser->id,
+        'role_id' => $adminRole->id,
+        'facility_id' => null,
+    ]);
+
+    $adminResponse = $this->actingAs($adminUser)->get(route('dashboard'));
+    $adminResponse->assertOk()
+        ->assertInertia(fn ($page) => $page->component('Workspace/HospitalExecutiveWorkspace'));
 });
 
 test('superadmin can add facility branch to existing tenant within quota', function () {
