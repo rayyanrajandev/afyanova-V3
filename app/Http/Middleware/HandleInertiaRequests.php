@@ -42,11 +42,23 @@ class HandleInertiaRequests extends Middleware
                     'slug' => $request->user()->tenant->slug,
                 ] : null,
                 'facility' => fn () => $request->user() ? Facility::where('tenant_id', $request->user()->tenant_id)->first() : null,
+                'roles' => fn () => $request->user()
+                    ? $request->user()->roleAssignments()->with('role')->get()->map(fn ($ra) => [
+                        'id' => $ra->role?->id,
+                        'name' => $ra->role?->name,
+                        'slug' => $ra->role?->slug,
+                        'facility_id' => $ra->facility_id,
+                        'department_id' => $ra->department_id,
+                    ])
+                    : [],
                 'permissions' => fn () => $request->user()
                     ? app(AuthorizationService::class)->getUserPermissions($request->user())
                     : [],
                 'is_superadmin' => fn () => $request->user()
-                    ? (app(AuthorizationService::class)->isSuperAdmin($request->user()) || app(AuthorizationService::class)->hasPermission($request->user(), 'platform.superadmin.access'))
+                    ? app(AuthorizationService::class)->isSuperAdmin($request->user())
+                    : false,
+                'is_tenant_admin' => fn () => $request->user()
+                    ? app(AuthorizationService::class)->isTenantAdmin($request->user())
                     : false,
             ],
             'flash' => fn () => [

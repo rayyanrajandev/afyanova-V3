@@ -3,6 +3,7 @@
 use App\Domains\Audit\Models\AuditLog;
 use App\Domains\Identity\Models\Permission;
 use App\Domains\Identity\Models\Role;
+use App\Domains\Identity\Models\User;
 use App\Domains\Tenancy\Models\Facility;
 use App\Domains\Tenancy\Models\Tenant;
 use Illuminate\Support\Facades\DB;
@@ -170,6 +171,24 @@ test('superadmin can provision new hospital organization under RLS policies', fu
     $facility = Facility::withoutGlobalScopes()->where('tenant_id', $tenant->id)->first();
     expect($facility)->not->toBeNull()
         ->and($facility->name)->toBe('Main DSK Wing');
+
+    // Verify initial admin user has tenant-admin role assigned
+    $adminUser = User::withoutGlobalScopes()->where('tenant_id', $tenant->id)->where('email', 'admin@dskdispensary.co.tz')->first();
+    expect($adminUser)->not->toBeNull();
+
+    $authService = app(\App\Domains\Identity\Services\AuthorizationService::class);
+    expect($authService->isTenantAdmin($adminUser))->toBeTrue()
+        ->and($authService->isSuperAdmin($adminUser))->toBeFalse()
+        ->and($authService->hasPermission($adminUser, 'platform.superadmin.access'))->toBeFalse()
+        ->and($authService->hasPermission($adminUser, 'billing.invoice.view'))->toBeTrue()
+        ->and($authService->hasPermission($adminUser, 'patient.registry.view'))->toBeTrue();
+
+    // Verify tenant admin can access dashboard but is 403 forbidden from superadmin platform control
+    $dashboardResponse = $this->actingAs($adminUser)->get(route('dashboard'));
+    $dashboardResponse->assertOk();
+
+    $superadminResponse = $this->actingAs($adminUser)->get(route('superadmin.workspace'));
+    $superadminResponse->assertForbidden();
 });
 
 test('superadmin can add facility branch to existing tenant within quota', function () {

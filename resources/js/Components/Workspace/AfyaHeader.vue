@@ -61,13 +61,12 @@ onUnmounted(() => {
 const page = usePage();
 const user = page.props.auth?.user || { first_name: 'Staff', last_name: 'User', email: 'user@afyanova.local' };
 
-// permAny: [] means always visible (no page-level permission bar exists for
-// that workspace); otherwise the user needs at least one of the listed
-// slugs — mirrors exactly what each workspace controller's own
-// authorizeAnyWorkspacePermission() call requires, so this nav never shows
-// a link the server would 403 on click.
+const isSuperAdmin = computed(() => !!page.props.auth?.is_superadmin);
+const isTenantAdmin = computed(() => !!page.props.auth?.is_tenant_admin);
+const userPermissions = computed(() => page.props.auth?.permissions || []);
+
 const hospitalModules = [
-    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, route: 'dashboard', permAny: [] },
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, route: 'dashboard', permAny: ['scheduling.queue.view', 'scheduling.appointment.view', 'patient.registry.view', 'clinical.encounter.view', 'billing.invoice.view', 'pharmacy.prescription.view', 'lab.order.view', 'identity.user.manage', 'reports.analytics.view'] },
     { id: 'reports', label: 'Hospital Analytics & BI', icon: TrendingUp, route: 'reports.workspace', permAny: ['reports.clinical.view', 'reports.financial.view', 'reports.pharmacoeconomic.view', 'reports.analytics.view'] },
     { id: 'clinical', label: 'Clinical Workspace', icon: Stethoscope, route: 'workspace.clinical', permAny: ['clinical.encounter.view'] },
     { id: 'inpatient', label: 'Inpatient Wards', icon: Bed, route: 'inpatient.workspace', permAny: ['inpatient.ward.view'] },
@@ -78,17 +77,32 @@ const hospitalModules = [
     { id: 'billing', label: 'Billing & POS', icon: Receipt, route: 'billing.desk', permAny: ['billing.invoice.view'] },
     { id: 'pharmacy', label: 'Pharmacy', icon: Pill, route: 'pharmacy.queue', permAny: ['pharmacy.prescription.view', 'pharmacy.inventory.view'] },
     { id: 'inventory', label: 'Inventory & Warehousing', icon: Package, route: 'inventory.workspace', permAny: ['inventory.stock.view', 'inventory.catalog.view', 'inventory.requisition.view', 'inventory.transfer.view', 'inventory.po.view', 'inventory.predictive.view', 'inventory.grn.view', 'inventory.dda.view', 'inventory.gas.view', 'inventory.stocktake.view'] },
-    { id: 'access-control', label: 'Access Control & RBAC', icon: Shield, route: 'access-control.workspace', permAny: ['identity.user.manage', 'identity.role.manage'] },
-    { id: 'audit', label: 'Forensic Audit & Integrity', icon: ShieldCheck, route: 'audit.workspace', permAny: ['identity.user.view', 'identity.user.manage'] },
+    { id: 'access-control', label: 'Access Control & RBAC', icon: Shield, route: 'access-control.workspace', permAny: ['identity.user.manage', 'identity.role.manage', 'identity.roles.assign', 'identity.permissions.manage'] },
+    { id: 'audit', label: 'Forensic Audit & Integrity', icon: ShieldCheck, route: 'audit.workspace', permAny: ['audit.log.view', 'identity.user.view', 'identity.user.manage'] },
     { id: 'patients', label: 'Patient Registry', icon: Users, route: 'patients.index', permAny: ['patient.registry.view'] },
     { id: 'scheduling', label: 'Live Queue & Triage', icon: Clock, route: 'queue.index', permAny: ['scheduling.appointment.view', 'scheduling.queue.view'] },
-    { id: 'superadmin', label: 'Superadmin Platform Control', icon: Globe, route: 'superadmin.workspace', permAny: ['platform.superadmin.access'] },
 ];
 
-const userPermissions = page.props.auth?.permissions || [];
-const visibleModules = hospitalModules.filter(
-    (mod) => mod.permAny.length === 0 || mod.permAny.some((slug) => userPermissions.includes(slug))
-);
+const visibleModules = computed(() => {
+    const list = hospitalModules.filter((mod) => {
+        if (isTenantAdmin.value) return true;
+        if (mod.permAny.length === 0) return true;
+        return mod.permAny.some((slug) => userPermissions.value.includes(slug));
+    });
+
+    // Only Platform Superadmins can see the Superadmin Platform Control plane
+    if (isSuperAdmin.value) {
+        list.push({
+            id: 'superadmin',
+            label: 'Superadmin Platform Control',
+            icon: Globe,
+            route: 'superadmin.workspace',
+            permAny: ['platform.superadmin.access'],
+        });
+    }
+
+    return list;
+});
 
 const activeTenantName = computed(() => {
     return page.props.auth?.tenant?.name || page.props.auth?.user?.tenant?.name || 'AfyaNova Health Network';
@@ -99,7 +113,7 @@ const activeFacilityName = computed(() => {
 });
 
 const currentModuleObj = () => {
-    return hospitalModules.find(m => m.id === props.activeModule) || visibleModules[0] || hospitalModules[0];
+    return visibleModules.value.find(m => m.id === props.activeModule) || hospitalModules.find(m => m.id === props.activeModule) || visibleModules.value[0] || hospitalModules[0];
 };
 
 const switchModule = (mod) => {

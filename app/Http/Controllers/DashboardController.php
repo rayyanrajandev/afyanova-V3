@@ -28,8 +28,27 @@ class DashboardController extends Controller
         $user = $request->user();
 
         // 1. Platform Superadmins land directly on the Multi-Tenant SaaS Control Plane (unless actively in support impersonation)
-        if (($authService->isSuperAdmin($user) || $authService->hasPermission($user, 'platform.superadmin.access')) && ! $request->session()->has('impersonation')) {
+        if ($authService->isSuperAdmin($user) && ! $request->session()->has('impersonation')) {
             return redirect()->route('superadmin.workspace');
+        }
+
+        // 2. Authorize that user has at least one valid hospital permission or is tenant admin
+        if (! $authService->isTenantAdmin($user)) {
+            $this->authorizeAnyWorkspacePermission($user, $authService, [
+                'scheduling.queue.view',
+                'scheduling.appointment.view',
+                'patient.registry.view',
+                'clinical.encounter.view',
+                'billing.invoice.view',
+                'pharmacy.prescription.view',
+                'lab.order.view',
+                'procedure.order.view',
+                'radiology.order.view',
+                'insurance.claim.view',
+                'inventory.stock.view',
+                'reports.analytics.view',
+                'identity.user.manage',
+            ]);
         }
 
         $can = $this->buildSectionCanMap($user, $authService, [

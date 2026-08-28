@@ -95,6 +95,18 @@ class AuthorizationService
             }
         }
 
+        // If user is tenant-admin, they have all non-platform tenant permissions
+        if ($this->isTenantAdmin($user)) {
+            $allTenantPerms = \App\Domains\Identity\Models\Permission::where('domain', '!=', 'Platform')->pluck('slug')->toArray();
+            $permissions = array_merge($permissions, $allTenantPerms);
+        }
+
+        // If user is super-admin, they have all permissions including platform control
+        if ($this->isSuperAdmin($user)) {
+            $allPerms = \App\Domains\Identity\Models\Permission::pluck('slug')->toArray();
+            $permissions = array_merge($permissions, $allPerms);
+        }
+
         return array_values(array_unique($permissions));
     }
 
