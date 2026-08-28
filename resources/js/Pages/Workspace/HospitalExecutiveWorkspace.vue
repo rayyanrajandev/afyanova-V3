@@ -143,8 +143,8 @@ const reloadData = () => {
             </template>
 
             <!-- 2. CENTER PANEL: Primary Executive Workspace -->
-            <AfyaWorkspaceMain>
-                <div class="space-y-2.5 max-w-7xl mx-auto p-1 text-xs">
+            <AfyaWorkspaceMain :breadcrumbs="[{ label: 'Executive Command Center', active: true }]">
+                <div class="w-full space-y-4 text-xs">
                     <!-- Top Compact Executive Banner -->
                     <div class="flex items-center justify-between bg-card border border-border/60 rounded-lg px-3 py-2 shadow-2xs">
                         <div class="flex items-center gap-2.5 min-w-0">
