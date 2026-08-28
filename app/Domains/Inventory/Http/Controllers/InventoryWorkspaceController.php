@@ -4,18 +4,7 @@ namespace App\Domains\Inventory\Http\Controllers;
 
 use App\Core\Traits\AuthorizesWorkspaceAccess;
 use App\Domains\Identity\Services\AuthorizationService;
-use App\Domains\Inventory\Actions\ApproveDepartmentRequisitionAction;
-use App\Domains\Inventory\Actions\ApprovePurchaseOrderAction;
-use App\Domains\Inventory\Actions\ConfirmDepartmentRequisitionAction;
-use App\Domains\Inventory\Actions\ConfirmStockTransferAction;
-use App\Domains\Inventory\Actions\CreateDepartmentRequisitionAction;
-use App\Domains\Inventory\Actions\CreatePurchaseOrderAction;
-use App\Domains\Inventory\Actions\CreateStockTransferAction;
 use App\Domains\Inventory\Actions\GeneratePredictiveReordersAction;
-use App\Domains\Inventory\Actions\IssueDepartmentRequisitionAction;
-use App\Domains\Inventory\Actions\ProcessGoodsReceiptAction;
-use App\Domains\Inventory\Actions\ReconcileStocktakeSessionAction;
-use App\Domains\Inventory\Actions\RecordDdaAdministrationAction;
 use App\Domains\Inventory\Models\DdaRegisterLog;
 use App\Domains\Inventory\Models\DepartmentRequisition;
 use App\Domains\Inventory\Models\GoodsReceiptNote;
@@ -32,7 +21,6 @@ use App\Domains\Pharmacy\Models\InventoryBatch;
 use App\Domains\Pharmacy\Models\MedicationFormulary;
 use App\Domains\Tenancy\Models\Department;
 use App\Domains\Tenancy\Models\Facility;
-use App\Domains\Tenancy\Models\Tenant;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -41,6 +29,21 @@ use Illuminate\Routing\Controller;
 use Inertia\Inertia;
 use Inertia\Response;
 
+/**
+ * Inventory workspace: the read-heavy `index()` render (ten sections' worth
+ * of stock/catalog/procurement data) plus the two endpoints
+ * (`searchCatalog`, `storeItem`) that share this file's `SECTION_SLUGS`/
+ * `ACTION_SLUGS`/`canSeeItemCatalog()` permission plumbing.
+ *
+ * The other thirteen write endpoints that used to live here — requisitions,
+ * transfers, purchase orders, goods receipt, stocktake, DDA logging,
+ * predictive reorder generation — moved to their own per-resource
+ * controllers (InventoryRequisitionController and siblings) once this file
+ * passed 600 lines covering ten unrelated concerns. Each of those methods
+ * was already a thin authorize+validate+Action wrapper with no dependency
+ * on this class's shared state, so the move only relocates controller
+ * glue — no Action, Policy, or route name/URL changed.
+ */
 class InventoryWorkspaceController extends Controller
 {
     use AuthorizesRequests, AuthorizesWorkspaceAccess;
@@ -78,6 +81,30 @@ class InventoryWorkspaceController extends Controller
         'generatePredictiveReorder' => 'inventory.predictive.generate',
     ];
 
+    /**
+     * Whether the user can see full item-master detail (incl. cost/selling
+     * price) — the union of every section whose UI actually reads
+     * `itemMasters`/the catalog-search endpoint: the standalone Catalog
+     * tab, plus the requisition/transfer/PO/GRN/DDA creation forms, each of
+     * which embeds an `AfyaItemCombobox` (or, for DDA, a plain item
+     * dropdown) that needs item name/code/pricing to populate. Confirmed by
+     * reading every one of InventoryWorkspace.vue's `itemMasters` consumers
+     * — nothing outside these six write/catalog actions touches it.
+     */
+    private function canSeeItemCatalog($user, AuthorizationService $authService): bool
+    {
+        $slugs = [
+            self::SECTION_SLUGS['catalog'],
+            self::ACTION_SLUGS['storeRequisition'],
+            self::ACTION_SLUGS['storeTransfer'],
+            self::ACTION_SLUGS['storePurchaseOrder'],
+            self::ACTION_SLUGS['storeGoodsReceipt'],
+            self::ACTION_SLUGS['storeDdaLog'],
+        ];
+
+        return collect($slugs)->contains(fn (string $slug) => $authService->hasPermission($user, $slug));
+    }
+
     public function index(Request $request, AuthorizationService $authService): Response
     {
         $this->authorizeAnyWorkspacePermission($request->user(), $authService, array_values(self::SECTION_SLUGS));
@@ -87,13 +114,19 @@ class InventoryWorkspaceController extends Controller
             $this->buildSectionCanMap($request->user(), $authService, self::ACTION_SLUGS)
         );
 
-        $tenantId = auth()->user()?->tenant_id ?? Tenant::first()?->id;
+        // No Tenant::first() fallback: behind ['auth','verified'], so
+        // auth()->user() is always present and users.tenant_id is NOT NULL
+        // at the DB level — the fallback could never fire from a real
+        // request, and defaulting to an arbitrary tenant in a multi-tenant
+        // system is a landmine, not a safety net.
+        $tenantId = auth()->user()?->tenant_id;
 
-        // Shared reference/lookup data (facility list, item names, supplier
-        // list, units of measure) needed across multiple sections' forms —
-        // not gated per-section, since e.g. the requisition-creation form
-        // needs the item picker regardless of whether the user can also see
-        // the standalone catalog tab.
+        // Shared reference/lookup data (facility list, supplier list, units
+        // of measure) needed across multiple sections' forms — not gated
+        // per-section. Item-master detail (unit_cost_price/unit_selling_price
+        // included) is the exception: it's gated below, since it's the one
+        // piece of "shared reference data" that's also directly displayed
+        // (catalog table, AfyaItemCombobox search results).
         $locations = InventoryLocation::with('facility')
             ->where('tenant_id', $tenantId)
             ->where('is_active', true)
@@ -101,9 +134,11 @@ class InventoryWorkspaceController extends Controller
 
         $selectedLocationId = $request->get('location_id', $locations->first()?->id);
 
-        $itemMasters = ItemMaster::with(['baseUom', 'purchasingUom', 'medication'])
-            ->where('tenant_id', $tenantId)
-            ->get();
+        $itemMasters = $this->canSeeItemCatalog($request->user(), $authService)
+            ? ItemMaster::with(['baseUom', 'purchasingUom', 'medication'])
+                ->where('tenant_id', $tenantId)
+                ->get()
+            : collect();
 
         $suppliers = Supplier::where('tenant_id', $tenantId)->where('is_active', true)->get();
         $medications = MedicationFormulary::where('tenant_id', $tenantId)->where('is_active', true)->get();
@@ -237,7 +272,12 @@ class InventoryWorkspaceController extends Controller
     {
         $this->authorize('manageCatalog', InventoryLocation::class);
 
-        $tenantId = auth()->user()?->tenant_id ?? Tenant::first()?->id;
+        // No Tenant::first() fallback: behind ['auth','verified'], so
+        // auth()->user() is always present and users.tenant_id is NOT NULL
+        // at the DB level — the fallback could never fire from a real
+        // request, and defaulting to an arbitrary tenant in a multi-tenant
+        // system is a landmine, not a safety net.
+        $tenantId = auth()->user()?->tenant_id;
 
         $validated = $request->validate([
             'item_code' => 'required|string|unique:item_masters,item_code',
@@ -260,273 +300,16 @@ class InventoryWorkspaceController extends Controller
         return back()->with('success', 'New item added to hospital catalog.');
     }
 
-    public function storeRequisition(Request $request, CreateDepartmentRequisitionAction $action): RedirectResponse
+    public function searchCatalog(Request $request, AuthorizationService $authService): JsonResponse
     {
-        $this->authorize('createRequisition', [InventoryLocation::class, $request->input('facility_id')]);
+        abort_unless($this->canSeeItemCatalog($request->user(), $authService), 403);
 
-        $validated = $request->validate([
-            'facility_id' => 'required|string',
-            'department_id' => 'nullable|string',
-            'source_location_id' => 'required|string',
-            'destination_location_id' => 'required|string|different:source_location_id',
-            'requisition_type' => 'required|string',
-            'items' => 'required|array|min:1',
-            'items.*.item_id' => 'required|string',
-            'items.*.quantity_requested' => 'required|integer|min:1',
-            'notes' => 'nullable|string',
-        ]);
-
-        $action->execute(
-            $validated['facility_id'],
-            $validated['department_id'] ?? null,
-            $validated['source_location_id'],
-            $validated['destination_location_id'],
-            $validated['items'],
-            $validated['requisition_type'],
-            auth()->id(),
-            $validated['notes'] ?? null
-        );
-
-        return back()->with('success', 'Department store requisition submitted successfully.');
-    }
-
-    public function approveRequisition(Request $request, string $id, ApproveDepartmentRequisitionAction $action): RedirectResponse
-    {
-        $requisition = DepartmentRequisition::findOrFail($id);
-        $this->authorize('approveRequisition', [InventoryLocation::class, $requisition->facility_id]);
-
-        $validated = $request->validate([
-            'approved_quantities' => 'nullable|array',
-            'notes' => 'nullable|string',
-        ]);
-
-        $action->execute($id, $validated['approved_quantities'] ?? null, auth()->id(), $validated['notes'] ?? null);
-
-        return back()->with('success', 'Department requisition approved.');
-    }
-
-    public function issueRequisition(Request $request, string $id, IssueDepartmentRequisitionAction $action): RedirectResponse
-    {
-        $requisition = DepartmentRequisition::findOrFail($id);
-        $this->authorize('issueRequisition', [InventoryLocation::class, $requisition->facility_id]);
-
-        $validated = $request->validate([
-            'allocations' => 'nullable|array',
-            'notes' => 'nullable|string',
-        ]);
-
-        $action->execute($id, $validated['allocations'] ?? null, auth()->id(), $validated['notes'] ?? null);
-
-        return back()->with('success', 'Department requisition dispatched in-transit.');
-    }
-
-    public function confirmRequisition(Request $request, string $id, ConfirmDepartmentRequisitionAction $action): RedirectResponse
-    {
-        $requisition = DepartmentRequisition::findOrFail($id);
-        $this->authorize('confirmRequisition', [InventoryLocation::class, $requisition->facility_id]);
-
-        $validated = $request->validate([
-            'received_quantities' => 'nullable|array',
-            'notes' => 'nullable|string',
-        ]);
-
-        $action->execute($id, $validated['received_quantities'] ?? null, auth()->id(), $validated['notes'] ?? null);
-
-        return back()->with('success', 'Store requisition received and confirmed into ward cabinet.');
-    }
-
-    public function storeDdaLog(Request $request, RecordDdaAdministrationAction $action): RedirectResponse
-    {
-        $validated = $request->validate([
-            'facility_id' => 'required|string',
-            'item_id' => 'required|string',
-            'batch_id' => 'required|string',
-            'encounter_id' => 'nullable|string',
-            'patient_id' => 'nullable|string',
-            'prescriber_id' => 'nullable|string',
-            'witness_user_id' => 'nullable|string',
-            'dose_administered' => 'required|numeric|min:0.01',
-            'dose_wasted_discarded' => 'nullable|numeric|min:0',
-            'indication' => 'required|string',
-            'notes' => 'nullable|string',
-        ]);
-
-        $this->authorize('recordDda', [InventoryLocation::class, $validated['facility_id']]);
-
-        $action->execute(
-            $validated['facility_id'],
-            $validated['item_id'],
-            $validated['batch_id'],
-            (float) $validated['dose_administered'],
-            (float) ($validated['dose_wasted_discarded'] ?? 0),
-            $validated['encounter_id'] ?? null,
-            $validated['patient_id'] ?? null,
-            $validated['prescriber_id'] ?? null,
-            auth()->id(),
-            $validated['witness_user_id'] ?? null,
-            $validated['indication'],
-            $validated['notes'] ?? null
-        );
-
-        return back()->with('success', 'DDA Controlled Substance administration logged successfully.');
-    }
-
-    public function storeTransfer(Request $request, CreateStockTransferAction $action): RedirectResponse
-    {
-        $sourceLocation = InventoryLocation::findOrFail($request->input('source_location_id'));
-        $this->authorize('dispatchTransfer', $sourceLocation);
-
-        $validated = $request->validate([
-            'source_location_id' => 'required|string',
-            'destination_location_id' => 'required|string|different:source_location_id',
-            'items' => 'required|array|min:1',
-            'items.*.medication_id' => 'required|string',
-            'items.*.batch_id' => 'required|string',
-            'items.*.quantity' => 'required|integer|min:1',
-            'notes' => 'nullable|string',
-        ]);
-
-        $action->execute(
-            $validated['source_location_id'],
-            $validated['destination_location_id'],
-            $validated['items'],
-            auth()->id(),
-            $validated['notes'] ?? null
-        );
-
-        return back()->with('success', 'Stock transfer dispatched in transit successfully.');
-    }
-
-    public function confirmTransfer(Request $request, string $id, ConfirmStockTransferAction $action): RedirectResponse
-    {
-        $transfer = StockTransfer::with('destinationLocation')->findOrFail($id);
-        $this->authorize('confirmTransfer', $transfer->destinationLocation);
-
-        $validated = $request->validate([
-            'received_items' => 'nullable|array',
-            'notes' => 'nullable|string',
-        ]);
-
-        $action->execute(
-            $id,
-            $validated['received_items'] ?? null,
-            auth()->id(),
-            $validated['notes'] ?? null
-        );
-
-        return back()->with('success', 'Stock transfer received and confirmed into warehouse inventory.');
-    }
-
-    public function storePurchaseOrder(Request $request, CreatePurchaseOrderAction $action): RedirectResponse
-    {
-        $this->authorize('createPurchaseOrder', [InventoryLocation::class, $request->input('facility_id')]);
-
-        $validated = $request->validate([
-            'supplier_id' => 'required|string',
-            'facility_id' => 'required|string',
-            'destination_location_id' => 'nullable|string',
-            'order_date' => 'required|date',
-            'expected_delivery_date' => 'nullable|date|after_or_equal:order_date',
-            'items' => 'required|array|min:1',
-            'items.*.medication_id' => 'required|string',
-            'items.*.requested_quantity' => 'required|integer|min:1',
-            'items.*.unit_cost' => 'required|numeric|min:0',
-            'notes' => 'nullable|string',
-        ]);
-
-        $action->execute(
-            $validated['supplier_id'],
-            $validated['facility_id'],
-            $validated['destination_location_id'] ?? null,
-            $validated['items'],
-            $validated['order_date'],
-            $validated['expected_delivery_date'] ?? null,
-            auth()->id(),
-            $validated['notes'] ?? null
-        );
-
-        return back()->with('success', 'Purchase order created and submitted successfully.');
-    }
-
-    public function approvePurchaseOrder(string $id, ApprovePurchaseOrderAction $action): RedirectResponse
-    {
-        $order = PurchaseOrder::findOrFail($id);
-        $this->authorize('approvePurchaseOrder', [InventoryLocation::class, $order->facility_id]);
-
-        $action->execute($id, auth()->id());
-
-        return back()->with('success', 'Purchase order approved successfully.');
-    }
-
-    public function storeGoodsReceipt(Request $request, ProcessGoodsReceiptAction $action): RedirectResponse
-    {
-        $this->authorize('receiveGoods', [InventoryLocation::class, $request->input('facility_id')]);
-
-        $validated = $request->validate([
-            'purchase_order_id' => 'nullable|string',
-            'supplier_id' => 'required|string',
-            'facility_id' => 'required|string',
-            'location_id' => 'required|string',
-            'received_date' => 'required|date',
-            'supplier_invoice_number' => 'nullable|string',
-            'delivery_note_number' => 'nullable|string',
-            'items' => 'required|array|min:1',
-            'items.*.medication_id' => 'required|string',
-            'items.*.po_item_id' => 'nullable|string',
-            'items.*.batch_number' => 'required|string',
-            'items.*.expiry_date' => 'required|date|after:today',
-            'items.*.received_quantity' => 'required|integer|min:1',
-            'items.*.rejected_quantity' => 'nullable|integer|min:0',
-            'items.*.unit_purchase_cost' => 'required|numeric|min:0',
-            'items.*.unit_selling_price' => 'nullable|numeric|min:0',
-            'items.*.rejection_reason' => 'nullable|string',
-            'notes' => 'nullable|string',
-        ]);
-
-        $action->execute(
-            $validated['purchase_order_id'] ?? null,
-            $validated['supplier_id'],
-            $validated['facility_id'],
-            $validated['location_id'],
-            $validated['items'],
-            $validated['received_date'],
-            $validated['supplier_invoice_number'] ?? null,
-            $validated['delivery_note_number'] ?? null,
-            auth()->id(),
-            $validated['notes'] ?? null
-        );
-
-        return back()->with('success', 'Goods Receipt Note (GRN) posted to inventory ledger successfully.');
-    }
-
-    public function storeStocktake(Request $request, ReconcileStocktakeSessionAction $action): RedirectResponse
-    {
-        $session = StocktakeSession::findOrFail($request->input('session_id'));
-        $this->authorize('reconcileStocktake', [InventoryLocation::class, $session->facility_id]);
-
-        $validated = $request->validate([
-            'session_id' => 'required|string',
-            'counts' => 'required|array|min:1',
-            'counts.*.medication_id' => 'required|string',
-            'counts.*.batch_id' => 'nullable|string',
-            'counts.*.physical_counted_quantity' => 'required|integer|min:0',
-            'counts.*.variance_reason' => 'nullable|string',
-            'notes' => 'nullable|string',
-        ]);
-
-        $action->execute(
-            $validated['session_id'],
-            $validated['counts'],
-            auth()->id(),
-            $validated['notes'] ?? null
-        );
-
-        return back()->with('success', 'Stocktake session reconciled and balancing entries posted.');
-    }
-
-    public function searchCatalog(Request $request): JsonResponse
-    {
-        $tenantId = auth()->user()?->tenant_id ?? Tenant::first()?->id;
+        // No Tenant::first() fallback: behind ['auth','verified'], so
+        // auth()->user() is always present and users.tenant_id is NOT NULL
+        // at the DB level — the fallback could never fire from a real
+        // request, and defaulting to an arbitrary tenant in a multi-tenant
+        // system is a landmine, not a safety net.
+        $tenantId = auth()->user()?->tenant_id;
         $sku = trim($request->get('sku', ''));
         $query = trim($request->get('q', ''));
         $category = $request->get('category', 'ALL');
@@ -565,22 +348,5 @@ class InventoryWorkspaceController extends Controller
             'count' => $items->count(),
             'exact_sku_match' => false,
         ]);
-    }
-
-    public function generatePredictiveReorder(Request $request, GeneratePredictiveReordersAction $action): RedirectResponse
-    {
-        $tenantId = auth()->user()?->tenant_id ?? Tenant::first()?->id;
-        $facilityId = auth()->user()?->facility_id ?? Facility::where('tenant_id', $tenantId)->first()?->id ?? 'default';
-
-        $this->authorize('generatePredictiveReorder', [InventoryLocation::class, $facilityId]);
-
-        $result = $action->execute($tenantId, $facilityId, true);
-
-        $count = count($result['purchase_orders_created'] ?? []);
-        if ($count > 0) {
-            return back()->with('success', "{$count} replenishment Purchase Order(s) generated successfully based on ADC run-rate.");
-        }
-
-        return back()->with('info', 'All inventory SKUs are currently stocked above safety reorder points.');
     }
 }

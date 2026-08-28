@@ -4,6 +4,7 @@ namespace App\Domains\Pharmacy\Http\Controllers;
 
 use App\Core\Traits\AuthorizesWorkspaceAccess;
 use App\Domains\Identity\Services\AuthorizationService;
+use App\Domains\Pharmacy\Actions\DispenseDirectOtcAction;
 use App\Domains\Pharmacy\Actions\DispenseMedicationAction;
 use App\Domains\Pharmacy\Actions\VerifyPrescriptionAction;
 use App\Domains\Pharmacy\Exceptions\PharmacyException;
@@ -11,6 +12,7 @@ use App\Domains\Pharmacy\Models\InventoryBatch;
 use App\Domains\Pharmacy\Models\MedicationFormulary;
 use App\Domains\Pharmacy\Models\Prescription;
 use App\Domains\Pharmacy\Models\StockMovement;
+use App\Domains\Scheduling\Models\QueueTicket;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -33,12 +35,14 @@ class DispensingController extends Controller
     {
         return [
             'queue' => 'pharmacy.prescription.view',
+            'otc' => 'pharmacy.dispense.execute',
             'formulary' => 'pharmacy.inventory.view',
             'movements' => 'pharmacy.inventory.view',
             'verify' => 'pharmacy.prescription.verify',
             'dispense' => 'pharmacy.dispense.execute',
             'storeBatch' => 'pharmacy.inventory.receive',
             'adjustBatch' => 'pharmacy.inventory.adjust',
+            'billing' => 'billing.invoice.view',
         ];
     }
 
@@ -50,43 +54,50 @@ class DispensingController extends Controller
 
         $prescriptions = $can['queue'] ? Prescription::with([
             'patient.allergies',
+            'patient.policies.insuranceCompany',
             'prescriber',
             'medication.batches' => function ($q) {
                 $q->where('status', 'Active')->orderBy('expiry_date', 'asc');
             },
             'dispenseEvents.dispenseEventBatches.batch',
-            'encounter.invoices',
+            'encounter.invoices.lineItems',
         ])
             ->whereIn('status', ['Pending', 'Verified', 'Partially Dispensed', 'Dispensed'])
             ->orderBy('created_at', 'desc')
             ->get() : collect();
 
-        // Shared reference data for the dispensing action itself (drug/batch
-        // lookup) as well as the formulary tab display — kept loaded
-        // whenever the page loads at all rather than split per-tab, since
-        // gating it further would break the dispense flow with no real
-        // data-sensitivity benefit (formulary/batch data isn't patient PII).
-        $medications = MedicationFormulary::with([
-            'batches' => function ($q) {
-                $q->orderBy('expiry_date', 'asc');
-            },
-            'stockMovements' => function ($q) {
-                $q->latest('created_at')->take(10);
-            },
-        ])
-            ->where('is_active', true)
-            ->get();
+        $canSeeFormularyDetail = $can['formulary'] || $can['storeBatch'] || $can['adjustBatch'] || $can['otc'];
 
-        $batches = InventoryBatch::with(['medication', 'facility'])
-            ->orderBy('expiry_date', 'asc')
-            ->get();
+        $medications = $canSeeFormularyDetail
+            ? MedicationFormulary::with([
+                'itemMaster',
+                'batches' => function ($q) {
+                    $q->where('status', 'Active')->orderBy('expiry_date', 'asc');
+                },
+            ])
+                ->where('is_active', true)
+                ->pharmaceuticalOnly()
+                ->get()
+            : collect();
+
+        $batches = $canSeeFormularyDetail
+            ? InventoryBatch::with(['medication', 'facility'])
+                ->orderBy('expiry_date', 'asc')
+                ->get()
+            : collect();
 
         $recentMovements = $can['movements']
             ? StockMovement::with(['medication', 'batch', 'performer'])
                 ->latest('created_at')
-                ->take(50)
+                ->take(500)
                 ->get()
             : collect();
+
+        $waitingTickets = QueueTicket::where('current_service_point', 'Pharmacy')
+            ->whereIn('status', ['Waiting', 'InProgress'])
+            ->with(['patient.policies'])
+            ->orderBy('joined_queue_at')
+            ->get();
 
         return Inertia::render('Domains/Pharmacy/PharmacyQueue', [
             'can' => $can,
@@ -94,6 +105,7 @@ class DispensingController extends Controller
             'medications' => $medications,
             'batches' => $batches,
             'recentMovements' => $recentMovements,
+            'waitingTickets' => $waitingTickets,
             'initialSection' => 'queue',
         ]);
     }
@@ -123,12 +135,55 @@ class DispensingController extends Controller
             'pharmacist_notes' => 'nullable|string',
         ]);
 
+        // Enforce Financial POS Clearance Gatekeeper:
+        // Cash-paying patients must have settled all invoices before medications can leave the dispensary
+        $prescription->load(['patient.policies', 'encounter.invoices']);
+        $hasActiveInsurance = $prescription->patient?->policies?->contains(fn ($p) => in_array($p->status, ['Active', 'Verified']));
+
+        if (! $hasActiveInsurance) {
+            $unpaidInvoices = $prescription->encounter?->invoices?->filter(fn ($inv) => $inv->status !== 'Paid');
+            if ($unpaidInvoices && $unpaidInvoices->isNotEmpty()) {
+                $unpaidTotal = $unpaidInvoices->sum(fn ($inv) => (float) $inv->total_amount - (float) $inv->paid_amount);
+
+                return back()->withErrors([
+                    'dispense' => 'Cannot dispense medication: Patient has an unpaid balance of TZS '.number_format($unpaidTotal).' at the Cashier Desk. Payment settlement is required before dispensing.',
+                ]);
+            }
+        }
+
         try {
             $action->execute($prescription, (int) $validated['quantity_dispensed'], $validated['pharmacist_notes'] ?? null);
 
             return back()->with('success', 'Medication dispensed successfully via FEFO allocation.');
         } catch (PharmacyException $e) {
             return back()->withErrors(['dispense' => $e->getMessage()]);
+        }
+    }
+
+    public function dispenseDirectOtc(Request $request, DispenseDirectOtcAction $action)
+    {
+        $this->authorizeAnyWorkspacePermission($request->user(), app(AuthorizationService::class), ['pharmacy.dispense.execute']);
+
+        $validated = $request->validate([
+            'patient_id' => 'nullable|uuid|exists:patients,id',
+            'ticket_id' => 'nullable|uuid|exists:queue_tickets,id',
+            'reason' => 'nullable|string|max:255',
+            'notes' => 'nullable|string|max:500',
+            'items' => 'required|array|min:1',
+            'items.*.medication_id' => 'required|uuid|exists:medication_formularies,id',
+            'items.*.quantity' => 'required|integer|min:1',
+            'items.*.unit_price' => 'nullable|numeric|min:0',
+            'items.*.instructions' => 'nullable|string|max:255',
+        ]);
+
+        try {
+            $result = $action->execute($validated);
+
+            $msg = "Direct OTC sale completed successfully. {$result['total_amount']} TZS billed.";
+
+            return back()->with('success', $msg);
+        } catch (PharmacyException $e) {
+            return back()->withErrors(['otc' => $e->getMessage()]);
         }
     }
 }

@@ -1,6 +1,6 @@
 <?php
 
-use App\Core\Context\TenantContext;
+use App\Domains\Billing\Models\Invoice;
 use App\Domains\Clinical\Models\Encounter;
 use App\Domains\Identity\Actions\AssignUserRoleAction;
 use App\Domains\Identity\Models\Permission;
@@ -33,7 +33,7 @@ beforeEach(function () {
         'status' => 'Active',
     ]);
 
-    app(TenantContext::class)->setTenantId($this->tenant->id);
+    setTestTenantContext($this->tenant->id);
 
     $this->facility = Facility::create([
         'tenant_id' => $this->tenant->id,
@@ -262,7 +262,7 @@ test('record pacu telemetry calculates aldrete score and confirms ward readiness
         ->and($booking->fresh()->status)->toBe('Completed');
 });
 
-test('procedure workspace renders correctly with treatment queues and metrics', function () {
+test('procedure workspace renders correctly with segregated treatment queues and metrics', function () {
     $this->actingAs($this->user);
 
     $response = $this->get(route('procedures.workspace'));
@@ -271,11 +271,125 @@ test('procedure workspace renders correctly with treatment queues and metrics', 
         ->assertInertia(fn ($page) => $page
             ->component('Workspace/ProcedureWorkspace')
             ->has('procedureCatalogs')
+            ->has('injectionQueue')
             ->has('dressingQueue')
+            ->has('minorSurgeryQueue')
             ->has('surgicalBookings')
             ->has('operatingSuites')
             ->has('metrics')
         );
+});
+
+test('record procedure execution handles single stat injection vs multi-dose course progression', function () {
+    $this->actingAs($this->user);
+
+    $injCatalog = ProcedureCatalog::create([
+        'tenant_id' => $this->tenant->id,
+        'procedure_code' => 'PROC-INJ-001',
+        'name' => 'Intramuscular / Intravenous Injection Administration',
+        'category' => 'Injection',
+        'tier_level' => 'Tier1_Minor',
+        'standard_price' => 5000.00,
+        'is_active' => true,
+    ]);
+
+    $order = app(CreateProcedureOrderAction::class)->execute(
+        $this->encounter,
+        $injCatalog->id,
+        'Routine',
+        'Inj. Ceftriaxone 1g OD x 3 doses'
+    );
+
+    // Dose 1 of 3 (Multi-dose ongoing)
+    $action = app(RecordProcedureExecutionAction::class);
+    $execution1 = $action->execute($order, [
+        'execution_setting' => 'InjectionRoom',
+        'medication_source' => 'FacilityPharmacy',
+        'treatment_plan_type' => 'Multi',
+        'total_doses' => 3,
+        'current_dose_number' => 1,
+        'remaining_doses' => 2,
+        'is_course_completed' => false,
+        'findings_and_technique' => '[Clinic Stock / Ndani] Administered Dose #1 of 3 via aseptic technique.',
+        'follow_up_date' => now()->addDay()->toDateString(),
+    ], [
+        [
+            'item_name' => 'Disposable Syringe 5ml with 21G Needle',
+            'batch_id' => $this->batch->id,
+            'quantity_used' => 1,
+            'unit_price' => 500,
+        ],
+    ]);
+
+    expect($order->fresh()->status)->toBe('InProgress')
+        ->and($execution1->findings_and_technique)->toContain('Dose #1 of 3')
+        ->and($this->batch->fresh()->current_quantity)->toEqual(99);
+
+    // Dose 3 of 3 (Completed)
+    $execution3 = $action->execute($order, [
+        'execution_setting' => 'InjectionRoom',
+        'medication_source' => 'FacilityPharmacy',
+        'treatment_plan_type' => 'Multi',
+        'total_doses' => 3,
+        'current_dose_number' => 3,
+        'remaining_doses' => 0,
+        'is_course_completed' => true,
+        'findings_and_technique' => '[Clinic Stock / Ndani] Administered Dose #3 of 3. Treatment completed.',
+    ], [
+        [
+            'item_name' => 'Disposable Syringe 5ml with 21G Needle',
+            'batch_id' => $this->batch->id,
+            'quantity_used' => 1,
+            'unit_price' => 500,
+        ],
+    ]);
+
+    expect($order->fresh()->status)->toBe('Completed')
+        ->and($this->batch->fresh()->current_quantity)->toEqual(98);
+});
+
+test('record procedure execution for sindano ya nje patient-supplied only decrements consumables', function () {
+    $this->actingAs($this->user);
+
+    $injCatalog = ProcedureCatalog::create([
+        'tenant_id' => $this->tenant->id,
+        'procedure_code' => 'PROC-INJ-002',
+        'name' => 'External Medication Administration (Sindano ya Nje)',
+        'category' => 'Injection',
+        'tier_level' => 'Tier1_Minor',
+        'standard_price' => 2000.00,
+        'is_active' => true,
+    ]);
+
+    $order = app(CreateProcedureOrderAction::class)->execute(
+        $this->encounter,
+        $injCatalog->id,
+        'Routine',
+        'Inj. TT (Brought by patient)'
+    );
+
+    $action = app(RecordProcedureExecutionAction::class);
+    $execution = $action->execute($order, [
+        'execution_setting' => 'InjectionRoom',
+        'medication_source' => 'PatientSupplied',
+        'treatment_plan_type' => 'Single',
+        'total_doses' => 1,
+        'current_dose_number' => 1,
+        'remaining_doses' => 0,
+        'is_course_completed' => true,
+        'findings_and_technique' => '[Sindano ya Nje / Patient-Supplied - Verified Prescription & Intact Seal] Administered STAT Single Dose.',
+    ], [
+        [
+            'item_name' => 'Disposable Syringe 2ml with 23G Needle',
+            'batch_id' => $this->batch->id,
+            'quantity_used' => 1,
+            'unit_price' => 500,
+        ],
+    ]);
+
+    expect($execution->findings_and_technique)->toContain('[Sindano ya Nje')
+        ->and($order->fresh()->status)->toBe('Completed')
+        ->and($this->batch->fresh()->current_quantity)->toEqual(99);
 });
 
 test('doctor can order procedure from consultation desk and verify dual-pathway routing to dressing desk', function () {
@@ -311,4 +425,56 @@ test('doctor can order procedure from consultation desk and verify dual-pathway 
         ->assertInertia(fn ($page) => $page
             ->where('dressingQueue.0.order_number', $order->order_number)
         );
+});
+
+test('procedure execution controller blocks routine cash orders with unpaid cashier invoice and allows paid or emergency orders', function () {
+    $role = $this->user->roleAssignments->first()->role;
+    $execPerm = Permission::firstOrCreate(
+        ['slug' => 'procedure.execute.dressing'],
+        ['name' => 'Execute Procedure', 'domain' => 'Procedure']
+    );
+    $role->permissions()->syncWithoutDetaching([$execPerm->id]);
+
+    $this->actingAs($this->user);
+
+    $order = app(CreateProcedureOrderAction::class)->execute($this->encounter, $this->procedureCatalog->id, 'Routine', 'Cash wound dressing');
+
+    // 1. Create an unpaid cash invoice on the encounter
+    $invoice = Invoice::create([
+        'tenant_id' => $this->tenant->id,
+        'facility_id' => $this->facility->id,
+        'patient_id' => $this->patient->id,
+        'encounter_id' => $this->encounter->id,
+        'invoice_number' => 'INV-TEST-001',
+        'status' => 'Issued',
+        'total_amount' => 15000.00,
+        'paid_amount' => 0.00,
+        'issue_date' => now(),
+    ]);
+
+    // 2. Attempt to execute procedure while invoice is unpaid -> Must fail with validation error
+    $response = $this->post(route('procedures.orders.execute', $order->id), [
+        'execution_setting' => 'DressingRoom',
+        'findings_and_technique' => 'Attempting dressing before payment',
+        'wound_condition' => 'Clean',
+    ]);
+
+    $response->assertSessionHasErrors(['execute_procedure']);
+    expect($order->fresh()->status)->toBe('Ordered');
+
+    // 3. Pay all invoices at Cashier
+    Invoice::where('encounter_id', $this->encounter->id)->update([
+        'status' => 'Paid',
+        'paid_amount' => 15000.00,
+    ]);
+
+    // 4. Retry execution after payment -> Must succeed
+    $responsePaid = $this->post(route('procedures.orders.execute', $order->id), [
+        'execution_setting' => 'DressingRoom',
+        'findings_and_technique' => 'Cleaned wound with saline and dressed with sterile gauze',
+        'wound_condition' => 'Clean',
+    ]);
+
+    $responsePaid->assertSessionHasNoErrors();
+    expect($order->fresh()->status)->toBe('Completed');
 });

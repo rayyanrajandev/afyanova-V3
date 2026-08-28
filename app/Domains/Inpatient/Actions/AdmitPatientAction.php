@@ -9,7 +9,6 @@ use App\Domains\Inpatient\Models\Bed;
 use App\Domains\Inpatient\Models\Ward;
 use App\Domains\Patient\Models\Patient;
 use App\Domains\Tenancy\Models\Facility;
-use App\Domains\Tenancy\Models\Tenant;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -62,8 +61,14 @@ class AdmitPatientAction
                 throw InpatientException::patientAlreadyAdmitted("{$patient->first_name} {$patient->last_name}");
             }
 
-            $tenantId = $bed->tenant_id ?? auth()->user()?->tenant_id ?? Tenant::first()?->id;
-            $facilityId = $bed->facility_id ?? auth()->user()?->facility_id ?? Facility::where('tenant_id', $tenantId)->first()?->id ?? Facility::first()?->id;
+            // Dropped the Tenant::first()/global Facility::first() tail
+            // fallbacks that used to end these chains: silently admitting a
+            // patient under an arbitrary other tenant/facility when the bed
+            // and the acting user's own tenant/facility both somehow come
+            // back null is a landmine, not a safety net — better to let
+            // that surface as an error than misfile the admission.
+            $tenantId = $bed->tenant_id ?? auth()->user()?->tenant_id;
+            $facilityId = $bed->facility_id ?? auth()->user()?->facility_id ?? Facility::where('tenant_id', $tenantId)->first()?->id;
 
             // 4. Mark Bed as Occupied
             $bed->update(['status' => 'Occupied']);

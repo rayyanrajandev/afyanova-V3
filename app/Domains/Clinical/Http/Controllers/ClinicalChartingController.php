@@ -3,6 +3,7 @@
 namespace App\Domains\Clinical\Http\Controllers;
 
 use App\Domains\Clinical\Actions\AmendClinicalNoteAction;
+use App\Domains\Clinical\Actions\CreateDiagnosisAction;
 use App\Domains\Clinical\Actions\RecordVitalsAction;
 use App\Domains\Clinical\Actions\SignClinicalNoteAction;
 use App\Domains\Clinical\Exceptions\ClinicalImmutabilityException;
@@ -64,6 +65,23 @@ class ClinicalChartingController extends Controller
         ]);
 
         return back()->with('success', 'Note drafted successfully.');
+    }
+
+    public function storeDiagnosis(Request $request, Encounter $encounter, CreateDiagnosisAction $action)
+    {
+        $this->authorize('recordDiagnosis', $encounter);
+
+        $validated = $request->validate([
+            'icd_10_code' => 'nullable|string|max:20',
+            'description' => 'required|string|max:255',
+            'certainty' => 'required|string|in:Confirmed,Suspected',
+            'type' => 'required|string|in:Primary,Secondary,Comorbidity',
+            'notes' => 'nullable|string|max:1000',
+        ]);
+
+        $action->execute($encounter, $validated);
+
+        return back()->with('success', 'Diagnosis recorded successfully.');
     }
 
     public function signNote(ClinicalNote $note, SignClinicalNoteAction $action)

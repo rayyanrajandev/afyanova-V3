@@ -3,21 +3,25 @@
 namespace App\Domains\Billing\Http\Controllers;
 
 use App\Core\Traits\AuthorizesWorkspaceAccess;
+use App\Domains\Billing\Actions\ApplyDepositToInvoiceAction;
 use App\Domains\Billing\Actions\CloseCashierShiftAction;
 use App\Domains\Billing\Actions\GenerateInvoiceAction;
 use App\Domains\Billing\Actions\IssueInvoiceAction;
 use App\Domains\Billing\Actions\IssueInvoiceAdjustmentAction;
 use App\Domains\Billing\Actions\IssueRefundAction;
 use App\Domains\Billing\Actions\OpenCashierShiftAction;
+use App\Domains\Billing\Actions\RecordPatientDepositAction;
 use App\Domains\Billing\Actions\RecordPaymentAction;
 use App\Domains\Billing\Exceptions\InvoiceImmutabilityException;
 use App\Domains\Billing\Exceptions\LedgerImbalanceException;
 use App\Domains\Billing\Models\CashierShift;
 use App\Domains\Billing\Models\Invoice;
 use App\Domains\Billing\Models\LedgerEntry;
+use App\Domains\Billing\Models\PatientDeposit;
 use App\Domains\Clinical\Models\Encounter;
 use App\Domains\Identity\Models\User;
 use App\Domains\Identity\Services\AuthorizationService;
+use App\Domains\Patient\Models\Patient;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -41,10 +45,23 @@ class BillingController extends Controller
             'adjustInvoice' => 'billing.discount.approve',
             'openShift' => 'billing.shift.open',
             'closeShift' => 'billing.shift.close',
+            'recordDeposit' => 'billing.payment.collect',
+            'applyDeposit' => 'billing.payment.collect',
         ]);
 
-        $invoices = Invoice::with(['patient', 'lineItems'])
+        $invoices = Invoice::with(['patient.deposits', 'lineItems'])
             ->orderBy('created_at', 'desc')
+            ->get();
+
+        $patientDeposits = PatientDeposit::with(['patient', 'cashierShift', 'allocations.invoice'])
+            ->where('status', 'Active')
+            ->latest('created_at')
+            ->get();
+
+        $patients = Patient::where('status', 'Active')
+            ->select(['id', 'primary_mrn', 'first_name', 'last_name', 'phone_number'])
+            ->orderBy('first_name')
+            ->limit(100)
             ->get();
 
         $user = auth()->user() ?? User::first();
@@ -98,6 +115,8 @@ class BillingController extends Controller
         return Inertia::render('Workspace/BillingWorkspace', [
             'can' => $can,
             'invoices' => $invoices,
+            'patientDeposits' => $patientDeposits,
+            'patients' => $patients,
             'activeShift' => $activeShift,
             'recentShifts' => $recentShifts,
             'tillTelemetry' => $telemetry,
@@ -113,9 +132,22 @@ class BillingController extends Controller
         return back()->with('success', 'Invoice generated successfully.');
     }
 
-    public function pay(Request $request, Invoice $invoice, RecordPaymentAction $action)
+    public function pay(Request $request, Invoice $invoice, RecordPaymentAction $action, AuthorizationService $authService)
     {
         $this->authorize('collectPayment', $invoice);
+
+        $user = $request->user();
+        if ($user && $authService->hasPermission($user, 'billing.shift.open')) {
+            $hasActiveShift = CashierShift::where('user_id', $user->id)
+                ->where('status', 'Open')
+                ->exists();
+
+            if (! $hasActiveShift) {
+                return back()->withErrors([
+                    'billing' => 'Cannot collect payment: An active cashier shift session is required. Please open your shift first.',
+                ]);
+            }
+        }
 
         $validated = $request->validate([
             'amount' => 'nullable|numeric|min:1',
@@ -273,5 +305,58 @@ class BillingController extends Controller
         $action->execute($shift, $validated['closing_cash_counted'], $validated['notes'] ?? null);
 
         return back()->with('success', 'Cashier shift closed and physical cash reconciled.');
+    }
+
+    public function recordDeposit(Request $request, RecordPatientDepositAction $action, AuthorizationService $authService)
+    {
+        abort_unless($authService->hasPermission($request->user(), 'billing.payment.collect'), 403);
+
+        $validated = $request->validate([
+            'patient_id' => 'required|uuid|exists:patients,id',
+            'amount' => 'required|numeric|min:1',
+            'payment_method' => 'required|string',
+            'reference_number' => 'nullable|string|max:100',
+            'notes' => 'nullable|string|max:255',
+        ]);
+
+        $patient = Patient::findOrFail($validated['patient_id']);
+
+        try {
+            $deposit = $action->execute(
+                $patient,
+                (float) $validated['amount'],
+                $validated['payment_method'],
+                $validated['reference_number'] ?? null,
+                $validated['notes'] ?? null
+            );
+
+            return back()->with('success', "Patient advance deposit of TZS ".number_format($deposit->amount, 2)." recorded successfully ({$deposit->deposit_number}).");
+        } catch (\Throwable $e) {
+            return back()->withErrors(['billing' => $e->getMessage()]);
+        }
+    }
+
+    public function applyDeposit(Request $request, Invoice $invoice, ApplyDepositToInvoiceAction $action, AuthorizationService $authService)
+    {
+        abort_unless($authService->hasPermission($request->user(), 'billing.payment.collect'), 403);
+
+        $validated = $request->validate([
+            'deposit_id' => 'required|uuid|exists:patient_deposits,id',
+            'amount' => 'nullable|numeric|min:0.01',
+        ]);
+
+        $deposit = PatientDeposit::findOrFail($validated['deposit_id']);
+
+        try {
+            $allocation = $action->execute(
+                $deposit,
+                $invoice,
+                ! empty($validated['amount']) ? (float) $validated['amount'] : null
+            );
+
+            return back()->with('success', "Applied TZS ".number_format($allocation->allocated_amount, 2)." from deposit {$deposit->deposit_number} to invoice {$invoice->invoice_number}.");
+        } catch (\Throwable $e) {
+            return back()->withErrors(['billing' => $e->getMessage()]);
+        }
     }
 }

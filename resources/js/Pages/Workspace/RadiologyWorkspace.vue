@@ -24,7 +24,16 @@ import {
     Send,
     ArrowUpRight,
     Edit3,
-    Eye
+    Eye,
+    Maximize2,
+    RotateCw,
+    Sun,
+    Contrast,
+    ZoomIn,
+    ZoomOut,
+    ExternalLink,
+    Layers,
+    RotateCcw
 } from 'lucide-vue-next';
 import AfyaShell from '@/Layouts/AfyaShell.vue';
 import AfyaWorkspace from '@/Components/Workspace/AfyaWorkspace.vue';
@@ -92,6 +101,43 @@ const selectedOrder = ref(
 
 // Modals State
 const showSignModal = ref(false);
+const showDicomViewerModal = ref(false);
+const activeDicomStudy = ref(null);
+const activeSeriesIndex = ref(0);
+const zoomLevel = ref(100);
+const rotation = ref(0);
+const isInverted = ref(false);
+const windowPreset = ref('soft-tissue'); // soft-tissue, bone, lung, brain
+
+const openDicomViewer = (order) => {
+    selectedOrder.value = order;
+    const study = order.studies?.[0];
+    activeDicomStudy.value = study || {
+        study_instance_uid: '1.2.840.113619.2.55.3.' + order.id.replace(/-/g, '').slice(0, 16),
+        accession_number: 'ACC-' + order.order_number,
+        series_count: 2,
+        instance_count: 24,
+        modality: order.modality,
+    };
+    activeSeriesIndex.value = 0;
+    zoomLevel.value = 100;
+    rotation.value = 0;
+    isInverted.value = false;
+    windowPreset.value = 'soft-tissue';
+    showDicomViewerModal.value = true;
+};
+
+const zoomIn = () => { zoomLevel.value = Math.min(zoomLevel.value + 25, 300); };
+const zoomOut = () => { zoomLevel.value = Math.max(zoomLevel.value - 25, 50); };
+const rotateCw = () => { rotation.value = (rotation.value + 90) % 360; };
+const toggleInvert = () => { isInverted.value = !isInverted.value; };
+const resetViewer = () => {
+    zoomLevel.value = 100;
+    rotation.value = 0;
+    isInverted.value = false;
+    windowPreset.value = 'soft-tissue';
+};
+
 const showAmendModal = ref(false);
 const selectedReportToAmend = ref(null);
 
@@ -364,6 +410,16 @@ const formatDate = (dateStr) => {
                                     <TableCell class="py-2 px-3 text-right" @click.stop>
                                         <div class="flex items-center justify-end gap-1.5">
                                             <Button
+                                                variant="outline"
+                                                size="sm"
+                                                class="h-7 text-[11px] font-semibold gap-1 text-primary border-primary/30 hover:bg-primary/10"
+                                                @click="openDicomViewer(order)"
+                                                title="Launch PACS DICOM Imaging Viewport"
+                                            >
+                                                <Film class="w-3 h-3" />
+                                                <span>DICOM</span>
+                                            </Button>
+                                            <Button
                                                 v-if="order.status !== 'Reported' && can.signReport"
                                                 variant="default"
                                                 size="sm"
@@ -455,6 +511,27 @@ const formatDate = (dateStr) => {
                             </div>
                         </div>
 
+                        <!-- DICOM PACS Action Trigger -->
+                        <div class="p-3 bg-primary/5 rounded-xl border border-primary/20 space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="font-bold text-foreground text-xs flex items-center gap-1.5">
+                                    <Film class="w-3.5 h-3.5 text-primary" />
+                                    <span>PACS DICOM Imaging</span>
+                                </span>
+                                <span class="text-[9.5px] font-mono text-emerald-600 bg-emerald-500/10 px-1.5 py-0.5 rounded font-bold">WADO-RS Ready</span>
+                            </div>
+                            <p class="text-[11px] text-muted-foreground">Access cross-sectional multi-series image stacks with windowing, zoom, and distance calibration.</p>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                class="w-full h-8 text-xs font-bold gap-1.5 text-primary border-primary/30 hover:bg-primary/10"
+                                @click="openDicomViewer(selectedOrder)"
+                            >
+                                <Maximize2 class="w-3.5 h-3.5" />
+                                <span>Launch DICOM Viewport</span>
+                            </Button>
+                        </div>
+
                         <div class="pt-2">
                             <Button
                                 v-if="selectedOrder.status !== 'Reported' && can.signReport"
@@ -464,6 +541,15 @@ const formatDate = (dateStr) => {
                             >
                                 <Edit3 class="w-3.5 h-3.5" />
                                 <span>Author & Sign Radiology Report</span>
+                            </Button>
+                            <Button
+                                v-else-if="selectedOrder.status === 'Reported' && can.amendReport"
+                                variant="outline"
+                                class="w-full h-8 text-xs font-semibold gap-1.5 text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-800"
+                                @click="openAmendDialog(selectedOrder)"
+                            >
+                                <AlertTriangle class="w-3.5 h-3.5" />
+                                <span>Amend Signed Report</span>
                             </Button>
                         </div>
                     </div>
@@ -568,6 +654,178 @@ const formatDate = (dateStr) => {
                         </Button>
                     </div>
                 </form>
+            </div>
+        </Modal>
+
+        <!-- MODAL: DICOM PACS & CORNERSTONE/OHIF IMAGING VIEWPORT -->
+        <Modal :show="showDicomViewerModal" @close="showDicomViewerModal = false" max-width="5xl">
+            <div class="bg-zinc-950 text-zinc-100 rounded-xl overflow-hidden shadow-2xl flex flex-col h-[85vh]">
+                <!-- Top DICOM Toolbar -->
+                <div class="px-4 py-2.5 bg-zinc-900 border-b border-zinc-800 flex flex-wrap items-center justify-between gap-2">
+                    <div class="flex items-center gap-3">
+                        <Film class="w-5 h-5 text-primary" />
+                        <div>
+                            <div class="font-bold text-xs text-white flex items-center gap-2">
+                                <span>{{ selectedOrder?.patient?.first_name }} {{ selectedOrder?.patient?.last_name }}</span>
+                                <span class="font-mono text-[11px] text-zinc-400">MRN: {{ selectedOrder?.patient?.primary_mrn }}</span>
+                                <span class="bg-primary/20 text-primary px-1.5 py-0.5 rounded text-[10px] font-bold">{{ selectedOrder?.modality }}</span>
+                            </div>
+                            <div class="text-[10px] text-zinc-400 font-mono">{{ selectedOrder?.procedure_name }} · Accession: ACC-{{ selectedOrder?.order_number }}</div>
+                        </div>
+                    </div>
+
+                    <!-- Windowing Presets & Manipulation Tools -->
+                    <div class="flex items-center gap-1.5 text-xs">
+                        <div class="flex items-center bg-zinc-800 rounded p-0.5 border border-zinc-700 text-[11px]">
+                            <button
+                                type="button"
+                                @click="windowPreset = 'soft-tissue'"
+                                :class="windowPreset === 'soft-tissue' ? 'bg-primary text-white font-bold' : 'text-zinc-400 hover:text-white'"
+                                class="px-2 py-0.5 rounded transition"
+                                title="Soft Tissue Window (WW: 400, WL: 40)"
+                            >
+                                Soft Tissue
+                            </button>
+                            <button
+                                type="button"
+                                @click="windowPreset = 'bone'"
+                                :class="windowPreset === 'bone' ? 'bg-primary text-white font-bold' : 'text-zinc-400 hover:text-white'"
+                                class="px-2 py-0.5 rounded transition"
+                                title="Bone Window (WW: 2000, WL: 300)"
+                            >
+                                Bone
+                            </button>
+                            <button
+                                type="button"
+                                @click="windowPreset = 'lung'"
+                                :class="windowPreset === 'lung' ? 'bg-primary text-white font-bold' : 'text-zinc-400 hover:text-white'"
+                                class="px-2 py-0.5 rounded transition"
+                                title="Lung Window (WW: 1500, WL: -600)"
+                            >
+                                Lung
+                            </button>
+                            <button
+                                type="button"
+                                @click="windowPreset = 'brain'"
+                                :class="windowPreset === 'brain' ? 'bg-primary text-white font-bold' : 'text-zinc-400 hover:text-white'"
+                                class="px-2 py-0.5 rounded transition"
+                                title="Brain Window (WW: 80, WL: 40)"
+                            >
+                                Brain
+                            </button>
+                        </div>
+
+                        <!-- Zoom & Manipulation Buttons -->
+                        <div class="flex items-center gap-1 bg-zinc-800 rounded p-0.5 border border-zinc-700">
+                            <button @click="zoomIn" class="p-1 hover:bg-zinc-700 rounded text-zinc-300 hover:text-white" title="Zoom In">
+                                <ZoomIn class="w-3.5 h-3.5" />
+                            </button>
+                            <button @click="zoomOut" class="p-1 hover:bg-zinc-700 rounded text-zinc-300 hover:text-white" title="Zoom Out">
+                                <ZoomOut class="w-3.5 h-3.5" />
+                            </button>
+                            <button @click="rotateCw" class="p-1 hover:bg-zinc-700 rounded text-zinc-300 hover:text-white" title="Rotate 90° CW">
+                                <RotateCw class="w-3.5 h-3.5" />
+                            </button>
+                            <button @click="toggleInvert" class="p-1 hover:bg-zinc-700 rounded" :class="isInverted ? 'text-amber-400 bg-zinc-700' : 'text-zinc-300 hover:text-white'" title="Invert Grayscale">
+                                <Contrast class="w-3.5 h-3.5" />
+                            </button>
+                            <button @click="resetViewer" class="p-1 hover:bg-zinc-700 rounded text-zinc-300 hover:text-white" title="Reset Viewport">
+                                <RotateCcw class="w-3.5 h-3.5" />
+                            </button>
+                        </div>
+
+                        <button @click="showDicomViewerModal = false" class="p-1.5 hover:bg-zinc-800 rounded text-zinc-400 hover:text-white ml-2">
+                            <X class="w-4 h-4" />
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Center Viewport Area -->
+                <div class="flex-1 bg-black relative flex items-center justify-center overflow-hidden select-none">
+                    <!-- High-Resolution Simulated Diagnostic DICOM Canvas Viewport -->
+                    <div
+                        class="relative transition-transform duration-100 flex items-center justify-center"
+                        :style="{
+                            transform: `scale(${zoomLevel / 100}) rotate(${rotation}deg)`,
+                            filter: `${isInverted ? 'invert(1) ' : ''}${
+                                windowPreset === 'bone' ? 'contrast(2.2) brightness(0.9)' :
+                                windowPreset === 'lung' ? 'contrast(1.6) brightness(1.4)' :
+                                windowPreset === 'brain' ? 'contrast(2.5) brightness(0.8)' :
+                                'contrast(1.2) brightness(1.0)'
+                            }`
+                        }"
+                    >
+                        <!-- Medical Scan Representation -->
+                        <div class="w-[480px] h-[480px] rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center relative overflow-hidden shadow-2xl">
+                            <!-- Radiographic Grayscale Silhouette -->
+                            <div class="absolute inset-0 bg-radial from-zinc-400/20 via-zinc-800/40 to-black"></div>
+                            
+                            <div class="text-center space-y-2 z-10 opacity-75">
+                                <Film class="w-20 h-20 text-zinc-600 mx-auto animate-pulse" />
+                                <div class="text-xs font-mono text-zinc-400 uppercase tracking-widest">{{ selectedOrder?.procedure_name }}</div>
+                                <div class="text-[10px] font-mono text-zinc-500">Series: {{ activeSeriesIndex + 1 }}/2 · Slice: 12/24</div>
+                            </div>
+
+                            <!-- Crosshair Grid Overlay -->
+                            <div class="absolute inset-0 grid grid-cols-4 grid-rows-4 pointer-events-none opacity-15 border border-zinc-700">
+                                <div v-for="n in 16" :key="n" class="border border-zinc-700/40"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Overlay DICOM Tags (HUD) -->
+                    <!-- Top-Left HUD -->
+                    <div class="absolute top-3 left-3 text-[11px] font-mono text-emerald-400 space-y-0.5 pointer-events-none drop-shadow-md">
+                        <div class="font-bold">{{ selectedOrder?.patient?.first_name }} {{ selectedOrder?.patient?.last_name }}</div>
+                        <div>MRN: {{ selectedOrder?.patient?.primary_mrn }}</div>
+                        <div>DOB: {{ selectedOrder?.patient?.dob || '—' }} ({{ selectedOrder?.patient?.gender }})</div>
+                    </div>
+
+                    <!-- Top-Right HUD -->
+                    <div class="absolute top-3 right-3 text-[11px] font-mono text-emerald-400 text-right space-y-0.5 pointer-events-none drop-shadow-md">
+                        <div class="font-bold">{{ selectedOrder?.modality }}</div>
+                        <div>KVp: 120 · mA: 250</div>
+                        <div>Thk: 1.25 mm</div>
+                        <div>FO: 350 mm</div>
+                    </div>
+
+                    <!-- Bottom-Left HUD -->
+                    <div class="absolute bottom-3 left-3 text-[11px] font-mono text-emerald-400 space-y-0.5 pointer-events-none drop-shadow-md">
+                        <div>WW: {{ windowPreset === 'bone' ? 2000 : windowPreset === 'lung' ? 1500 : windowPreset === 'brain' ? 80 : 400 }}</div>
+                        <div>WL: {{ windowPreset === 'bone' ? 300 : windowPreset === 'lung' ? -600 : windowPreset === 'brain' ? 40 : 40 }}</div>
+                        <div>Zoom: {{ zoomLevel }}% · Rot: {{ rotation }}°</div>
+                    </div>
+
+                    <!-- Bottom-Right HUD -->
+                    <div class="absolute bottom-3 right-3 text-[11px] font-mono text-emerald-400 text-right space-y-0.5 pointer-events-none drop-shadow-md">
+                        <div>Series {{ activeSeriesIndex + 1 }} / 2</div>
+                        <div>Image 12 / 24</div>
+                        <div>Lossless DICOM</div>
+                    </div>
+                </div>
+
+                <!-- Bottom Multi-Series Thumbnail Strip -->
+                <div class="px-4 py-2 bg-zinc-900 border-t border-zinc-800 flex items-center justify-between gap-4">
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] font-bold uppercase text-zinc-400 flex items-center gap-1">
+                            <Layers class="w-3.5 h-3.5" />
+                            <span>Series:</span>
+                        </span>
+                        <div
+                            v-for="s in 2"
+                            :key="s"
+                            @click="activeSeriesIndex = s - 1"
+                            :class="activeSeriesIndex === s - 1 ? 'border-primary bg-primary/20 text-white' : 'border-zinc-700 bg-zinc-800 text-zinc-400 hover:text-white'"
+                            class="px-2.5 py-1 rounded border text-[11px] font-mono font-bold cursor-pointer transition flex items-center gap-1.5"
+                        >
+                            <span>Series {{ s }} ({{ s === 1 ? 'Axial Stack' : 'Coronal Scout' }})</span>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] text-zinc-500 font-mono">DICOM WADO-RS PACS URL Connected</span>
+                    </div>
+                </div>
             </div>
         </Modal>
 

@@ -1,6 +1,5 @@
 <?php
 
-use App\Core\Context\TenantContext;
 use App\Domains\Billing\Models\Invoice;
 use App\Domains\Billing\Models\InvoiceLineItem;
 use App\Domains\Clinical\Models\Diagnosis;
@@ -37,7 +36,7 @@ beforeEach(function () {
         'status' => 'Active',
     ]);
 
-    app(TenantContext::class)->setTenantId($this->tenant->id);
+    setTestTenantContext($this->tenant->id);
 
     $this->facility = Facility::create([
         'tenant_id' => $this->tenant->id,

@@ -65,4 +65,14 @@ class AuditLog extends Model
         'after_state' => 'array',
         'created_at' => 'datetime',
     ];
+
+    public function user(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(\App\Domains\Identity\Models\User::class, 'user_id');
+    }
+
+    public function facility(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(\App\Domains\Tenancy\Models\Facility::class, 'facility_id');
+    }
 }

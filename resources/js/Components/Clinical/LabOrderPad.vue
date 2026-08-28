@@ -394,6 +394,8 @@ const hasAnyCriticalResults = computed(() => {
                             v-for="item in encounterLabItems"
                             :key="item.id"
                             :item="item"
+                            :can-enter-results="can?.recordLabResults || can?.saveResults || false"
+                            @enter-results="openWorkbench(item)"
                             @open-workbench="openWorkbench(item)"
                         />
                     </div>

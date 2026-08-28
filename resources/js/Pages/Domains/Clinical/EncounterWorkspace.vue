@@ -78,7 +78,7 @@ const activeTab = ref('vitals');
                             </div>
                             
                             <div v-if="activeTab === 'soap'">
-                                <SOAPNote :encounter-id="encounter.id" :existing-notes="encounter.notes" />
+                                <SOAPNote :encounter-id="encounter.id" :existing-notes="encounter.notes" :existing-diagnoses="encounter.diagnoses" />
                             </div>
 
                             <div v-if="activeTab === 'rx'">

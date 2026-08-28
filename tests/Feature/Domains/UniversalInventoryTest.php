@@ -1,6 +1,8 @@
 <?php
 
-use App\Core\Context\TenantContext;
+use App\Domains\Identity\Actions\AssignUserRoleAction;
+use App\Domains\Identity\Models\Permission;
+use App\Domains\Identity\Models\Role;
 use App\Domains\Identity\Models\User;
 use App\Domains\Inventory\Actions\ApproveDepartmentRequisitionAction;
 use App\Domains\Inventory\Actions\ConfirmDepartmentRequisitionAction;
@@ -28,7 +30,7 @@ beforeEach(function () {
         'domain' => 'afya.local',
         'status' => 'Active',
     ]);
-    app(TenantContext::class)->setTenantId($this->tenant->id);
+    setTestTenantContext($this->tenant->id);
 
     $this->facility = Facility::create([
         'tenant_id' => $this->tenant->id,
@@ -323,6 +325,14 @@ test('tracks medical oxygen cylinder fleet status transitions', function () {
 });
 
 test('catalog search API supports free-text query, category scoping, and exact SKU scan', function () {
+    $role = Role::create(['tenant_id' => $this->tenant->id, 'slug' => 'inventory-officer', 'name' => 'Inventory Officer']);
+    $catalogView = Permission::firstOrCreate(
+        ['slug' => 'inventory.catalog.view'],
+        ['name' => 'View Item Catalog', 'domain' => 'Inventory']
+    );
+    $role->permissions()->syncWithoutDetaching([$catalogView->id]);
+    app(AssignUserRoleAction::class)->execute($this->user->id, $role->id);
+
     ItemMaster::create([
         'tenant_id' => $this->tenant->id,
         'item_code' => 'MSD-SURG-CANNULA',

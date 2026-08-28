@@ -27,6 +27,10 @@ const props = defineProps({
         type: Object,
         required: true,
     },
+    canEnterResults: {
+        type: Boolean,
+        default: false,
+    },
 });
 
 const emit = defineEmits(['enterResults']);
@@ -114,30 +118,42 @@ const isNumeric = (val) => !isNaN(parseFloat(val)) && isFinite(val);
                     <span>CRITICAL PANIC VALUE</span>
                 </span>
 
+                <!-- Completed Status -->
                 <span 
                     v-else-if="item.status === 'Completed'"
-                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20"
+                    class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20"
                 >
                     <CheckCircle2 class="w-3 h-3" />
-                    <span>Completed</span>
+                    <span>Completed & Verified</span>
                 </span>
 
+                <!-- In Progress / Testing on Analyzer -->
+                <span 
+                    v-else-if="item.status === 'Testing' || item.status === 'Sample Collected' || item.status === 'In Progress'"
+                    class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-sky-500/10 text-sky-700 dark:text-sky-400 border border-sky-500/20"
+                >
+                    <FlaskConical class="w-3 h-3 text-sky-600 dark:text-sky-400 animate-pulse" />
+                    <span>In Testing on Analyzer</span>
+                </span>
+
+                <!-- Awaiting Specimen Collection in Lab -->
                 <span 
                     v-else
-                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20"
+                    class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20"
                 >
                     <Clock class="w-3 h-3" />
-                    <span>{{ item.status }}</span>
+                    <span>Awaiting Specimen (Lab)</span>
                 </span>
 
+                <!-- Only show Enter POC Result if explicitly permitted -->
                 <Button 
-                    v-if="!isCompleted"
+                    v-if="!isCompleted && canEnterResults"
                     variant="outline" 
                     size="sm" 
-                    class="h-7 px-2.5 text-[11px] font-semibold"
+                    class="h-7 px-2.5 text-[11px] font-semibold gap-1 text-primary border-primary/30 hover:bg-primary/10"
                     @click="$emit('enterResults', item)"
                 >
-                    Enter Results
+                    <span>Enter POC Result</span>
                 </Button>
             </div>
         </div>

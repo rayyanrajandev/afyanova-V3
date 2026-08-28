@@ -77,6 +77,12 @@ class ClinicalVital extends Model
 
     const AUDIT_CATEGORY = 'CLINICAL';
 
+    const AUDIT_REDACT = [
+        'temperature_c', 'heart_rate', 'systolic_bp', 'diastolic_bp',
+        'respiratory_rate', 'oxygen_saturation', 'weight_kg', 'height_cm',
+        'bmi', 'notes', 'amendment_reason',
+    ];
+
     protected $guarded = ['id'];
 
     protected $casts = [

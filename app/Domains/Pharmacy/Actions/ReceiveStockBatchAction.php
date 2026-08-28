@@ -6,7 +6,6 @@ use App\Domains\Pharmacy\Models\InventoryBatch;
 use App\Domains\Pharmacy\Models\MedicationFormulary;
 use App\Domains\Pharmacy\Models\StockMovement;
 use App\Domains\Tenancy\Models\Facility;
-use App\Domains\Tenancy\Models\Tenant;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -14,8 +13,12 @@ class ReceiveStockBatchAction
 {
     public function execute(array $data): InventoryBatch
     {
-        $tenantId = $data['tenant_id'] ?? auth()->user()?->tenant_id ?? Tenant::first()?->id;
-        $facilityId = $data['facility_id'] ?? auth()->user()?->facility_id ?? Facility::where('tenant_id', $tenantId)->first()?->id ?? Facility::first()?->id;
+        // Dropped the Tenant::first()/global Facility::first() tail
+        // fallbacks: silently receiving stock under an arbitrary other
+        // tenant/facility when neither the caller nor the acting user
+        // supplies one is a landmine, not a safety net.
+        $tenantId = $data['tenant_id'] ?? auth()->user()?->tenant_id;
+        $facilityId = $data['facility_id'] ?? auth()->user()?->facility_id ?? Facility::where('tenant_id', $tenantId)->first()?->id;
         $userId = $data['performed_by'] ?? auth()->id();
 
         if (empty($data['medication_id'])) {

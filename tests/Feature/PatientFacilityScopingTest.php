@@ -1,6 +1,5 @@
 <?php
 
-use App\Core\Context\TenantContext;
 use App\Domains\Clinical\Actions\StartEncounterAction;
 use App\Domains\Identity\Actions\AssignUserRoleAction;
 use App\Domains\Identity\Models\Permission;
@@ -25,7 +24,7 @@ function buildTwoFacilityTenant(): array
         'status' => 'active',
     ]);
 
-    app(TenantContext::class)->setTenantId($tenant->id);
+    setTestTenantContext($tenant->id);
 
     $facilityA = Facility::create([
         'tenant_id' => $tenant->id,

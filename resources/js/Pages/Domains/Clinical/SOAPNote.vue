@@ -40,6 +40,10 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
+    existingDiagnoses: {
+        type: Array,
+        default: () => [],
+    },
     notes: {
         type: Array,
         default: () => [],
@@ -252,6 +256,45 @@ const submit = () => {
         onError: (errs) => {
             errorMessage.value = errs.note || 'Failed to save clinical note.';
             setTimeout(() => { errorMessage.value = ''; }, 5000);
+        }
+    });
+};
+
+// Structured Diagnosis Recording (separate from the free-text Assessment
+// narrative above — this writes an actual Diagnosis row, which is what
+// MTUHA morbidity reporting, insurance claim scrubbing, and FHIR Condition
+// export all read from).
+const diagnosisForm = useForm({
+    icd_10_code: '',
+    description: '',
+    certainty: 'Confirmed',
+    type: 'Primary',
+});
+const diagnosisError = ref('');
+
+const submitDiagnosis = () => {
+    if (!diagnosisForm.description.trim()) {
+        diagnosisError.value = 'Enter a diagnosis description first.';
+        setTimeout(() => { diagnosisError.value = ''; }, 3000);
+        return;
+    }
+
+    if (props.encounterId === 'demo' || props.encounterId === 'new') {
+        diagnosisError.value = 'Diagnosis can only be saved once the encounter has started.';
+        setTimeout(() => { diagnosisError.value = ''; }, 3500);
+        return;
+    }
+
+    diagnosisForm.post(route('clinical.diagnoses.store', props.encounterId), {
+        preserveScroll: true,
+        onSuccess: () => {
+            diagnosisForm.reset('icd_10_code', 'description');
+            successMessage.value = '✓ Diagnosis recorded to encounter.';
+            setTimeout(() => { successMessage.value = ''; }, 3500);
+        },
+        onError: (errs) => {
+            diagnosisError.value = errs.description || errs.icd_10_code || 'Failed to record diagnosis.';
+            setTimeout(() => { diagnosisError.value = ''; }, 5000);
         }
     });
 };
@@ -527,6 +570,65 @@ const formatDate = (dateStr) => {
                         placeholder="Primary clinical impression, ICD-10 code, differential diagnoses..."
                         class="w-full rounded border border-border/70 bg-muted/10 p-1.5 text-xs text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary leading-relaxed resize-y min-h-[52px]"
                     ></textarea>
+
+                    <!-- Structured Diagnosis (separate from the narrative above — writes an
+                         actual Diagnosis row for morbidity reporting / insurance / FHIR export) -->
+                    <div class="pt-1 mt-1 border-t border-amber-500/20 space-y-1">
+                        <div v-if="existingDiagnoses.length" class="flex flex-wrap gap-1">
+                            <span
+                                v-for="dx in existingDiagnoses"
+                                :key="dx.id"
+                                class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-medium border"
+                                :class="dx.is_deprecated
+                                    ? 'bg-muted/30 text-muted-foreground border-border/60 line-through'
+                                    : 'bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800'"
+                                :title="dx.notes || ''"
+                            >
+                                <Stethoscope class="w-2.5 h-2.5" />
+                                {{ dx.description }}<template v-if="dx.icd_10_code"> ({{ dx.icd_10_code }})</template>
+                                <span class="opacity-70">· {{ dx.type }}/{{ dx.certainty }}</span>
+                            </span>
+                        </div>
+
+                        <div v-if="can.recordDiagnosis" class="flex flex-wrap items-center gap-1">
+                            <input
+                                v-model="diagnosisForm.description"
+                                type="text"
+                                placeholder="Diagnosis (e.g. Uncomplicated malaria)"
+                                class="flex-1 min-w-[120px] rounded border border-border/70 bg-muted/10 px-1.5 py-1 text-[10px] text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                            />
+                            <input
+                                v-model="diagnosisForm.icd_10_code"
+                                type="text"
+                                placeholder="ICD-10"
+                                class="w-16 rounded border border-border/70 bg-muted/10 px-1.5 py-1 text-[10px] text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                            />
+                            <select
+                                v-model="diagnosisForm.certainty"
+                                class="rounded border border-border/70 bg-muted/10 px-1 py-1 text-[10px] text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                            >
+                                <option value="Confirmed">Confirmed</option>
+                                <option value="Suspected">Suspected</option>
+                            </select>
+                            <select
+                                v-model="diagnosisForm.type"
+                                class="rounded border border-border/70 bg-muted/10 px-1 py-1 text-[10px] text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                            >
+                                <option value="Primary">Primary</option>
+                                <option value="Secondary">Secondary</option>
+                                <option value="Comorbidity">Comorbidity</option>
+                            </select>
+                            <button
+                                type="button"
+                                @click="submitDiagnosis"
+                                :disabled="diagnosisForm.processing"
+                                class="px-2 py-1 rounded bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white text-[10px] font-semibold whitespace-nowrap"
+                            >
+                                {{ diagnosisForm.processing ? 'Saving…' : '+ Diagnosis' }}
+                            </button>
+                        </div>
+                        <p v-if="diagnosisError" class="text-[9px] text-rose-600">{{ diagnosisError }}</p>
+                    </div>
                 </div>
 
                 <!-- QUADRANT 4: [P] PLAN (Emerald Tint) -->

@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
-import { Link } from '@inertiajs/vue3';
+import { Link, usePage } from '@inertiajs/vue3';
 import {
     X,
     Search,
@@ -87,6 +87,10 @@ const latestVitals  = computed(() => vitals.value[0] || null);
 const totalBalance  = computed(() =>
     invoices.value.reduce((s, i) => s + Math.max(0, Number(i.total_amount) - Number(i.paid_amount)), 0)
 );
+
+const page = usePage();
+const canClinical = computed(() => page.props.auth?.permissions?.includes('clinical.encounter.view') || page.props.auth?.roles?.some(r => r.name === 'tenant-admin' || r.slug === 'tenant-admin'));
+const canBilling = computed(() => page.props.auth?.permissions?.includes('billing.invoice.view') || page.props.auth?.roles?.some(r => r.name === 'tenant-admin' || r.slug === 'tenant-admin'));
 
 // ── Timeline ────────────────────────────────────────────────────────────────
 const timelineEvents = computed(() => {
@@ -360,13 +364,13 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown));
 
                                 <!-- Nav Footer Actions -->
                                 <div class="border-t border-border p-2 space-y-1">
-                                    <Link :href="route('encounters.workspace', encounters[0]?.id || 'demo')">
+                                    <Link v-if="canClinical" :href="route('encounters.workspace', encounters[0]?.id || 'demo')">
                                         <Button variant="default" size="sm" class="w-full justify-start gap-2 text-xs h-7">
                                             <Stethoscope class="w-3.5 h-3.5" />
                                             Consultation
                                         </Button>
                                     </Link>
-                                    <Link :href="route('billing.desk')">
+                                    <Link v-if="canBilling" :href="route('billing.desk')">
                                         <Button variant="outline" size="sm" class="w-full justify-start gap-2 text-xs h-7">
                                             <Receipt class="w-3.5 h-3.5" />
                                             Point of Sale
@@ -495,7 +499,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown));
                                         <p class="text-xs text-muted-foreground">{{ enc.reason_for_visit || 'Routine Consultation' }}</p>
                                         <div class="flex items-center justify-between text-[11px] text-muted-foreground pt-2 border-t border-border/50">
                                             <span class="font-mono">{{ new Date(enc.start_time || enc.created_at).toLocaleString('en-GB') }}</span>
-                                            <Link :href="route('encounters.workspace', enc.id)">
+                                            <Link v-if="canClinical" :href="route('encounters.workspace', enc.id)">
                                                 <Button variant="outline" size="sm" class="h-6 text-xs gap-1 px-2">
                                                     <ExternalLink class="w-3 h-3" /> Open Chart
                                                 </Button>
@@ -646,17 +650,17 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown));
                                     <Table v-else>
                                         <TableHeader>
                                             <TableRow>
-                                                <TableHead>Invoice #</TableHead>
-                                                <TableHead>Date</TableHead>
-                                                <TableHead>Total (TZS)</TableHead>
-                                                <TableHead>Paid (TZS)</TableHead>
-                                                <TableHead>Balance</TableHead>
-                                                <TableHead>Status</TableHead>
+                                                <TableHead class="min-w-[175px] whitespace-nowrap">Invoice #</TableHead>
+                                                <TableHead class="min-w-[100px] whitespace-nowrap">Date</TableHead>
+                                                <TableHead class="whitespace-nowrap">Total (TZS)</TableHead>
+                                                <TableHead class="whitespace-nowrap">Paid (TZS)</TableHead>
+                                                <TableHead class="whitespace-nowrap">Balance</TableHead>
+                                                <TableHead class="whitespace-nowrap">Status</TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
                                             <TableRow v-for="inv in invoices" :key="inv.id">
-                                                <TableCell class="font-mono font-bold text-foreground">{{ inv.invoice_number }}</TableCell>
+                                                <TableCell class="font-mono font-bold text-foreground whitespace-nowrap">{{ inv.invoice_number }}</TableCell>
                                                 <TableCell class="text-xs text-muted-foreground">{{ new Date(inv.created_at).toLocaleDateString('en-GB') }}</TableCell>
                                                 <TableCell class="font-mono text-xs">{{ fmtN(inv.total_amount) }}</TableCell>
                                                 <TableCell class="font-mono text-xs text-emerald-700">{{ fmtN(inv.paid_amount) }}</TableCell>

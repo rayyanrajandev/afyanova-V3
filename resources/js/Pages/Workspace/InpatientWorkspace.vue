@@ -29,7 +29,8 @@ import {
     Wrench,
     SlidersHorizontal,
     Pill,
-    Syringe
+    Syringe,
+    Printer
 } from '@lucide/vue';
 import AfyaShell from '@/Layouts/AfyaShell.vue';
 import AfyaWorkspace from '@/Components/Workspace/AfyaWorkspace.vue';
@@ -38,6 +39,7 @@ import AfyaSidebarItem from '@/Components/Workspace/AfyaSidebarItem.vue';
 import AfyaWorkspaceMain from '@/Components/Workspace/AfyaWorkspaceMain.vue';
 import AfyaContextPanel from '@/Components/Workspace/AfyaContextPanel.vue';
 import Modal from '@/Components/Modal.vue';
+import PatientWristbandPrint from '@/Components/Print/PatientWristbandPrint.vue';
 
 // UI Primitives & Design Foundation
 import Button from '@/Components/ui/Button.vue';
@@ -109,6 +111,8 @@ const activeSection = ref('bed_map'); // bed_map, census, discharges
 const selectedWardFilter = ref('all');
 const selectedBed = ref(props.beds?.[0] || null);
 const selectedAdmission = ref(props.activeAdmissions?.[0] || null);
+const printingWristbandPatient = ref(null);
+const printingWristbandAdmission = ref(null);
 
 // Search query
 const searchQuery = ref('');
@@ -206,6 +210,21 @@ const submitMar = () => {
         },
         onError: () => {
             isMarSubmitting.value = false;
+        }
+    });
+};
+
+// Midnight Bed Billing Trigger
+const isGeneratingCharges = ref(false);
+const triggerBedBilling = () => {
+    if (!confirm('Run midnight bed & board billing engine for all currently admitted patients? This will generate daily accommodation charges.')) {
+        return;
+    }
+    isGeneratingCharges.value = true;
+    router.post(route('inpatient.generate-bed-charges'), {}, {
+        preserveScroll: true,
+        onFinish: () => {
+            isGeneratingCharges.value = false;
         }
     });
 };
@@ -345,6 +364,111 @@ const markBedCleaned = (bed) => {
     router.post(route('inpatient.beds.status', bed.id), { status: 'Available' });
 };
 
+// Ward & Bed Topology Layout State & Methods
+const showCreateWardModal = ref(false);
+const showEditWardModal = ref(false);
+const targetWardItem = ref(null);
+const showCreateBedModal = ref(false);
+const targetWardForBed = ref(null);
+const isWardSubmitting = ref(false);
+
+const createWardForm = ref({
+    name: '',
+    code: '',
+    ward_type: 'General',
+    gender_restriction: 'None',
+    floor_location: 'Ground Floor',
+    daily_base_rate: 25000,
+});
+
+const editWardForm = ref({
+    name: '',
+    code: '',
+    ward_type: 'General',
+    gender_restriction: 'None',
+    floor_location: '',
+    daily_base_rate: 25000,
+    is_active: true,
+});
+
+const createBedForm = ref({
+    ward_id: '',
+    bed_number: '',
+    bed_type: 'Standard',
+    daily_rate_amount: 25000,
+    notes: '',
+});
+
+const openCreateWardModal = () => {
+    createWardForm.value = {
+        name: '',
+        code: `WRD-${Math.floor(10 + Math.random() * 90)}`,
+        ward_type: 'General',
+        gender_restriction: 'None',
+        floor_location: 'First Floor',
+        daily_base_rate: 25000,
+    };
+    showCreateWardModal.value = true;
+};
+
+const submitCreateWard = () => {
+    isWardSubmitting.value = true;
+    router.post(route('inpatient.wards.store'), createWardForm.value, {
+        onFinish: () => {
+            isWardSubmitting.value = false;
+            showCreateWardModal.value = false;
+        }
+    });
+};
+
+const openEditWardModal = (ward) => {
+    targetWardItem.value = ward;
+    editWardForm.value = {
+        name: ward.name,
+        code: ward.code,
+        ward_type: ward.ward_type || 'General',
+        gender_restriction: ward.gender_restriction || 'None',
+        floor_location: ward.floor_location || '',
+        daily_base_rate: Number(ward.daily_base_rate || 25000),
+        is_active: ward.is_active !== undefined ? !!ward.is_active : true,
+    };
+    showEditWardModal.value = true;
+};
+
+const submitEditWard = () => {
+    if (!targetWardItem.value) return;
+    isWardSubmitting.value = true;
+    router.put(route('inpatient.wards.update', targetWardItem.value.id), editWardForm.value, {
+        onFinish: () => {
+            isWardSubmitting.value = false;
+            showEditWardModal.value = false;
+        }
+    });
+};
+
+const openCreateBedModal = (ward = null) => {
+    targetWardForBed.value = ward;
+    const selectedWard = ward || props.wards?.[0];
+    createBedForm.value = {
+        ward_id: selectedWard ? selectedWard.id : '',
+        bed_number: `B-${Math.floor(100 + Math.random() * 900)}`,
+        bed_type: 'Standard',
+        daily_rate_amount: Number(selectedWard?.daily_base_rate || 25000),
+        notes: 'Equipped with basic bedside monitor and oxygen outlet',
+    };
+    showCreateBedModal.value = true;
+};
+
+const submitCreateBed = () => {
+    isWardSubmitting.value = true;
+    router.post(route('inpatient.beds.store'), createBedForm.value, {
+        onFinish: () => {
+            isWardSubmitting.value = false;
+            showCreateBedModal.value = false;
+        }
+    });
+};
+
 const formatDate = (dateStr) => {
     if (!dateStr) return '—';
     const d = new Date(dateStr);
@@ -403,6 +527,14 @@ const formatCurrency = (val) => {
                         @click="activeSection = 'discharges'"
                     />
 
+                    <AfyaSidebarItem
+                        label="Ward & Bed Topology"
+                        :icon="Building2"
+                        :active="activeSection === 'topology'"
+                        :collapsed="state === 'collapsed'"
+                        @click="activeSection = 'topology'"
+                    />
+
                     <div v-if="state !== 'collapsed'" class="pt-2 px-2 py-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider border-t border-border/40 mt-1">
                         Wards Census
                     </div>
@@ -427,7 +559,7 @@ const formatCurrency = (val) => {
                 <AfyaWorkspaceMain
                     :breadcrumbs="[
                         { label: 'Inpatient', href: route('inpatient.workspace') },
-                        { label: activeSection === 'bed_map' ? 'Hospital Bed Map' : (activeSection === 'census' ? 'Active Inpatient Census' : 'Discharge & Transfer Registry'), active: true }
+                        { label: activeSection === 'bed_map' ? 'Hospital Bed Map' : (activeSection === 'census' ? 'Active Inpatient Census' : (activeSection === 'topology' ? 'Ward & Bed Facility Topology' : 'Discharge & Transfer Registry')), active: true }
                     ]"
                 >
                     <template #actions>
@@ -436,6 +568,19 @@ const formatCurrency = (val) => {
                                 <ShieldCheck class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                                 <span>Occupancy: <strong>{{ censusMetrics.rate }}%</strong></span>
                             </span>
+                            <Button
+                                v-if="can.generateBedCharges"
+                                variant="outline"
+                                size="sm"
+                                class="h-7.5 px-3 text-xs font-bold gap-1.5 text-indigo-700 dark:text-indigo-400 border-indigo-300 dark:border-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 shadow-2xs"
+                                :disabled="isGeneratingCharges"
+                                @click="triggerBedBilling"
+                                title="Post midnight bed & board accommodation charges to active admissions"
+                            >
+                                <Loader2 v-if="isGeneratingCharges" class="w-3.5 h-3.5 animate-spin" />
+                                <Clock v-else class="w-3.5 h-3.5 text-indigo-600" />
+                                <span>Midnight Bed Billing</span>
+                            </Button>
                             <Button
                                 v-if="can.admit"
                                 variant="default"
@@ -768,6 +913,111 @@ const formatCurrency = (val) => {
                             </div>
                         </div>
 
+                        <!-- ================= VIEW 4: WARD & BED TOPOLOGY ================= -->
+                        <div v-else-if="activeSection === 'topology'" class="w-full space-y-4">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <Building2 class="w-4 h-4 text-primary" />
+                                    <h3 class="font-bold text-sm text-foreground">Inpatient Hospital Wards & Bed Topologies</h3>
+                                </div>
+                                <Button
+                                    variant="default"
+                                    size="sm"
+                                    class="h-7 text-xs font-bold gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white"
+                                    @click="openCreateWardModal"
+                                >
+                                    <Plus class="w-3.5 h-3.5" />
+                                    <span>Register New Ward</span>
+                                </Button>
+                            </div>
+
+                            <div class="grid grid-cols-1 gap-4">
+                                <div
+                                    v-for="ward in wards"
+                                    :key="ward.id"
+                                    class="bg-card rounded-xl border border-border/60 shadow-2xs overflow-hidden"
+                                >
+                                    <!-- Ward Header -->
+                                    <div class="px-4 py-3 bg-muted/20 border-b border-border/40 flex items-center justify-between">
+                                        <div>
+                                            <div class="flex items-center gap-2">
+                                                <h4 class="font-bold text-sm text-foreground">{{ ward.name }}</h4>
+                                                <span class="px-1.5 py-0.5 rounded font-mono text-[9px] font-bold bg-primary/10 text-primary">
+                                                    {{ ward.code }}
+                                                </span>
+                                                <span class="px-1.5 py-0.5 rounded text-[9.5px] font-bold bg-muted text-muted-foreground">
+                                                    {{ ward.ward_type }}
+                                                </span>
+                                            </div>
+                                            <div class="text-[10px] text-muted-foreground mt-0.5">
+                                                Floor: {{ ward.floor_location || 'Main' }} • Gender: {{ ward.gender_restriction }} • Base Rate: <strong class="text-foreground font-mono">TZS {{ formatCurrency(ward.daily_base_rate) }} / night</strong>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex items-center gap-2">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                class="h-6 px-2 text-[10.5px] font-semibold"
+                                                @click="openEditWardModal(ward)"
+                                            >
+                                                Edit Ward
+                                            </Button>
+                                            <Button
+                                                variant="default"
+                                                size="sm"
+                                                class="h-6 px-2 text-[10.5px] font-bold gap-1 bg-primary text-primary-foreground"
+                                                @click="openCreateBedModal(ward)"
+                                            >
+                                                <Plus class="w-3 h-3" />
+                                                <span>Add Bed</span>
+                                            </Button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Beds in this ward -->
+                                    <div class="p-3">
+                                        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
+                                            <div
+                                                v-for="b in beds.filter(bed => bed.ward_id === ward.id)"
+                                                :key="b.id"
+                                                class="p-2 rounded-lg border text-xs space-y-1 transition"
+                                                :class="{
+                                                    'bg-emerald-500/5 border-emerald-500/30': b.status === 'Available',
+                                                    'bg-rose-500/5 border-rose-500/30': b.status === 'Occupied',
+                                                    'bg-amber-500/5 border-amber-500/30': b.status === 'Cleaning',
+                                                    'bg-muted/40 border-border/40': b.status === 'Maintenance' || b.status === 'Reserved'
+                                                }"
+                                            >
+                                                <div class="flex items-center justify-between font-mono font-bold">
+                                                    <span class="text-foreground text-[11px]">{{ b.bed_number }}</span>
+                                                    <span
+                                                        class="w-2 h-2 rounded-full"
+                                                        :class="{
+                                                            'bg-emerald-500': b.status === 'Available',
+                                                            'bg-rose-500': b.status === 'Occupied',
+                                                            'bg-amber-500': b.status === 'Cleaning',
+                                                            'bg-muted-foreground': b.status === 'Maintenance' || b.status === 'Reserved'
+                                                        }"
+                                                    ></span>
+                                                </div>
+                                                <div class="text-[9.5px] text-muted-foreground truncate">{{ b.bed_type }}</div>
+                                                <div class="text-[9px] font-mono text-muted-foreground">
+                                                    TZS {{ formatCurrency(b.daily_rate_amount || ward.daily_base_rate) }}
+                                                </div>
+                                                <div class="text-[9px] font-bold" :class="b.status === 'Occupied' ? 'text-rose-600' : 'text-emerald-600'">
+                                                    {{ b.status }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div v-if="!beds.filter(bed => bed.ward_id === ward.id).length" class="text-center py-3 text-muted-foreground italic text-xs">
+                                            No physical beds registered in this ward yet. Click "Add Bed" to provision.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                 </AfyaWorkspaceMain>
             </template>
@@ -900,6 +1150,15 @@ const formatCurrency = (val) => {
                             >
                                 <Syringe class="w-3.5 h-3.5" />
                                 <span>Chart & Dispense Dose (e-MAR)</span>
+                            </Button>
+
+                            <Button
+                                variant="outline"
+                                class="w-full h-8 text-xs font-semibold justify-center gap-1.5 shadow-2xs border-border/80"
+                                @click="printingWristbandPatient = selectedAdmission.patient; printingWristbandAdmission = selectedAdmission"
+                            >
+                                <Printer class="w-3.5 h-3.5 text-primary" />
+                                <span>Print Bedside Wristband</span>
                             </Button>
 
                             <Button
@@ -1339,5 +1598,218 @@ const formatCurrency = (val) => {
             </div>
         </Modal>
 
+        <!-- Bedside Patient Wristband Print Modal -->
+        <PatientWristbandPrint
+            v-if="printingWristbandPatient"
+            :patient="printingWristbandPatient"
+            :admission="printingWristbandAdmission"
+            @close="printingWristbandPatient = null; printingWristbandAdmission = null"
+        />
+
+        <!-- MODAL: REGISTER WARD -->
+        <Modal :show="showCreateWardModal" max-width="md" @close="showCreateWardModal = false">
+            <div class="p-5 space-y-3.5 text-xs">
+                <div class="flex items-center justify-between border-b border-border pb-3">
+                    <div class="flex items-center gap-2">
+                        <Building2 class="w-4 h-4 text-emerald-600" />
+                        <h3 class="font-bold text-sm text-foreground">Register New Inpatient Ward</h3>
+                    </div>
+                    <button @click="showCreateWardModal = false" class="text-muted-foreground hover:text-foreground">
+                        <X class="w-4 h-4" />
+                    </button>
+                </div>
+
+                <form @submit.prevent="submitCreateWard" class="space-y-3">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="space-y-1">
+                            <label class="block font-bold text-muted-foreground text-[10px] uppercase">Ward Name *</label>
+                            <Input v-model="createWardForm.name" required placeholder="e.g. St. Luke Male Surgical" class="h-8 text-xs" />
+                        </div>
+                        <div class="space-y-1">
+                            <label class="block font-bold text-muted-foreground text-[10px] uppercase">Ward Code *</label>
+                            <Input v-model="createWardForm.code" required class="h-8 text-xs font-mono" />
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="space-y-1">
+                            <label class="block font-bold text-muted-foreground text-[10px] uppercase">Ward Type *</label>
+                            <select v-model="createWardForm.ward_type" class="w-full h-8 rounded border border-input bg-background px-2 text-xs">
+                                <option value="General">General Medical/Surgical</option>
+                                <option value="ICU">Intensive Care Unit (ICU)</option>
+                                <option value="HDU">High Dependency Unit (HDU)</option>
+                                <option value="Maternity">Maternity & Labour</option>
+                                <option value="Pediatric">Pediatric Ward</option>
+                                <option value="VIP_Private">VIP / Executive Suite</option>
+                                <option value="Isolation">Infectious Disease Isolation</option>
+                            </select>
+                        </div>
+                        <div class="space-y-1">
+                            <label class="block font-bold text-muted-foreground text-[10px] uppercase">Gender Restriction</label>
+                            <select v-model="createWardForm.gender_restriction" class="w-full h-8 rounded border border-input bg-background px-2 text-xs">
+                                <option value="None">None (Co-ed / Private)</option>
+                                <option value="Male_Only">Male Only</option>
+                                <option value="Female_Only">Female Only</option>
+                                <option value="Pediatric">Pediatric (< 12 yrs)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="space-y-1">
+                            <label class="block font-bold text-muted-foreground text-[10px] uppercase">Floor / Building Location</label>
+                            <Input v-model="createWardForm.floor_location" placeholder="e.g. Block B, 2nd Floor" class="h-8 text-xs" />
+                        </div>
+                        <div class="space-y-1">
+                            <label class="block font-bold text-muted-foreground text-[10px] uppercase">Daily Base Rate (TZS/night) *</label>
+                            <Input v-model.number="createWardForm.daily_base_rate" type="number" min="0" required class="h-8 text-xs font-mono font-bold" />
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-end gap-2 pt-3 border-t border-border">
+                        <Button variant="outline" size="sm" type="button" @click="showCreateWardModal = false">Cancel</Button>
+                        <Button variant="default" size="sm" type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold" :disabled="isWardSubmitting">
+                            <Loader2 v-if="isWardSubmitting" class="w-3.5 h-3.5 animate-spin mr-1" />
+                            <span>Save Ward</span>
+                        </Button>
+                    </div>
+                </form>
+            </div>
+        </Modal>
+
+        <!-- MODAL: EDIT WARD -->
+        <Modal :show="showEditWardModal" max-width="md" @close="showEditWardModal = false">
+            <div class="p-5 space-y-3.5 text-xs">
+                <div class="flex items-center justify-between border-b border-border pb-3">
+                    <div class="flex items-center gap-2">
+                        <Building2 class="w-4 h-4 text-primary" />
+                        <h3 class="font-bold text-sm text-foreground">Edit Ward: {{ targetWardItem?.name }}</h3>
+                    </div>
+                    <button @click="showEditWardModal = false" class="text-muted-foreground hover:text-foreground">
+                        <X class="w-4 h-4" />
+                    </button>
+                </div>
+
+                <form @submit.prevent="submitEditWard" class="space-y-3">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="space-y-1">
+                            <label class="block font-bold text-muted-foreground text-[10px] uppercase">Ward Name *</label>
+                            <Input v-model="editWardForm.name" required class="h-8 text-xs" />
+                        </div>
+                        <div class="space-y-1">
+                            <label class="block font-bold text-muted-foreground text-[10px] uppercase">Ward Code *</label>
+                            <Input v-model="editWardForm.code" required class="h-8 text-xs font-mono" />
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="space-y-1">
+                            <label class="block font-bold text-muted-foreground text-[10px] uppercase">Ward Type</label>
+                            <select v-model="editWardForm.ward_type" class="w-full h-8 rounded border border-input bg-background px-2 text-xs">
+                                <option value="General">General Medical/Surgical</option>
+                                <option value="ICU">Intensive Care Unit (ICU)</option>
+                                <option value="HDU">High Dependency Unit (HDU)</option>
+                                <option value="Maternity">Maternity & Labour</option>
+                                <option value="Pediatric">Pediatric Ward</option>
+                                <option value="VIP_Private">VIP / Executive Suite</option>
+                                <option value="Isolation">Infectious Disease Isolation</option>
+                            </select>
+                        </div>
+                        <div class="space-y-1">
+                            <label class="block font-bold text-muted-foreground text-[10px] uppercase">Gender Restriction</label>
+                            <select v-model="editWardForm.gender_restriction" class="w-full h-8 rounded border border-input bg-background px-2 text-xs">
+                                <option value="None">None (Co-ed / Private)</option>
+                                <option value="Male_Only">Male Only</option>
+                                <option value="Female_Only">Female Only</option>
+                                <option value="Pediatric">Pediatric (< 12 yrs)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="space-y-1">
+                            <label class="block font-bold text-muted-foreground text-[10px] uppercase">Floor Location</label>
+                            <Input v-model="editWardForm.floor_location" class="h-8 text-xs" />
+                        </div>
+                        <div class="space-y-1">
+                            <label class="block font-bold text-muted-foreground text-[10px] uppercase">Daily Base Rate (TZS)</label>
+                            <Input v-model.number="editWardForm.daily_base_rate" type="number" min="0" required class="h-8 text-xs font-mono font-bold" />
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2 pt-1">
+                        <input type="checkbox" v-model="editWardForm.is_active" class="rounded border-input text-primary" />
+                        <label class="text-[11px] text-muted-foreground">Ward is active and accepting admissions</label>
+                    </div>
+
+                    <div class="flex items-center justify-end gap-2 pt-3 border-t border-border">
+                        <Button variant="outline" size="sm" type="button" @click="showEditWardModal = false">Cancel</Button>
+                        <Button variant="default" size="sm" type="submit" :disabled="isWardSubmitting">
+                            <Loader2 v-if="isWardSubmitting" class="w-3.5 h-3.5 animate-spin mr-1" />
+                            <span>Save Changes</span>
+                        </Button>
+                    </div>
+                </form>
+            </div>
+        </Modal>
+
+        <!-- MODAL: ADD BED TO WARD -->
+        <Modal :show="showCreateBedModal" max-width="md" @close="showCreateBedModal = false">
+            <div class="p-5 space-y-3.5 text-xs">
+                <div class="flex items-center justify-between border-b border-border pb-3">
+                    <div class="flex items-center gap-2">
+                        <Bed class="w-4 h-4 text-primary" />
+                        <h3 class="font-bold text-sm text-foreground">Add Bed to {{ targetWardForBed?.name || 'Ward' }}</h3>
+                    </div>
+                    <button @click="showCreateBedModal = false" class="text-muted-foreground hover:text-foreground">
+                        <X class="w-4 h-4" />
+                    </button>
+                </div>
+
+                <form @submit.prevent="submitCreateBed" class="space-y-3">
+                    <div class="space-y-1">
+                        <label class="block font-bold text-muted-foreground text-[10px] uppercase">Target Ward *</label>
+                        <select v-model="createBedForm.ward_id" required class="w-full h-8 rounded border border-input bg-background px-2 text-xs">
+                            <option v-for="w in wards" :key="w.id" :value="w.id">{{ w.name }} ({{ w.ward_type }})</option>
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="space-y-1">
+                            <label class="block font-bold text-muted-foreground text-[10px] uppercase">Bed Number / Label *</label>
+                            <Input v-model="createBedForm.bed_number" required placeholder="e.g. Bed-01 or ICU-03" class="h-8 text-xs font-mono font-bold" />
+                        </div>
+                        <div class="space-y-1">
+                            <label class="block font-bold text-muted-foreground text-[10px] uppercase">Bed Type</label>
+                            <select v-model="createBedForm.bed_type" class="w-full h-8 rounded border border-input bg-background px-2 text-xs">
+                                <option value="Standard">Standard Hospital Bed</option>
+                                <option value="Electric_ICU">Electric ICU / Critical Bed</option>
+                                <option value="Pediatric_Crib">Pediatric Cot / Crib</option>
+                                <option value="Incubator">Neonatal Incubator</option>
+                                <option value="Delivery_Bed">Labour & Delivery Bed</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="space-y-1">
+                        <label class="block font-bold text-muted-foreground text-[10px] uppercase">Specific Daily Bed Rate (TZS) - Optional Override</label>
+                        <Input v-model.number="createBedForm.daily_rate_amount" type="number" min="0" placeholder="Defaults to Ward Base Rate if empty" class="h-8 text-xs font-mono" />
+                    </div>
+
+                    <div class="space-y-1">
+                        <label class="block font-bold text-muted-foreground text-[10px] uppercase">Bedside Amenities / Notes</label>
+                        <Input v-model="createBedForm.notes" placeholder="e.g. Oxygen point, suction unit, ventilator attached" class="h-8 text-xs" />
+                    </div>
+
+                    <div class="flex items-center justify-end gap-2 pt-3 border-t border-border">
+                        <Button variant="outline" size="sm" type="button" @click="showCreateBedModal = false">Cancel</Button>
+                        <Button variant="default" size="sm" type="submit" :disabled="isWardSubmitting">
+                            <Loader2 v-if="isWardSubmitting" class="w-3.5 h-3.5 animate-spin mr-1" />
+                            <span>Register Bed</span>
+                        </Button>
+                    </div>
+                </form>
+            </div>
+        </Modal>
     </AfyaShell>
 </template>

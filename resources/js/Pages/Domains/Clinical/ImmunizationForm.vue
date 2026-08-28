@@ -4,6 +4,7 @@ import { useForm } from '@inertiajs/vue3';
 import { Syringe, Save, Loader2, CheckCircle2, AlertTriangle, X, ShieldAlert } from 'lucide-vue-next';
 import Button from '@/Components/ui/Button.vue';
 import Input from '@/Components/ui/Input.vue';
+import AfyaDatePicker from '@/Components/Afya/AfyaDatePicker.vue';
 import InputError from '@/Components/InputError.vue';
 import Table from '@/Components/ui/Table.vue';
 import TableHeader from '@/Components/ui/TableHeader.vue';
@@ -172,13 +173,17 @@ const formatDate = (dateStr) => {
                     <InputError :message="form.errors.batch_number" class="mt-1" />
                 </div>
                 <div>
-                    <label class="block text-[11px] font-semibold text-foreground mb-1">Vial Expiration Date *</label>
-                    <Input v-model="form.expiration_date" type="date" class="h-8 text-xs font-mono" />
-                    <InputError :message="form.errors.expiration_date" class="mt-1" />
+                    <AfyaDatePicker
+                        v-model="form.expiration_date"
+                        label="Vial Expiration Date"
+                        required
+                        :min="new Date().toISOString().split('T')[0]"
+                        :error="form.errors.expiration_date"
+                    />
                 </div>
                 <div>
                     <label class="block text-[11px] font-semibold text-foreground mb-1">Route *</label>
-                    <select v-model="form.route" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                    <select v-model="form.route" class="w-full h-8.5 text-xs rounded border border-border bg-card px-2">
                         <option value="Intradermal">Intradermal (ID)</option>
                         <option value="Intramuscular">Intramuscular (IM)</option>
                         <option value="Subcutaneous">Subcutaneous (SC)</option>
@@ -200,9 +205,12 @@ const formatDate = (dateStr) => {
                     <InputError :message="form.errors.adverse_reaction_notes" class="mt-1" />
                 </div>
                 <div>
-                    <label class="block text-[11px] font-semibold text-foreground mb-1">Next Follow-Up Due Date</label>
-                    <Input v-model="form.next_due_date" type="date" class="h-8 text-xs font-mono" />
-                    <InputError :message="form.errors.next_due_date" class="mt-1" />
+                    <AfyaDatePicker
+                        v-model="form.next_due_date"
+                        label="Next Follow-Up Due Date"
+                        :min="new Date().toISOString().split('T')[0]"
+                        :error="form.errors.next_due_date"
+                    />
                 </div>
             </div>
 

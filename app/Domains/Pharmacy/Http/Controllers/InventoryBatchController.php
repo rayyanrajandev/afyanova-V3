@@ -35,6 +35,7 @@ class InventoryBatchController extends Controller
         ]);
 
         $medications = MedicationFormulary::with([
+            'itemMaster',
             'batches' => function ($q) {
                 $q->orderBy('expiry_date', 'asc');
             },
@@ -47,7 +48,7 @@ class InventoryBatchController extends Controller
         $recentMovements = $can['movements']
             ? StockMovement::with(['medication', 'batch', 'performer'])
                 ->latest('created_at')
-                ->take(50)
+                ->take(500)
                 ->get()
             : collect();
 

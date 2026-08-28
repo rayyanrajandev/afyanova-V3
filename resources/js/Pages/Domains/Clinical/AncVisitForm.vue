@@ -1,9 +1,10 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import { Heart, Save, Loader2, CheckCircle2, AlertTriangle, X, ShieldAlert, Baby } from 'lucide-vue-next';
 import Button from '@/Components/ui/Button.vue';
 import Input from '@/Components/ui/Input.vue';
+import AfyaDatePicker from '@/Components/Afya/AfyaDatePicker.vue';
 import InputError from '@/Components/InputError.vue';
 import Table from '@/Components/ui/Table.vue';
 import TableHeader from '@/Components/ui/TableHeader.vue';
@@ -67,6 +68,8 @@ const onLmpChange = () => {
         }
     }
 };
+
+watch(() => form.last_menstrual_period, onLmpChange);
 
 const submit = () => {
     if (props.encounterId === 'demo' || props.encounterId === 'new') {
@@ -149,14 +152,21 @@ const formatDate = (dateStr) => {
                     <InputError :message="form.errors.para" class="mt-1" />
                 </div>
                 <div>
-                    <label class="block text-[11px] font-semibold text-foreground mb-1">LMP (Last Menstrual Period) *</label>
-                    <Input v-model="form.last_menstrual_period" type="date" @change="onLmpChange" class="h-8 text-xs font-mono" />
-                    <InputError :message="form.errors.last_menstrual_period" class="mt-1" />
+                    <AfyaDatePicker
+                        v-model="form.last_menstrual_period"
+                        label="LMP (Last Menstrual Period)"
+                        required
+                        :max="new Date().toISOString().split('T')[0]"
+                        :error="form.errors.last_menstrual_period"
+                    />
                 </div>
                 <div>
-                    <label class="block text-[11px] font-semibold text-foreground mb-1">EDD (Estimated Delivery Date) *</label>
-                    <Input v-model="form.estimated_date_of_delivery" type="date" class="h-8 text-xs font-mono" />
-                    <InputError :message="form.errors.estimated_date_of_delivery" class="mt-1" />
+                    <AfyaDatePicker
+                        v-model="form.estimated_date_of_delivery"
+                        label="EDD (Estimated Delivery Date)"
+                        required
+                        :error="form.errors.estimated_date_of_delivery"
+                    />
                 </div>
             </div>
 

@@ -62,6 +62,10 @@ const searchQuery = ref('');
 // Modals
 const showAssignRoleModal = ref(false);
 const showEditRolePermissionsModal = ref(false);
+const showCreateUserModal = ref(false);
+const showEditUserModal = ref(false);
+const showResetPasswordModal = ref(false);
+const targetUserForAction = ref(null);
 
 // Forms
 const assignRoleForm = useForm({
@@ -71,9 +75,144 @@ const assignRoleForm = useForm({
     department_id: '',
 });
 
+const createUserForm = useForm({
+    first_name: '',
+    last_name: '',
+    email: '',
+    phone: '',
+    professional_registration_no: '',
+    role_id: '',
+    facility_id: '',
+    password: 'Password@123',
+});
+
+const editUserForm = useForm({
+    first_name: '',
+    last_name: '',
+    phone: '',
+    professional_registration_no: '',
+    status: 'Active',
+});
+
+const resetPasswordForm = useForm({
+    password: '',
+});
+
 const rolePermissionsForm = useForm({
     permission_ids: [],
 });
+
+const openCreateUserModal = () => {
+    createUserForm.reset();
+    createUserForm.role_id = props.roles[0]?.id || '';
+    createUserForm.facility_id = props.facilities[0]?.id || '';
+    showCreateUserModal.value = true;
+};
+
+const submitCreateUser = () => {
+    createUserForm.post(route('access-control.users.store'), {
+        onSuccess: () => {
+            showCreateUserModal.value = false;
+            createUserForm.reset();
+        }
+    });
+};
+
+const openEditUserModal = (user) => {
+    targetUserForAction.value = user;
+    editUserForm.first_name = user.first_name;
+    editUserForm.last_name = user.last_name;
+    editUserForm.phone = user.phone || '';
+    editUserForm.professional_registration_no = user.professional_registration_no || '';
+    editUserForm.status = user.status || 'Active';
+    showEditUserModal.value = true;
+};
+
+const submitEditUser = () => {
+    if (!targetUserForAction.value) return;
+    editUserForm.put(route('access-control.users.update', targetUserForAction.value.id), {
+        onSuccess: () => {
+            showEditUserModal.value = false;
+        }
+    });
+};
+
+const toggleUserStatus = (user) => {
+    if (!confirm(`Are you sure you want to change account status for ${user.first_name} ${user.last_name}?`)) return;
+    router.post(route('access-control.users.toggle-status', user.id));
+};
+
+const openResetPasswordModal = (user) => {
+    targetUserForAction.value = user;
+    resetPasswordForm.password = '';
+    showResetPasswordModal.value = true;
+};
+
+const submitResetPassword = () => {
+    if (!targetUserForAction.value) return;
+    resetPasswordForm.post(route('access-control.users.reset-password', targetUserForAction.value.id), {
+        onSuccess: () => {
+            showResetPasswordModal.value = false;
+            resetPasswordForm.reset();
+        }
+    });
+};
+
+// Facility & Department Management State
+const showCreateFacilityModal = ref(false);
+const showCreateDepartmentModal = ref(false);
+const targetFacilityForDept = ref(null);
+
+const createFacilityForm = useForm({
+    name: '',
+    code: '',
+    facility_type: 'Hospital',
+    hfr_code: '',
+    license_number: '',
+    physical_address: '',
+    contact_phone: '',
+    contact_email: '',
+});
+
+const createDepartmentForm = useForm({
+    facility_id: '',
+    name: '',
+    code: '',
+    department_type: 'Clinical',
+});
+
+const openCreateFacilityModal = () => {
+    createFacilityForm.reset();
+    createFacilityForm.code = `FAC-${Math.floor(100 + Math.random() * 900)}`;
+    showCreateFacilityModal.value = true;
+};
+
+const submitCreateFacility = () => {
+    createFacilityForm.post(route('access-control.facilities.store'), {
+        onSuccess: () => {
+            showCreateFacilityModal.value = false;
+            createFacilityForm.reset();
+        }
+    });
+};
+
+const openCreateDepartmentModal = (facility) => {
+    targetFacilityForDept.value = facility;
+    createDepartmentForm.facility_id = facility.id;
+    createDepartmentForm.name = '';
+    createDepartmentForm.code = '';
+    createDepartmentForm.department_type = 'Clinical';
+    showCreateDepartmentModal.value = true;
+};
+
+const submitCreateDepartment = () => {
+    createDepartmentForm.post(route('access-control.departments.store'), {
+        onSuccess: () => {
+            showCreateDepartmentModal.value = false;
+            createDepartmentForm.reset();
+        }
+    });
+};
 
 // Live Permission Tester State
 const testPermissionSlug = ref('clinical.encounter.create');
@@ -169,6 +308,7 @@ const breadcrumbLabel = computed(() => {
         case 'users': return 'Staff Directory & Access Matrix';
         case 'roles': return 'Standard System Roles & Permissions';
         case 'permissions': return 'Granular Permissions Catalog';
+        case 'facilities': return 'Facility Branches & Department Units';
         default: return 'Access Control';
     }
 });
@@ -201,6 +341,15 @@ const breadcrumbLabel = computed(() => {
                         :collapsed="state === 'collapsed'"
                         :badge="users.length"
                         @click="activeSection = 'users'"
+                    />
+                    <AfyaSidebarItem
+                        v-if="can.facilities"
+                        :icon="Building2"
+                        label="Facilities & Branches"
+                        :active="activeSection === 'facilities'"
+                        :collapsed="state === 'collapsed'"
+                        :badge="facilities.length"
+                        @click="activeSection = 'facilities'"
                     />
                     <AfyaSidebarItem
                         v-if="can.roles"
@@ -250,13 +399,24 @@ const breadcrumbLabel = computed(() => {
                     <template #actions>
                         <div class="flex items-center gap-2">
                             <Button
-                                v-if="can.assignRole"
+                                v-if="can.users"
                                 variant="default"
+                                size="sm"
+                                class="h-7 text-xs font-semibold gap-1 shadow-2xs bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+                                @click="openCreateUserModal"
+                            >
+                                <Plus class="w-3.5 h-3.5" />
+                                <span>Add Staff Member</span>
+                            </Button>
+
+                            <Button
+                                v-if="can.assignRole"
+                                variant="outline"
                                 size="sm"
                                 class="h-7 text-xs font-semibold gap-1 shadow-2xs"
                                 @click="openAssignRoleModal()"
                             >
-                                <Plus class="w-3.5 h-3.5" />
+                                <Key class="w-3.5 h-3.5 text-primary" />
                                 <span>Assign Role Scope</span>
                             </Button>
 
@@ -336,7 +496,7 @@ const breadcrumbLabel = computed(() => {
                             <div class="flex items-center justify-between">
                                 <Input
                                     v-model="searchQuery"
-                                    placeholder="Search staff by name, email, or role..."
+                                    placeholder="Search staff by name, email, role, or MCT license..."
                                     class="h-8 text-xs bg-card max-w-sm"
                                 />
                             </div>
@@ -345,11 +505,11 @@ const breadcrumbLabel = computed(() => {
                                 <Table>
                                     <TableHeader>
                                         <TableRow class="bg-muted/40 text-[10px] uppercase tracking-wider font-bold">
-                                            <TableHead class="py-2 px-3">Staff Name</TableHead>
-                                            <TableHead class="py-2 px-3">Email Address</TableHead>
+                                            <TableHead class="py-2 px-3">Staff Member & Credential</TableHead>
+                                            <TableHead class="py-2 px-3">Contact Email & Phone</TableHead>
                                             <TableHead class="py-2 px-3">Primary Role</TableHead>
                                             <TableHead class="py-2 px-3">Assigned Scopes (Facility / Dept)</TableHead>
-                                            <TableHead class="py-2 px-3">Status</TableHead>
+                                            <TableHead class="py-2 px-3">Account Status</TableHead>
                                             <TableHead class="py-2 px-3 text-right">Actions</TableHead>
                                         </TableRow>
                                     </TableHeader>
@@ -361,11 +521,15 @@ const breadcrumbLabel = computed(() => {
                                             :class="selectedUser?.id === u.id ? 'bg-primary/5 font-semibold' : ''"
                                             class="hover:bg-muted/20 cursor-pointer border-b border-border/30"
                                         >
-                                            <TableCell class="py-2 px-3 font-bold text-foreground">
-                                                {{ u.first_name }} {{ u.last_name }}
+                                            <TableCell class="py-2 px-3">
+                                                <div class="font-bold text-foreground">{{ u.first_name }} {{ u.last_name }}</div>
+                                                <div v-if="u.professional_registration_no" class="text-[10px] font-mono text-emerald-600 dark:text-emerald-400">
+                                                    MCT / Lic: {{ u.professional_registration_no }}
+                                                </div>
                                             </TableCell>
                                             <TableCell class="py-2 px-3 font-mono text-xs text-muted-foreground">
-                                                {{ u.email }}
+                                                <div>{{ u.email }}</div>
+                                                <div v-if="u.phone" class="text-[10px] text-muted-foreground">{{ u.phone }}</div>
                                             </TableCell>
                                             <TableCell class="py-2 px-3">
                                                 <AfyaStatusBadge status="active" :label="u.role || 'Staff'" />
@@ -381,22 +545,142 @@ const breadcrumbLabel = computed(() => {
                                                 <span v-else class="text-muted-foreground italic">Global Tenant Scope</span>
                                             </TableCell>
                                             <TableCell class="py-2 px-3">
-                                                <AfyaStatusBadge status="active" label="Active" />
+                                                <AfyaStatusBadge 
+                                                    :status="u.status === 'Active' ? 'active' : (u.status === 'Suspended' ? 'warning' : 'inactive')" 
+                                                    :label="u.status || 'Active'" 
+                                                />
                                             </TableCell>
                                             <TableCell class="py-2 px-3 text-right">
-                                                <Button
-                                                    v-if="can.assignRole"
-                                                    variant="outline"
-                                                    size="sm"
-                                                    class="h-6 text-[10px] font-bold"
-                                                    @click.stop="openAssignRoleModal(u)"
-                                                >
-                                                    Add Role Scope
-                                                </Button>
+                                                <div class="flex items-center justify-end gap-1.5" @click.stop>
+                                                    <Button
+                                                        v-if="can.users"
+                                                        variant="outline"
+                                                        size="sm"
+                                                        class="h-6 px-2 text-[10px] font-semibold text-muted-foreground hover:text-foreground"
+                                                        @click="openEditUserModal(u)"
+                                                        title="Edit staff details and MCT credentials"
+                                                    >
+                                                        Edit
+                                                    </Button>
+                                                    <Button
+                                                        v-if="can.assignRole"
+                                                        variant="outline"
+                                                        size="sm"
+                                                        class="h-6 px-2 text-[10px] font-bold text-primary"
+                                                        @click="openAssignRoleModal(u)"
+                                                    >
+                                                        Scope
+                                                    </Button>
+                                                    <Button
+                                                        v-if="can.users"
+                                                        variant="outline"
+                                                        size="sm"
+                                                        class="h-6 px-2 text-[10px] font-semibold"
+                                                        :class="u.status === 'Active' ? 'text-amber-600 hover:bg-amber-50' : 'text-emerald-600 hover:bg-emerald-50'"
+                                                        @click="toggleUserStatus(u)"
+                                                    >
+                                                        {{ u.status === 'Active' ? 'Suspend' : 'Activate' }}
+                                                    </Button>
+                                                    <Button
+                                                        v-if="can.users"
+                                                        variant="outline"
+                                                        size="sm"
+                                                        class="h-6 px-2 text-[10px] font-semibold text-rose-600 hover:bg-rose-50"
+                                                        @click="openResetPasswordModal(u)"
+                                                        title="Reset staff password"
+                                                    >
+                                                        PW
+                                                    </Button>
+                                                </div>
                                             </TableCell>
                                         </TableRow>
                                     </TableBody>
                                 </Table>
+                            </div>
+                        </div>
+
+                        <!-- ============================================================== -->
+                        <!-- SECTION: FACILITY BRANCHES & DEPARTMENT TOPOLOGY               -->
+                        <!-- ============================================================== -->
+                        <div v-if="activeSection === 'facilities'" class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <h3 class="font-bold text-sm text-foreground">Facility Branches & Operating Units</h3>
+                                    <p class="text-xs text-muted-foreground">Manage multi-facility topology, HFR health facility registry codes, and department structures</p>
+                                </div>
+                                <Button
+                                    v-if="can.facilities"
+                                    variant="default"
+                                    size="sm"
+                                    class="h-7 text-xs font-semibold gap-1 bg-sky-600 hover:bg-sky-700 text-white font-bold"
+                                    @click="openCreateFacilityModal"
+                                >
+                                    <Plus class="w-3.5 h-3.5" />
+                                    <span>Add Facility Branch</span>
+                                </Button>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div
+                                    v-for="fac in facilities"
+                                    :key="fac.id"
+                                    class="bg-card p-4 rounded-xl border border-border/60 shadow-2xs space-y-3"
+                                >
+                                    <div class="flex items-start justify-between">
+                                        <div class="space-y-0.5">
+                                            <div class="flex items-center gap-2">
+                                                <Building2 class="w-4 h-4 text-sky-600" />
+                                                <h4 class="font-bold text-sm text-foreground">{{ fac.name }}</h4>
+                                            </div>
+                                            <div class="flex items-center gap-2 text-[10px] font-mono text-muted-foreground">
+                                                <span>Code: {{ fac.code }}</span>
+                                                <span v-if="fac.hfr_code" class="text-primary font-bold">HFR: {{ fac.hfr_code }}</span>
+                                            </div>
+                                        </div>
+                                        <AfyaStatusBadge :status="fac.is_active ? 'active' : 'inactive'" :label="fac.is_active ? 'Active Branch' : 'Inactive'" />
+                                    </div>
+
+                                    <div class="text-xs text-muted-foreground space-y-1 bg-muted/20 p-2.5 rounded-lg">
+                                        <div v-if="fac.physical_address">📍 {{ fac.physical_address }}</div>
+                                        <div class="flex items-center gap-4 text-[11px]">
+                                            <span v-if="fac.contact_phone">📞 {{ fac.contact_phone }}</span>
+                                            <span v-if="fac.contact_email">✉️ {{ fac.contact_email }}</span>
+                                            <span v-if="fac.facility_type" class="font-bold uppercase text-[10px] text-foreground">🏥 {{ fac.facility_type }}</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Departments in this Facility -->
+                                    <div class="space-y-2 border-t border-border/40 pt-2.5">
+                                        <div class="flex items-center justify-between text-xs">
+                                            <span class="font-bold text-foreground text-[11px] uppercase tracking-wider">Operating Departments ({{ fac.departments?.length || 0 }})</span>
+                                            <Button
+                                                v-if="can.facilities"
+                                                variant="outline"
+                                                size="sm"
+                                                class="h-5 px-2 text-[9.5px] font-bold text-primary border-primary/30 hover:bg-primary/5"
+                                                @click="openCreateDepartmentModal(fac)"
+                                            >
+                                                <Plus class="w-2.5 h-2.5 mr-0.5" />
+                                                <span>Add Dept</span>
+                                            </Button>
+                                        </div>
+
+                                        <div class="flex flex-wrap gap-1.5">
+                                            <span
+                                                v-for="dept in fac.departments"
+                                                :key="dept.id"
+                                                class="px-2 py-0.5 rounded-md bg-muted text-[11px] font-medium text-foreground border border-border/50 flex items-center gap-1"
+                                            >
+                                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                                <span>{{ dept.name }}</span>
+                                                <span v-if="dept.code" class="text-[9px] font-mono text-muted-foreground">({{ dept.code }})</span>
+                                            </span>
+                                            <span v-if="!fac.departments?.length" class="text-[11px] text-muted-foreground italic">
+                                                No departments registered yet.
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -632,6 +916,299 @@ const breadcrumbLabel = computed(() => {
                         Save Role Permissions
                     </Button>
                 </div>
+            </div>
+        </div>
+
+        <!-- MODAL: ADD NEW STAFF MEMBER -->
+        <div v-if="showCreateUserModal" class="fixed inset-0 bg-background/80 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+            <div class="bg-card border border-border/60 rounded-xl shadow-xl w-full max-w-lg p-5 space-y-4">
+                <div class="flex items-center justify-between border-b border-border/50 pb-3">
+                    <h3 class="font-bold text-foreground text-sm flex items-center gap-2">
+                        <UserCheck class="w-4 h-4 text-emerald-600" />
+                        <span>Add & Credential New Staff Member</span>
+                    </h3>
+                    <button @click="showCreateUserModal = false" class="text-muted-foreground hover:text-foreground">
+                        <X class="w-4 h-4" />
+                    </button>
+                </div>
+
+                <form @submit.prevent="submitCreateUser" class="space-y-3 text-xs">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="font-bold text-muted-foreground text-[10px] uppercase">First Name *</label>
+                            <Input v-model="createUserForm.first_name" required placeholder="e.g. Amina" class="h-8 text-xs" />
+                            <InputError :message="createUserForm.errors.first_name" class="mt-1" />
+                        </div>
+                        <div>
+                            <label class="font-bold text-muted-foreground text-[10px] uppercase">Last Name *</label>
+                            <Input v-model="createUserForm.last_name" required placeholder="e.g. Mussa" class="h-8 text-xs" />
+                            <InputError :message="createUserForm.errors.last_name" class="mt-1" />
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="font-bold text-muted-foreground text-[10px] uppercase">Email Address *</label>
+                            <Input v-model="createUserForm.email" type="email" required placeholder="doctor@afyanova.co.tz" class="h-8 text-xs font-mono" />
+                            <InputError :message="createUserForm.errors.email" class="mt-1" />
+                        </div>
+                        <div>
+                            <label class="font-bold text-muted-foreground text-[10px] uppercase">Phone Number</label>
+                            <Input v-model="createUserForm.phone" placeholder="+255 7..." class="h-8 text-xs" />
+                            <InputError :message="createUserForm.errors.phone" class="mt-1" />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="font-bold text-muted-foreground text-[10px] uppercase">Medical Council of Tanganyika (MCT) / Professional License #</label>
+                        <Input v-model="createUserForm.professional_registration_no" placeholder="e.g. MCT-DR-84729 or TNMC-RN-48201" class="h-8 text-xs font-mono" />
+                        <p class="text-[9.5px] text-muted-foreground mt-0.5">Required for e-prescriptions, surgical bookings, and clinical note signatures.</p>
+                        <InputError :message="createUserForm.errors.professional_registration_no" class="mt-1" />
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="font-bold text-muted-foreground text-[10px] uppercase">Primary Role Archetype *</label>
+                            <select v-model="createUserForm.role_id" required class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                                <option v-for="r in roles" :key="r.id" :value="r.id">{{ r.name }}</option>
+                            </select>
+                            <InputError :message="createUserForm.errors.role_id" class="mt-1" />
+                        </div>
+                        <div>
+                            <label class="font-bold text-muted-foreground text-[10px] uppercase">Facility Branch</label>
+                            <select v-model="createUserForm.facility_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                                <option value="">All Branches (Tenant Wide)</option>
+                                <option v-for="f in facilities" :key="f.id" :value="f.id">{{ f.name }}</option>
+                            </select>
+                            <InputError :message="createUserForm.errors.facility_id" class="mt-1" />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="font-bold text-muted-foreground text-[10px] uppercase">Temporary Password *</label>
+                        <Input v-model="createUserForm.password" type="password" required class="h-8 text-xs font-mono" />
+                        <InputError :message="createUserForm.errors.password" class="mt-1" />
+                    </div>
+
+                    <div class="flex justify-end gap-2 border-t border-border/50 pt-3">
+                        <Button type="button" variant="outline" size="sm" @click="showCreateUserModal = false">Cancel</Button>
+                        <Button type="submit" variant="default" size="sm" :disabled="createUserForm.processing" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold">
+                            Create Staff Account
+                        </Button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- MODAL: EDIT STAFF PROFILE -->
+        <div v-if="showEditUserModal" class="fixed inset-0 bg-background/80 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+            <div class="bg-card border border-border/60 rounded-xl shadow-xl w-full max-w-md p-5 space-y-4">
+                <div class="flex items-center justify-between border-b border-border/50 pb-3">
+                    <h3 class="font-bold text-foreground text-sm flex items-center gap-2">
+                        <Users class="w-4 h-4 text-primary" />
+                        <span>Edit Staff Details: {{ targetUserForAction?.first_name }} {{ targetUserForAction?.last_name }}</span>
+                    </h3>
+                    <button @click="showEditUserModal = false" class="text-muted-foreground hover:text-foreground">
+                        <X class="w-4 h-4" />
+                    </button>
+                </div>
+
+                <form @submit.prevent="submitEditUser" class="space-y-3 text-xs">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="font-bold text-muted-foreground text-[10px] uppercase">First Name *</label>
+                            <Input v-model="editUserForm.first_name" required class="h-8 text-xs" />
+                            <InputError :message="editUserForm.errors.first_name" class="mt-1" />
+                        </div>
+                        <div>
+                            <label class="font-bold text-muted-foreground text-[10px] uppercase">Last Name *</label>
+                            <Input v-model="editUserForm.last_name" required class="h-8 text-xs" />
+                            <InputError :message="editUserForm.errors.last_name" class="mt-1" />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="font-bold text-muted-foreground text-[10px] uppercase">Phone Number</label>
+                        <Input v-model="editUserForm.phone" placeholder="+255 7..." class="h-8 text-xs" />
+                        <InputError :message="editUserForm.errors.phone" class="mt-1" />
+                    </div>
+
+                    <div>
+                        <label class="font-bold text-muted-foreground text-[10px] uppercase">MCT / Professional License Registration #</label>
+                        <Input v-model="editUserForm.professional_registration_no" placeholder="e.g. MCT-DR-84729" class="h-8 text-xs font-mono" />
+                        <InputError :message="editUserForm.errors.professional_registration_no" class="mt-1" />
+                    </div>
+
+                    <div>
+                        <label class="font-bold text-muted-foreground text-[10px] uppercase">Account Status</label>
+                        <select v-model="editUserForm.status" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                            <option value="Active">Active</option>
+                            <option value="Suspended">Suspended</option>
+                            <option value="Inactive">Inactive</option>
+                        </select>
+                        <InputError :message="editUserForm.errors.status" class="mt-1" />
+                    </div>
+
+                    <div class="flex justify-end gap-2 border-t border-border/50 pt-3">
+                        <Button type="button" variant="outline" size="sm" @click="showEditUserModal = false">Cancel</Button>
+                        <Button type="submit" variant="default" size="sm" :disabled="editUserForm.processing">
+                            Save Changes
+                        </Button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- MODAL: RESET PASSWORD -->
+        <div v-if="showResetPasswordModal" class="fixed inset-0 bg-background/80 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+            <div class="bg-card border border-border/60 rounded-xl shadow-xl w-full max-w-md p-5 space-y-4">
+                <div class="flex items-center justify-between border-b border-border/50 pb-3">
+                    <h3 class="font-bold text-foreground text-sm flex items-center gap-2">
+                        <Key class="w-4 h-4 text-rose-600" />
+                        <span>Reset Password for {{ targetUserForAction?.first_name }}</span>
+                    </h3>
+                    <button @click="showResetPasswordModal = false" class="text-muted-foreground hover:text-foreground">
+                        <X class="w-4 h-4" />
+                    </button>
+                </div>
+
+                <form @submit.prevent="submitResetPassword" class="space-y-3 text-xs">
+                    <div>
+                        <label class="font-bold text-muted-foreground text-[10px] uppercase">New Password *</label>
+                        <Input v-model="resetPasswordForm.password" type="password" required minlength="8" placeholder="Minimum 8 characters..." class="h-8 text-xs font-mono" />
+                        <InputError :message="resetPasswordForm.errors.password" class="mt-1" />
+                    </div>
+
+                    <div class="flex justify-end gap-2 border-t border-border/50 pt-3">
+                        <Button type="button" variant="outline" size="sm" @click="showResetPasswordModal = false">Cancel</Button>
+                        <Button type="submit" variant="default" size="sm" :disabled="resetPasswordForm.processing" class="bg-rose-600 hover:bg-rose-700 text-white font-bold">
+                            Reset Password
+                        </Button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- MODAL: ADD FACILITY BRANCH -->
+        <div v-if="showCreateFacilityModal" class="fixed inset-0 bg-background/80 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+            <div class="bg-card border border-border/60 rounded-xl shadow-xl w-full max-w-lg p-5 space-y-4">
+                <div class="flex items-center justify-between border-b border-border/50 pb-3">
+                    <h3 class="font-bold text-foreground text-sm flex items-center gap-2">
+                        <Building2 class="w-4 h-4 text-sky-600" />
+                        <span>Register Facility Branch</span>
+                    </h3>
+                    <button @click="showCreateFacilityModal = false" class="text-muted-foreground hover:text-foreground">
+                        <X class="w-4 h-4" />
+                    </button>
+                </div>
+
+                <form @submit.prevent="submitCreateFacility" class="space-y-3 text-xs">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="font-bold text-muted-foreground text-[10px] uppercase">Branch Name *</label>
+                            <Input v-model="createFacilityForm.name" required placeholder="e.g. AfyaNova Mbezi Beach Clinic" class="h-8 text-xs" />
+                            <InputError :message="createFacilityForm.errors.name" class="mt-1" />
+                        </div>
+                        <div>
+                            <label class="font-bold text-muted-foreground text-[10px] uppercase">Branch Code *</label>
+                            <Input v-model="createFacilityForm.code" required placeholder="e.g. MBZ-01" class="h-8 text-xs font-mono" />
+                            <InputError :message="createFacilityForm.errors.code" class="mt-1" />
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="font-bold text-muted-foreground text-[10px] uppercase">Facility Type *</label>
+                            <select v-model="createFacilityForm.facility_type" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                                <option value="Hospital">General Hospital</option>
+                                <option value="Clinic">Polyclinic / Outpatient</option>
+                                <option value="Dispensary">Dispensary</option>
+                                <option value="Diagnostic_Center">Diagnostic Center</option>
+                            </select>
+                            <InputError :message="createFacilityForm.errors.facility_type" class="mt-1" />
+                        </div>
+                        <div>
+                            <label class="font-bold text-muted-foreground text-[10px] uppercase">MoH HFR Code</label>
+                            <Input v-model="createFacilityForm.hfr_code" placeholder="e.g. 104820-1" class="h-8 text-xs font-mono" />
+                            <InputError :message="createFacilityForm.errors.hfr_code" class="mt-1" />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="font-bold text-muted-foreground text-[10px] uppercase">Physical Address / Street</label>
+                        <Input v-model="createFacilityForm.physical_address" placeholder="e.g. Plot 42, Bagamoyo Road, Dar es Salaam" class="h-8 text-xs" />
+                        <InputError :message="createFacilityForm.errors.physical_address" class="mt-1" />
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="font-bold text-muted-foreground text-[10px] uppercase">Contact Phone</label>
+                            <Input v-model="createFacilityForm.contact_phone" placeholder="+255 22 2..." class="h-8 text-xs" />
+                            <InputError :message="createFacilityForm.errors.contact_phone" class="mt-1" />
+                        </div>
+                        <div>
+                            <label class="font-bold text-muted-foreground text-[10px] uppercase">Contact Email</label>
+                            <Input v-model="createFacilityForm.contact_email" type="email" placeholder="mbezi@afyanova.co.tz" class="h-8 text-xs font-mono" />
+                            <InputError :message="createFacilityForm.errors.contact_email" class="mt-1" />
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end gap-2 border-t border-border/50 pt-3">
+                        <Button type="button" variant="outline" size="sm" @click="showCreateFacilityModal = false">Cancel</Button>
+                        <Button type="submit" variant="default" size="sm" :disabled="createFacilityForm.processing" class="bg-sky-600 hover:bg-sky-700 text-white font-bold">
+                            Register Branch
+                        </Button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- MODAL: ADD DEPARTMENT -->
+        <div v-if="showCreateDepartmentModal" class="fixed inset-0 bg-background/80 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+            <div class="bg-card border border-border/60 rounded-xl shadow-xl w-full max-w-md p-5 space-y-4">
+                <div class="flex items-center justify-between border-b border-border/50 pb-3">
+                    <h3 class="font-bold text-foreground text-sm flex items-center gap-2">
+                        <Building2 class="w-4 h-4 text-primary" />
+                        <span>Add Department: {{ targetFacilityForDept?.name }}</span>
+                    </h3>
+                    <button @click="showCreateDepartmentModal = false" class="text-muted-foreground hover:text-foreground">
+                        <X class="w-4 h-4" />
+                    </button>
+                </div>
+
+                <form @submit.prevent="submitCreateDepartment" class="space-y-3 text-xs">
+                    <div>
+                        <label class="font-bold text-muted-foreground text-[10px] uppercase">Department Name *</label>
+                        <Input v-model="createDepartmentForm.name" required placeholder="e.g. Obstetrics & Gynecology" class="h-8 text-xs" />
+                        <InputError :message="createDepartmentForm.errors.name" class="mt-1" />
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="font-bold text-muted-foreground text-[10px] uppercase">Department Code</label>
+                            <Input v-model="createDepartmentForm.code" placeholder="e.g. OBGYN" class="h-8 text-xs font-mono" />
+                            <InputError :message="createDepartmentForm.errors.code" class="mt-1" />
+                        </div>
+                        <div>
+                            <label class="font-bold text-muted-foreground text-[10px] uppercase">Department Type *</label>
+                            <select v-model="createDepartmentForm.department_type" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                                <option value="Clinical">Clinical</option>
+                                <option value="Diagnostic">Diagnostic / Lab / Rad</option>
+                                <option value="Surgical">Surgical / Theatre</option>
+                                <option value="Administrative">Administrative / Finance</option>
+                                <option value="Support">Support Services</option>
+                            </select>
+                            <InputError :message="createDepartmentForm.errors.department_type" class="mt-1" />
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end gap-2 border-t border-border/50 pt-3">
+                        <Button type="button" variant="outline" size="sm" @click="showCreateDepartmentModal = false">Cancel</Button>
+                        <Button type="submit" variant="default" size="sm" :disabled="createDepartmentForm.processing">
+                            Add Department
+                        </Button>
+                    </div>
+                </form>
             </div>
         </div>
 

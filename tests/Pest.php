@@ -1,6 +1,8 @@
 <?php
 
+use App\Core\Context\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 /*
@@ -43,6 +45,34 @@ expect()->extend('toBeOne', function () {
 | global functions to help you to reduce the number of lines of code in your test files.
 |
 */
+
+/**
+ * Sets the acting tenant for a test fixture built by directly calling
+ * Eloquent factories/Actions rather than going through a real HTTP
+ * request — TenantContextMiddleware never runs for that code path, so
+ * without this, only the PHP-level TenantContext object (which
+ * BelongsToTenant's global scope and auto-fill read) gets set; the
+ * Postgres session variable RLS policies check
+ * (app.current_tenant_id, via set_config — see TenantContextMiddleware
+ * and EstablishTenantContextOnLogin, the two places that set it for a
+ * real request) never does. That was invisible for as long as the
+ * application's database role had BYPASSRLS granted — every INSERT
+ * succeeded regardless, because RLS was never actually being evaluated.
+ * The moment that was fixed, every test fixture using the bare
+ * `app(TenantContext::class)->setTenantId(...)` call started failing
+ * with "new row violates row-level security policy," because the
+ * fixture's own writes no longer satisfied a WITH CHECK clause that had
+ * never really been checked before. Use this everywhere a test needs to
+ * act as a given tenant outside of an actual HTTP round-trip.
+ */
+function setTestTenantContext(string $tenantId): void
+{
+    app(TenantContext::class)->setTenantId($tenantId);
+
+    if (DB::getDriverName() === 'pgsql') {
+        DB::statement('SELECT set_config(?, ?, false)', ['app.current_tenant_id', $tenantId]);
+    }
+}
 
 function something()
 {

@@ -5,28 +5,14 @@ namespace Database\Seeders;
 use App\Core\Context\TenantContext;
 use App\Domains\Billing\Models\CashierShift;
 use App\Domains\Billing\Models\ChargeMasterItem;
-use App\Domains\Billing\Models\Invoice;
-use App\Domains\Billing\Models\InvoiceLineItem;
-use App\Domains\Clinical\Models\Allergy;
-use App\Domains\Clinical\Models\ClinicalNote;
-use App\Domains\Clinical\Models\ClinicalVital;
-use App\Domains\Clinical\Models\Diagnosis;
-use App\Domains\Clinical\Models\Encounter;
-use App\Domains\Clinical\Models\LabOrder;
-use App\Domains\Clinical\Models\LabOrderItem;
 use App\Domains\Clinical\Models\LabTest;
 use App\Domains\Identity\Models\Permission;
 use App\Domains\Identity\Models\Role;
 use App\Domains\Identity\Models\User;
-use App\Domains\Inpatient\Models\Admission;
 use App\Domains\Inpatient\Models\Bed;
 use App\Domains\Inpatient\Models\Ward;
-use App\Domains\Insurance\Models\InsuranceClaim;
-use App\Domains\Insurance\Models\InsuranceClaimItem;
 use App\Domains\Insurance\Models\InsuranceProvider;
 use App\Domains\Insurance\Models\InsuranceScheme;
-use App\Domains\Insurance\Models\PatientPolicy;
-use App\Domains\Insurance\Models\PreAuthorization;
 use App\Domains\Inventory\Models\DepartmentRequisition;
 use App\Domains\Inventory\Models\DepartmentRequisitionItem;
 use App\Domains\Inventory\Models\InventoryLocation;
@@ -39,20 +25,11 @@ use App\Domains\Inventory\Models\StockTransferItem;
 use App\Domains\Inventory\Models\Supplier;
 use App\Domains\Inventory\Models\UnitOfMeasure;
 use App\Domains\Patient\Models\Patient;
-use App\Domains\Patient\Models\PatientContact;
-use App\Domains\Patient\Models\PatientIdentifier;
 use App\Domains\Pharmacy\Models\InventoryBatch;
 use App\Domains\Pharmacy\Models\MedicationFormulary;
-use App\Domains\Pharmacy\Models\Prescription;
 use App\Domains\Pharmacy\Models\StockMovement;
 use App\Domains\Procedure\Models\OperatingSuite;
-use App\Domains\Procedure\Models\PacuRecoveryRecord;
 use App\Domains\Procedure\Models\ProcedureCatalog;
-use App\Domains\Procedure\Models\ProcedureOrder;
-use App\Domains\Procedure\Models\SurgicalBooking;
-use App\Domains\Procedure\Models\WhoSurgicalChecklist;
-use App\Domains\Scheduling\Models\Appointment;
-use App\Domains\Scheduling\Models\QueueTicket;
 use App\Domains\Tenancy\Models\Department;
 use App\Domains\Tenancy\Models\Facility;
 use App\Domains\Tenancy\Models\Tenant;
@@ -66,6 +43,10 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        if (app()->environment('production')) {
+            abort(403, 'Refusing to run demo/seed data against a production environment.');
+        }
+
         // 1. Create Tenant (or fetch existing)
         $tenant = Tenant::firstOrCreate(
             ['slug' => 'dar-medical'],
@@ -140,131 +121,7 @@ class DatabaseSeeder extends Seeder
             ['id' => Uuid::uuid7()->toString(), 'created_at' => now(), 'updated_at' => now()]
         );
 
-        // 5. Create Multiple Realistic Patients
-        $patientsData = [
-            [
-                'first_name' => 'Asha',
-                'middle_name' => 'Ali',
-                'last_name' => 'Juma',
-                'dob' => '1990-05-15',
-                'gender' => 'Female',
-                'blood_group' => 'A+',
-                'primary_mrn' => 'MRN-2024-001',
-                'phone' => '+255712345678',
-                'nida' => '19900515-11111-00001-22',
-                'allergy' => 'Penicillin',
-                'allergy_sev' => 'Severe',
-            ],
-            [
-                'first_name' => 'Baraka',
-                'middle_name' => 'Simon',
-                'last_name' => 'Kimaro',
-                'dob' => '1982-11-20',
-                'gender' => 'Male',
-                'blood_group' => 'O+',
-                'primary_mrn' => 'MRN-2024-002',
-                'phone' => '+255754112233',
-                'nida' => '19821120-22222-00002-33',
-                'allergy' => 'Aspirin',
-                'allergy_sev' => 'Moderate',
-            ],
-            [
-                'first_name' => 'Neema',
-                'middle_name' => 'Joseph',
-                'last_name' => 'Mbowe',
-                'dob' => '1995-08-20',
-                'gender' => 'Female',
-                'blood_group' => 'B+',
-                'primary_mrn' => 'MRN-2024-003',
-                'phone' => '+255788990011',
-                'nida' => '19950820-33333-00003-44',
-                'allergy' => null,
-                'allergy_sev' => null,
-            ],
-            [
-                'first_name' => 'Emmanuel',
-                'middle_name' => 'Lucas',
-                'last_name' => 'Mushi',
-                'dob' => '1968-03-10',
-                'gender' => 'Male',
-                'blood_group' => 'AB+',
-                'primary_mrn' => 'MRN-2024-004',
-                'phone' => '+255762445566',
-                'nida' => '19680310-44444-00004-55',
-                'allergy' => 'Sulfa drugs',
-                'allergy_sev' => 'High',
-            ],
-            [
-                'first_name' => 'Halima',
-                'middle_name' => 'Said',
-                'last_name' => 'Bakari',
-                'dob' => '1964-07-25',
-                'gender' => 'Female',
-                'blood_group' => 'O-',
-                'primary_mrn' => 'MRN-2024-005',
-                'phone' => '+255713998877',
-                'nida' => '19640725-55555-00005-66',
-                'allergy' => null,
-                'allergy_sev' => null,
-            ],
-            [
-                'first_name' => 'Kassim',
-                'middle_name' => 'Rashid',
-                'last_name' => 'Majaliwa',
-                'dob' => '1985-09-12',
-                'gender' => 'Male',
-                'blood_group' => 'A-',
-                'primary_mrn' => 'MRN-2024-006',
-                'phone' => '+255789123456',
-                'nida' => '19850912-66666-00006-77',
-                'allergy' => null,
-                'allergy_sev' => null,
-            ],
-        ];
-
-        $createdPatients = [];
-        foreach ($patientsData as $pData) {
-            $patient = Patient::firstOrCreate(
-                ['tenant_id' => $tenant->id, 'primary_mrn' => $pData['primary_mrn']],
-                [
-                    'first_name' => $pData['first_name'],
-                    'middle_name' => $pData['middle_name'],
-                    'last_name' => $pData['last_name'],
-                    'dob' => $pData['dob'],
-                    'gender' => $pData['gender'],
-                    'blood_group' => $pData['blood_group'],
-                    'status' => 'Active',
-                ]
-            );
-
-            // Add Identifier
-            if (! empty($pData['nida'])) {
-                PatientIdentifier::firstOrCreate(
-                    ['patient_id' => $patient->id, 'type' => 'NIDA'],
-                    ['identifier_value' => $pData['nida'], 'facility_id' => $facility->id, 'is_primary' => true]
-                );
-            }
-
-            // Add Contact
-            if (! empty($pData['phone'])) {
-                PatientContact::firstOrCreate(
-                    ['patient_id' => $patient->id, 'contact_type' => 'Mobile Phone'],
-                    ['value' => $pData['phone'], 'is_verified' => true]
-                );
-            }
-
-            // Add Allergy
-            if (! empty($pData['allergy'])) {
-                Allergy::firstOrCreate(
-                    ['patient_id' => $patient->id, 'allergen' => $pData['allergy']],
-                    ['allergen_type' => 'Drug', 'severity' => $pData['allergy_sev'], 'status' => 'Active', 'recorded_by' => $doctor->id]
-                );
-            }
-
-            $createdPatients[] = $patient;
-        }
-
-        // 6. Create Medication Formularies
+        // 5. Create Medication Formularies & Charge Master Items
         $medications = [
             ['generic_name' => 'Amoxicillin', 'brand_name' => 'Amoxil', 'form' => 'Capsule', 'strength' => '500mg', 'route' => 'PO', 'drug_class' => 'Penicillin', 'charge_code' => 'PHARM-AMOXICILLIN-500', 'unit_price' => 300.00],
             ['generic_name' => 'Paracetamol', 'brand_name' => 'Panadol', 'form' => 'Tablet', 'strength' => '500mg', 'route' => 'PO', 'drug_class' => 'Analgesic', 'charge_code' => 'PHARM-PARACETAMOL-500', 'unit_price' => 150.00],
@@ -307,299 +164,6 @@ class DatabaseSeeder extends Seeder
                 'currency' => 'TZS',
                 'effective_from' => now()->subYear()->toDateString(),
                 'is_active' => true,
-            ]
-        );
-
-        // 7. Create Encounters & Clinical Notes
-        $firstPatient = $createdPatients[0];
-        $secondPatient = $createdPatients[1];
-        $thirdPatient = $createdPatients[2];
-
-        $enc1 = Encounter::firstOrCreate(
-            ['tenant_id' => $tenant->id, 'patient_id' => $firstPatient->id, 'encounter_type' => 'OPD'],
-            [
-                'facility_id' => $facility->id,
-                'department_id' => null,
-                'provider_id' => $doctor->id,
-                'status' => 'In Progress',
-                'reason_for_visit' => 'Acute fever, cough and general body weakness for 3 days',
-                'start_time' => now()->subMinutes(25),
-            ]
-        );
-
-        ClinicalVital::firstOrCreate(
-            ['encounter_id' => $enc1->id],
-            [
-                'patient_id' => $firstPatient->id,
-                'temperature_c' => 38.6,
-                'heart_rate' => 88,
-                'systolic_bp' => 125,
-                'diastolic_bp' => 82,
-                'respiratory_rate' => 18,
-                'oxygen_saturation' => 97,
-                'weight_kg' => 64.0,
-                'height_cm' => 165.0,
-                'bmi' => 23.51,
-                'recorded_by' => $doctor->id,
-                'recorded_at' => now()->subMinutes(20),
-            ]
-        );
-
-        ClinicalNote::firstOrCreate(
-            ['encounter_id' => $enc1->id],
-            [
-                'patient_id' => $firstPatient->id,
-                'author_id' => $doctor->id,
-                'note_type' => 'SOAP',
-                'content' => [
-                    'subjective' => 'Patient presents with 3-day history of high fever, headache, joint pains, and chills.',
-                    'objective' => 'Febrile (38.6°C), clear lung fields, no cervical lymphadenopathy.',
-                    'assessment' => 'Suspected Acute Malaria / Upper Respiratory Tract Infection.',
-                    'plan' => 'Perform mRDT malaria test, prescribe Artemether-Lumefantrine and Paracetamol.',
-                ],
-                'is_signed' => false,
-            ]
-        );
-
-        $enc2 = Encounter::firstOrCreate(
-            ['tenant_id' => $tenant->id, 'patient_id' => $secondPatient->id, 'encounter_type' => 'OPD'],
-            [
-                'facility_id' => $facility->id,
-                'department_id' => null,
-                'provider_id' => $doctor->id,
-                'status' => 'In Progress',
-                'reason_for_visit' => 'Routine Hypertension and Blood Sugar follow-up',
-                'start_time' => now()->subMinutes(10),
-            ]
-        );
-
-        ClinicalVital::firstOrCreate(
-            ['encounter_id' => $enc2->id],
-            [
-                'tenant_id' => $tenant->id,
-                'patient_id' => $secondPatient->id,
-                'temperature_c' => 37.1,
-                'heart_rate' => 74,
-                'systolic_bp' => 135,
-                'diastolic_bp' => 88,
-                'respiratory_rate' => 16,
-                'oxygen_saturation' => 99,
-                'weight_kg' => 78.0,
-                'height_cm' => 174.0,
-                'bmi' => 25.76,
-                'recorded_by' => $doctor->id,
-                'recorded_at' => now()->subMinutes(10),
-            ]
-        );
-
-        // 3. Triage Encounter with Pre-recorded Vitals (Ready for Doctor)
-        $enc3 = Encounter::firstOrCreate(
-            ['tenant_id' => $tenant->id, 'patient_id' => $thirdPatient->id, 'encounter_type' => 'OPD'],
-            [
-                'facility_id' => $facility->id,
-                'department_id' => null,
-                'provider_id' => null,
-                'status' => 'Triage',
-                'reason_for_visit' => 'Persistent frontal headache and dizziness since morning',
-                'start_time' => now()->subMinutes(15),
-            ]
-        );
-
-        ClinicalVital::firstOrCreate(
-            ['encounter_id' => $enc3->id],
-            [
-                'tenant_id' => $tenant->id,
-                'patient_id' => $thirdPatient->id,
-                'temperature_c' => 37.2,
-                'heart_rate' => 74,
-                'systolic_bp' => 118,
-                'diastolic_bp' => 76,
-                'respiratory_rate' => 16,
-                'oxygen_saturation' => 99,
-                'weight_kg' => 58.0,
-                'height_cm' => 162.0,
-                'bmi' => 22.10,
-                'recorded_by' => $doctor->id,
-                'recorded_at' => now()->subMinutes(12),
-            ]
-        );
-
-        // 8. Create Live Queue Tickets
-        QueueTicket::firstOrCreate(
-            ['tenant_id' => $tenant->id, 'ticket_number' => 'A-101'],
-            [
-                'facility_id' => $facility->id,
-                'patient_id' => $firstPatient->id,
-                'encounter_id' => $enc1->id,
-                'current_service_point' => 'Doctor',
-                'priority' => 'Urgent',
-                'status' => 'Waiting',
-                'joined_queue_at' => now()->subMinutes(30),
-            ]
-        );
-
-        QueueTicket::firstOrCreate(
-            ['tenant_id' => $tenant->id, 'ticket_number' => 'A-102'],
-            [
-                'facility_id' => $facility->id,
-                'patient_id' => $thirdPatient->id,
-                'encounter_id' => $enc3->id,
-                'current_service_point' => 'Doctor',
-                'priority' => 'Normal',
-                'status' => 'Waiting',
-                'joined_queue_at' => now()->subMinutes(15),
-            ]
-        );
-
-        // 9. Create Appointment
-        Appointment::firstOrCreate(
-            ['tenant_id' => $tenant->id, 'patient_id' => $firstPatient->id],
-            [
-                'facility_id' => $facility->id,
-                'provider_id' => $doctor->id,
-                'scheduled_time' => now()->addHours(2),
-                'duration_minutes' => 30,
-                'appointment_type' => 'Clinical Review',
-                'status' => 'Scheduled',
-            ]
-        );
-
-        // 10. Create Invoices and Detailed Charges Items for Billing Desk
-        $inv1 = Invoice::firstOrCreate(
-            ['tenant_id' => $tenant->id, 'invoice_number' => 'INV-2026-0001'],
-            [
-                'facility_id' => $facility->id,
-                'encounter_id' => $enc1->id,
-                'patient_id' => $firstPatient->id,
-                'total_amount' => 45000,
-                'paid_amount' => 45000,
-                'status' => 'Paid',
-                'issued_at' => now()->subHours(4),
-            ]
-        );
-
-        InvoiceLineItem::firstOrCreate(
-            ['invoice_id' => $inv1->id, 'description' => 'General OPD Medical Consultation'],
-            [
-                'tenant_id' => $tenant->id,
-                'category' => 'Consultation',
-                'quantity' => 1,
-                'unit_price' => 20000,
-                'total_price' => 20000,
-            ]
-        );
-
-        InvoiceLineItem::firstOrCreate(
-            ['invoice_id' => $inv1->id, 'description' => 'Rapid Malaria mRDT & Blood Film'],
-            [
-                'tenant_id' => $tenant->id,
-                'category' => 'Lab',
-                'quantity' => 1,
-                'unit_price' => 15000,
-                'total_price' => 15000,
-            ]
-        );
-
-        InvoiceLineItem::firstOrCreate(
-            ['invoice_id' => $inv1->id, 'description' => 'Artemether / Lumefantrine 20/120mg (6-dose pack)'],
-            [
-                'tenant_id' => $tenant->id,
-                'category' => 'Pharmacy',
-                'quantity' => 1,
-                'unit_price' => 10000,
-                'total_price' => 10000,
-            ]
-        );
-
-        $inv2 = Invoice::firstOrCreate(
-            ['tenant_id' => $tenant->id, 'invoice_number' => 'INV-2026-0002'],
-            [
-                'facility_id' => $facility->id,
-                'encounter_id' => $enc2->id,
-                'patient_id' => $secondPatient->id,
-                'total_amount' => 65000,
-                'paid_amount' => 20000,
-                'status' => 'Partial',
-                'issued_at' => now()->subHours(2),
-            ]
-        );
-
-        InvoiceLineItem::firstOrCreate(
-            ['invoice_id' => $inv2->id, 'description' => 'Specialist Physician Consultation'],
-            [
-                'tenant_id' => $tenant->id,
-                'category' => 'Consultation',
-                'quantity' => 1,
-                'unit_price' => 30000,
-                'total_price' => 30000,
-            ]
-        );
-
-        InvoiceLineItem::firstOrCreate(
-            ['invoice_id' => $inv2->id, 'description' => 'Full Blood Picture & Lipid Profile'],
-            [
-                'tenant_id' => $tenant->id,
-                'category' => 'Lab',
-                'quantity' => 1,
-                'unit_price' => 25000,
-                'total_price' => 25000,
-            ]
-        );
-
-        InvoiceLineItem::firstOrCreate(
-            ['invoice_id' => $inv2->id, 'description' => 'Amlodipine 5mg (30 Tablets)'],
-            [
-                'tenant_id' => $tenant->id,
-                'category' => 'Pharmacy',
-                'quantity' => 1,
-                'unit_price' => 10000,
-                'total_price' => 10000,
-            ]
-        );
-
-        $inv3 = Invoice::firstOrCreate(
-            ['tenant_id' => $tenant->id, 'invoice_number' => 'INV-2026-0003'],
-            [
-                'facility_id' => $facility->id,
-                'encounter_id' => null,
-                'patient_id' => $thirdPatient->id,
-                'total_amount' => 55000,
-                'paid_amount' => 0,
-                'status' => 'Issued',
-                'issued_at' => now()->subMinutes(45),
-            ]
-        );
-
-        InvoiceLineItem::firstOrCreate(
-            ['invoice_id' => $inv3->id, 'description' => 'Emergency Triage Assessment & Vitals'],
-            [
-                'tenant_id' => $tenant->id,
-                'category' => 'Consultation',
-                'quantity' => 1,
-                'unit_price' => 15000,
-                'total_price' => 15000,
-            ]
-        );
-
-        InvoiceLineItem::firstOrCreate(
-            ['invoice_id' => $inv3->id, 'description' => 'Serum Electrolytes & Renal Function Panel'],
-            [
-                'tenant_id' => $tenant->id,
-                'category' => 'Lab',
-                'quantity' => 1,
-                'unit_price' => 25000,
-                'total_price' => 25000,
-            ]
-        );
-
-        InvoiceLineItem::firstOrCreate(
-            ['invoice_id' => $inv3->id, 'description' => 'IV Normal Saline 500ml & Infusion Set'],
-            [
-                'tenant_id' => $tenant->id,
-                'category' => 'Procedure',
-                'quantity' => 1,
-                'unit_price' => 15000,
-                'total_price' => 15000,
             ]
         );
 
@@ -710,203 +274,6 @@ class DatabaseSeeder extends Seeder
                     'price' => $lt['price'],
                     'parameters' => $lt['parameters'],
                     'is_active' => true,
-                ]
-            );
-        }
-
-        // Seed Sample Completed Lab Order for Encounter 1
-        $fbpTest = LabTest::where('test_code', 'LAB-FBP-001')->first();
-        $mrdtTest = LabTest::where('test_code', 'LAB-MAL-001')->first();
-
-        if ($enc1 && $fbpTest && $mrdtTest) {
-            $sampleOrder = LabOrder::firstOrCreate(
-                ['tenant_id' => $tenant->id, 'order_number' => "LAB-{$today}-001"],
-                [
-                    'encounter_id' => $enc1->id,
-                    'patient_id' => $enc1->patient_id,
-                    'ordering_provider_id' => $doctor->id,
-                    'priority' => 'STAT',
-                    'clinical_notes' => 'Acute fever x 3 days, chills, suspect malaria and anemia',
-                    'status' => 'Completed',
-                    'ordered_at' => now()->subHours(2),
-                    'collected_at' => now()->subMinutes(90),
-                    'completed_at' => now()->subMinutes(30),
-                ]
-            );
-
-            LabOrderItem::firstOrCreate(
-                ['lab_order_id' => $sampleOrder->id, 'lab_test_id' => $mrdtTest->id],
-                [
-                    'tenant_id' => $tenant->id,
-                    'price' => $mrdtTest->price,
-                    'status' => 'Completed',
-                    'specimen_barcode' => 'BC-MAL-8831',
-                    'results' => [
-                        'Malaria Antigen (P. falciparum/Pan)' => 'Positive (High Density)',
-                    ],
-                    'technician_remarks' => 'Confirmed trophozoites observed on thin blood smear.',
-                    'has_critical_value' => true,
-                    'critical_value_alerted_at' => now()->subMinutes(30),
-                    'performed_by_id' => $doctor->id,
-                ]
-            );
-
-            LabOrderItem::firstOrCreate(
-                ['lab_order_id' => $sampleOrder->id, 'lab_test_id' => $fbpTest->id],
-                [
-                    'tenant_id' => $tenant->id,
-                    'price' => $fbpTest->price,
-                    'status' => 'Completed',
-                    'specimen_barcode' => 'BC-FBP-8832',
-                    'results' => [
-                        'Hemoglobin (Hb)' => '6.4',
-                        'White Blood Cells (WBC)' => '14.2',
-                        'Platelets' => '110',
-                        'Hematocrit (HCT)' => '21.5',
-                    ],
-                    'technician_remarks' => 'Severe microcytic hypochromic anemia with moderate leukocytosis.',
-                    'has_critical_value' => true,
-                    'critical_value_alerted_at' => now()->subMinutes(30),
-                    'performed_by_id' => $doctor->id,
-                    'verified_by_id' => $doctor->id,
-                ]
-            );
-        }
-
-        // Seed Sample Pending Phlebotomy Order for Encounter 2 (Baraka Kimaro)
-        $rftTest = LabTest::where('test_code', 'LAB-RFT-001')->first();
-        $uriTest = LabTest::where('test_code', 'LAB-URI-001')->first();
-
-        if ($enc2 && $rftTest && $uriTest) {
-            $pendingOrder = LabOrder::firstOrCreate(
-                ['tenant_id' => $tenant->id, 'order_number' => "LAB-{$today}-002"],
-                [
-                    'encounter_id' => $enc2->id,
-                    'patient_id' => $enc2->patient_id,
-                    'ordering_provider_id' => $doctor->id,
-                    'priority' => 'Urgent',
-                    'clinical_notes' => 'Chronic hypertension monitoring, check renal profile and urinalysis',
-                    'status' => 'Ordered',
-                    'ordered_at' => now()->subMinutes(45),
-                ]
-            );
-
-            LabOrderItem::firstOrCreate(
-                ['lab_order_id' => $pendingOrder->id, 'lab_test_id' => $rftTest->id],
-                [
-                    'tenant_id' => $tenant->id,
-                    'price' => $rftTest->price,
-                    'status' => 'Pending',
-                ]
-            );
-
-            LabOrderItem::firstOrCreate(
-                ['lab_order_id' => $pendingOrder->id, 'lab_test_id' => $uriTest->id],
-                [
-                    'tenant_id' => $tenant->id,
-                    'price' => $uriTest->price,
-                    'status' => 'Pending',
-                ]
-            );
-        }
-
-        // Seed Sample In-Testing Order for Encounter 3 (Neema Mbowe)
-        $gluTest = LabTest::where('test_code', 'LAB-GLU-001')->first();
-        $lipTest = LabTest::where('test_code', 'LAB-LIP-001')->first();
-
-        if ($enc3 && $gluTest && $lipTest) {
-            $testingOrder = LabOrder::firstOrCreate(
-                ['tenant_id' => $tenant->id, 'order_number' => "LAB-{$today}-003"],
-                [
-                    'encounter_id' => $enc3->id,
-                    'patient_id' => $enc3->patient_id,
-                    'ordering_provider_id' => $doctor->id,
-                    'priority' => 'Routine',
-                    'clinical_notes' => 'Routine metabolic screening and lipid profiling',
-                    'status' => 'Sample Collected',
-                    'ordered_at' => now()->subHours(1),
-                    'collected_at' => now()->subMinutes(25),
-                ]
-            );
-
-            LabOrderItem::firstOrCreate(
-                ['lab_order_id' => $testingOrder->id, 'lab_test_id' => $gluTest->id],
-                [
-                    'tenant_id' => $tenant->id,
-                    'price' => $gluTest->price,
-                    'status' => 'Sample Collected',
-                    'specimen_barcode' => 'ACC-2026-GLU771',
-                    'technician_remarks' => 'Specimen loaded on automated chemistry analyzer',
-                ]
-            );
-
-            LabOrderItem::firstOrCreate(
-                ['lab_order_id' => $testingOrder->id, 'lab_test_id' => $lipTest->id],
-                [
-                    'tenant_id' => $tenant->id,
-                    'price' => $lipTest->price,
-                    'status' => 'Sample Collected',
-                    'specimen_barcode' => 'ACC-2026-LIP772',
-                    'technician_remarks' => 'Serum centrifuged, awaiting analyzer batch run',
-                ]
-            );
-        }
-
-        // 11. Create Realistic Prescriptions for Active Encounters
-        $coartemMed = MedicationFormulary::where('brand_name', 'Coartem')->first();
-        $panadolMed = MedicationFormulary::where('brand_name', 'Panadol')->first();
-        $norvascMed = MedicationFormulary::where('brand_name', 'Norvasc')->first();
-
-        if ($enc1 && $coartemMed) {
-            Prescription::firstOrCreate(
-                ['encounter_id' => $enc1->id, 'medication_id' => $coartemMed->id],
-                [
-                    'tenant_id' => $tenant->id,
-                    'patient_id' => $enc1->patient_id,
-                    'prescriber_id' => $doctor->id,
-                    'dosage' => '4 tablets',
-                    'route' => 'Oral',
-                    'frequency' => 'BID (Twice Daily)',
-                    'duration_days' => 3,
-                    'quantity' => 24,
-                    'instructions' => 'Take with fatty meal or milk for optimal absorption',
-                    'status' => 'Prescribed',
-                ]
-            );
-        }
-
-        if ($enc1 && $panadolMed) {
-            Prescription::firstOrCreate(
-                ['encounter_id' => $enc1->id, 'medication_id' => $panadolMed->id],
-                [
-                    'tenant_id' => $tenant->id,
-                    'patient_id' => $enc1->patient_id,
-                    'prescriber_id' => $doctor->id,
-                    'dosage' => '1000mg (2 tabs)',
-                    'route' => 'Oral',
-                    'frequency' => 'TID (Three Times Daily)',
-                    'duration_days' => 5,
-                    'quantity' => 30,
-                    'instructions' => 'For fever and body pains. Do not exceed 4000mg/24h',
-                    'status' => 'Prescribed',
-                ]
-            );
-        }
-
-        if ($enc2 && $norvascMed) {
-            Prescription::firstOrCreate(
-                ['encounter_id' => $enc2->id, 'medication_id' => $norvascMed->id],
-                [
-                    'tenant_id' => $tenant->id,
-                    'patient_id' => $enc2->patient_id,
-                    'prescriber_id' => $doctor->id,
-                    'dosage' => '5mg (1 tab)',
-                    'route' => 'Oral',
-                    'frequency' => 'OD (Once Daily)',
-                    'duration_days' => 30,
-                    'quantity' => 30,
-                    'instructions' => 'Take in the morning for blood pressure control',
-                    'status' => 'Prescribed',
                 ]
             );
         }
@@ -1072,47 +439,6 @@ class DatabaseSeeder extends Seeder
             }
         }
 
-        // Seed Sample Active Admissions
-        $mmwBed1 = $allCreatedBeds['MMW-BED-01'] ?? null;
-        if ($mmwBed1 && $firstPatient) {
-            $mmwBed1->update(['status' => 'Occupied']);
-            Admission::firstOrCreate(
-                ['tenant_id' => $tenant->id, 'admission_number' => 'ADM-2026-0001'],
-                [
-                    'facility_id' => $facility->id,
-                    'encounter_id' => $enc1->id ?? null,
-                    'patient_id' => $firstPatient->id,
-                    'admitting_doctor_id' => $doctor->id,
-                    'ward_id' => $mmwBed1->ward_id,
-                    'bed_id' => $mmwBed1->id,
-                    'admission_reason' => 'Acute severe malaria with chills, dehydration, and low hemoglobin requiring IV Artesunate and supportive monitoring.',
-                    'provisional_diagnosis' => 'Severe Falciparum Malaria with Anemia',
-                    'admitted_at' => now()->subDays(2),
-                    'status' => 'Admitted',
-                ]
-            );
-        }
-
-        $fswBed1 = $allCreatedBeds['FSW-BED-01'] ?? null;
-        if ($fswBed1 && $secondPatient) {
-            $fswBed1->update(['status' => 'Occupied']);
-            Admission::firstOrCreate(
-                ['tenant_id' => $tenant->id, 'admission_number' => 'ADM-2026-0002'],
-                [
-                    'facility_id' => $facility->id,
-                    'encounter_id' => $enc2->id ?? null,
-                    'patient_id' => $secondPatient->id,
-                    'admitting_doctor_id' => $doctor->id,
-                    'ward_id' => $fswBed1->ward_id,
-                    'bed_id' => $fswBed1->id,
-                    'admission_reason' => 'Hypertensive crisis with persistent severe headache requiring intravenous infusion and continuous BP telemetry.',
-                    'provisional_diagnosis' => 'Hypertensive Urgency / Severe Essential Hypertension',
-                    'admitted_at' => now()->subDays(1),
-                    'status' => 'Admitted',
-                ]
-            );
-        }
-
         // Seed 1 Bed in Cleaning state
         $icuBed1 = $allCreatedBeds['ICU-BED-01'] ?? null;
         if ($icuBed1) {
@@ -1208,252 +534,23 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        // Patient Policies
-        if ($firstPatient) {
-            $pol1 = PatientPolicy::firstOrCreate(
-                ['tenant_id' => $tenant->id, 'card_number' => '01-2099384-2'],
-                [
-                    'patient_id' => $firstPatient->id,
-                    'insurance_provider_id' => $nhif->id,
-                    'insurance_scheme_id' => $nhifScheme1->id,
-                    'principal_member_name' => 'Asha Juma',
-                    'principal_member_number' => 'MEM-TZ-8841',
-                    'relationship' => 'Self',
-                    'policy_start_date' => now()->subMonths(6)->toDateString(),
-                    'policy_expiry_date' => now()->addMonths(6)->toDateString(),
-                    'status' => 'Active',
-                    'biometric_verified' => true,
-                    'verified_at' => now()->subDays(2),
-                ]
-            );
-
-            // Seed Vetted Claim for Encounter 1
-            if ($enc1) {
-                $claim1 = InsuranceClaim::firstOrCreate(
-                    ['tenant_id' => $tenant->id, 'claim_number' => 'CLM-2026-0001'],
-                    [
-                        'patient_id' => $firstPatient->id,
-                        'patient_policy_id' => $pol1->id,
-                        'encounter_id' => $enc1->id,
-                        'total_claimed_amount' => 45000.00,
-                        'co_pay_amount' => 0.00,
-                        'approved_amount' => 45000.00,
-                        'status' => 'Vetted',
-                        'scrubber_passed' => true,
-                        'scrubber_errors' => null,
-                    ]
-                );
-
-                InsuranceClaimItem::firstOrCreate(
-                    ['insurance_claim_id' => $claim1->id, 'description' => 'General Medical Officer Outpatient Consultation'],
-                    [
-                        'tenant_id' => $tenant->id,
-                        'item_type' => 'Consultation',
-                        'item_code' => 'CON-OPD-001',
-                        'quantity' => 1,
-                        'unit_price' => 15000.00,
-                        'claimed_amount' => 15000.00,
-                        'approved_amount' => 15000.00,
-                        'status' => 'Claimed',
-                    ]
-                );
-
-                InsuranceClaimItem::firstOrCreate(
-                    ['insurance_claim_id' => $claim1->id, 'description' => 'Full Blood Picture (FBP) Diagnostic Panel'],
-                    [
-                        'tenant_id' => $tenant->id,
-                        'item_type' => 'Lab',
-                        'item_code' => 'LAB-FBP-001',
-                        'quantity' => 1,
-                        'unit_price' => 15000.00,
-                        'claimed_amount' => 15000.00,
-                        'approved_amount' => 15000.00,
-                        'status' => 'Claimed',
-                    ]
-                );
-
-                InsuranceClaimItem::firstOrCreate(
-                    ['insurance_claim_id' => $claim1->id, 'description' => 'Malaria Rapid Diagnostic Test (mRDT)'],
-                    [
-                        'tenant_id' => $tenant->id,
-                        'item_type' => 'Lab',
-                        'item_code' => 'LAB-MAL-001',
-                        'quantity' => 1,
-                        'unit_price' => 15000.00,
-                        'claimed_amount' => 15000.00,
-                        'approved_amount' => 15000.00,
-                        'status' => 'Claimed',
-                    ]
-                );
-            }
-        }
-
-        if ($secondPatient) {
-            $pol2 = PatientPolicy::firstOrCreate(
-                ['tenant_id' => $tenant->id, 'card_number' => 'JUB-TZ-884920'],
-                [
-                    'patient_id' => $secondPatient->id,
-                    'insurance_provider_id' => $jubilee->id,
-                    'insurance_scheme_id' => $jubileeScheme1->id,
-                    'principal_member_name' => 'Baraka Kimaro',
-                    'principal_member_number' => 'JUB-EMP-9921',
-                    'relationship' => 'Self',
-                    'policy_start_date' => now()->subMonths(3)->toDateString(),
-                    'policy_expiry_date' => now()->addMonths(9)->toDateString(),
-                    'status' => 'Active',
-                    'biometric_verified' => true,
-                    'verified_at' => now()->subDays(1),
-                ]
-            );
-
-            // Pre-Auth
-            PreAuthorization::firstOrCreate(
-                ['tenant_id' => $tenant->id, 'auth_code' => 'TAR-2026-881920'],
-                [
-                    'patient_id' => $secondPatient->id,
-                    'patient_policy_id' => $pol2->id,
-                    'encounter_id' => $enc2->id ?? null,
-                    'procedure_description' => 'Echocardiogram & Holter Telemetry Monitoring',
-                    'requested_amount' => 120000.00,
-                    'approved_amount' => 120000.00,
-                    'status' => 'Approved',
-                    'expires_at' => now()->addDays(30)->toDateString(),
-                    'notes' => 'Approved under specialist diagnostic sub-limit by Jubilee Medical Director',
-                ]
-            );
-
-            // Seed Submitted Claim for Encounter 2
-            if ($enc2) {
-                $claim2 = InsuranceClaim::firstOrCreate(
-                    ['tenant_id' => $tenant->id, 'claim_number' => 'CLM-2026-0002'],
-                    [
-                        'patient_id' => $secondPatient->id,
-                        'patient_policy_id' => $pol2->id,
-                        'encounter_id' => $enc2->id,
-                        'total_claimed_amount' => 85000.00,
-                        'co_pay_amount' => 0.00,
-                        'approved_amount' => 0.00,
-                        'status' => 'Submitted',
-                        'batch_number' => 'BATCH-2026-AUG01',
-                        'submitted_at' => now()->subDays(1),
-                        'scrubber_passed' => true,
-                    ]
-                );
-
-                InsuranceClaimItem::firstOrCreate(
-                    ['insurance_claim_id' => $claim2->id, 'description' => 'Emergency Physician Specialized Evaluation'],
-                    [
-                        'tenant_id' => $tenant->id,
-                        'item_type' => 'Consultation',
-                        'item_code' => 'CON-SP-001',
-                        'quantity' => 1,
-                        'unit_price' => 35000.00,
-                        'claimed_amount' => 35000.00,
-                        'approved_amount' => 0.00,
-                        'status' => 'Claimed',
-                    ]
-                );
-
-                InsuranceClaimItem::firstOrCreate(
-                    ['insurance_claim_id' => $claim2->id, 'description' => 'Serum Electrolytes & Renal Function Panel'],
-                    [
-                        'tenant_id' => $tenant->id,
-                        'item_type' => 'Lab',
-                        'item_code' => 'LAB-RFT-001',
-                        'quantity' => 1,
-                        'unit_price' => 25000.00,
-                        'claimed_amount' => 25000.00,
-                        'approved_amount' => 0.00,
-                        'status' => 'Claimed',
-                    ]
-                );
-
-                InsuranceClaimItem::firstOrCreate(
-                    ['insurance_claim_id' => $claim2->id, 'description' => 'Female Surgical Ward Day Bed Occupancy'],
-                    [
-                        'tenant_id' => $tenant->id,
-                        'item_type' => 'Bed',
-                        'item_code' => 'BED-FSW-001',
-                        'quantity' => 1,
-                        'unit_price' => 25000.00,
-                        'claimed_amount' => 25000.00,
-                        'approved_amount' => 0.00,
-                        'status' => 'Claimed',
-                    ]
-                );
-            }
-        }
-
-        if ($thirdPatient) {
-            $pol3 = PatientPolicy::firstOrCreate(
-                ['tenant_id' => $tenant->id, 'card_number' => 'STR-772910'],
-                [
-                    'patient_id' => $thirdPatient->id,
-                    'insurance_provider_id' => $strategis->id,
-                    'insurance_scheme_id' => $strategisScheme1->id,
-                    'principal_member_name' => 'Neema Mbowe',
-                    'principal_member_number' => 'STR-IND-4410',
-                    'relationship' => 'Self',
-                    'policy_start_date' => now()->subMonths(1)->toDateString(),
-                    'policy_expiry_date' => now()->addMonths(11)->toDateString(),
-                    'status' => 'Active',
-                    'biometric_verified' => true,
-                    'verified_at' => now()->subDays(3),
-                ]
-            );
-
-            // Seed Approved Remitted Claim for Encounter 3
-            if ($enc3) {
-                $claim3 = InsuranceClaim::firstOrCreate(
-                    ['tenant_id' => $tenant->id, 'claim_number' => 'CLM-2026-0003'],
-                    [
-                        'patient_id' => $thirdPatient->id,
-                        'patient_policy_id' => $pol3->id,
-                        'encounter_id' => $enc3->id,
-                        'total_claimed_amount' => 45000.00,
-                        'co_pay_amount' => 5000.00,
-                        'approved_amount' => 40000.00,
-                        'status' => 'Approved',
-                        'batch_number' => 'BATCH-2026-JUL04',
-                        'submitted_at' => now()->subDays(5),
-                        'adjudicated_at' => now()->subDays(1),
-                        'scrubber_passed' => true,
-                    ]
-                );
-
-                InsuranceClaimItem::firstOrCreate(
-                    ['insurance_claim_id' => $claim3->id, 'description' => 'Clinical Consultation & Metabolic Review'],
-                    [
-                        'tenant_id' => $tenant->id,
-                        'item_type' => 'Consultation',
-                        'item_code' => 'CON-OPD-001',
-                        'quantity' => 1,
-                        'unit_price' => 20000.00,
-                        'claimed_amount' => 20000.00,
-                        'approved_amount' => 20000.00,
-                        'status' => 'Approved',
-                    ]
-                );
-
-                InsuranceClaimItem::firstOrCreate(
-                    ['insurance_claim_id' => $claim3->id, 'description' => 'Lipid Profile & Glucose Screen Panel'],
-                    [
-                        'tenant_id' => $tenant->id,
-                        'item_type' => 'Lab',
-                        'item_code' => 'LAB-LIP-001',
-                        'quantity' => 1,
-                        'unit_price' => 25000.00,
-                        'claimed_amount' => 25000.00,
-                        'approved_amount' => 20000.00,
-                        'status' => 'Approved',
-                    ]
-                );
-            }
-        }
-
         // ----------------------------------------------------
         // SECTION 15: PROCEDURES & OPERATING THEATRE
         // ----------------------------------------------------
+        $procInj = ProcedureCatalog::firstOrCreate(
+            ['tenant_id' => $tenant->id, 'procedure_code' => 'PROC-INJ-001'],
+            [
+                'name' => 'Intramuscular / Intravenous Injection Administration',
+                'category' => 'Injection',
+                'tier_level' => 'Tier1_Minor',
+                'default_duration_minutes' => 10,
+                'standard_price' => 2000.00,
+                'requires_consent' => false,
+                'requires_anesthesia' => false,
+                'is_active' => true,
+            ]
+        );
+
         $proc1 = ProcedureCatalog::firstOrCreate(
             ['tenant_id' => $tenant->id, 'procedure_code' => 'PROC-DRS-001'],
             [
@@ -1558,177 +655,33 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        // Seed Sample Procedure Order for Encounter 1 (Asha Juma - Dressing)
-        if ($enc1) {
-            $pOrder1 = ProcedureOrder::firstOrCreate(
-                ['tenant_id' => $tenant->id, 'order_number' => 'PR-2026-0001'],
-                [
-                    'encounter_id' => $enc1->id,
-                    'patient_id' => $enc1->patient_id,
-                    'ordering_provider_id' => $doctor->id,
-                    'procedure_catalog_id' => $proc1->id,
-                    'priority' => 'Routine',
-                    'clinical_indication' => 'Diabetic foot ulcer dressing with antiseptic cleansing',
-                    'status' => 'Ordered',
-                    'ordered_at' => now()->subHours(1),
-                ]
-            );
-        }
-
-        // Seed Sample Procedure Order for Encounter 2 (Baraka Kimaro - Abscess I&D)
-        if ($enc2) {
-            $pOrder2 = ProcedureOrder::firstOrCreate(
-                ['tenant_id' => $tenant->id, 'order_number' => 'PR-2026-0002'],
-                [
-                    'encounter_id' => $enc2->id,
-                    'patient_id' => $enc2->patient_id,
-                    'ordering_provider_id' => $doctor->id,
-                    'procedure_catalog_id' => $proc3->id,
-                    'priority' => 'Urgent',
-                    'clinical_indication' => 'Fluctuant cutaneous abscess on left forearm, tender and erythematous',
-                    'status' => 'Ordered',
-                    'ordered_at' => now()->subMinutes(30),
-                ]
-            );
-        }
-
-        // Seed Sample Surgical Case for Encounter 3 (Neema Mbowe - C-Section in OT-1)
-        if ($enc3) {
-            $surgOrder = ProcedureOrder::firstOrCreate(
-                ['tenant_id' => $tenant->id, 'order_number' => 'PR-2026-0003'],
-                [
-                    'encounter_id' => $enc3->id,
-                    'patient_id' => $enc3->patient_id,
-                    'ordering_provider_id' => $doctor->id,
-                    'procedure_catalog_id' => $proc4->id,
-                    'priority' => 'Emergency',
-                    'clinical_indication' => 'Fetal distress in active labour with previous scar',
-                    'status' => 'InProgress',
-                    'ordered_at' => now()->subHours(2),
-                ]
-            );
-
-            $surgBooking = SurgicalBooking::firstOrCreate(
-                ['tenant_id' => $tenant->id, 'booking_number' => 'SURG-2026-0001'],
-                [
-                    'procedure_order_id' => $surgOrder->id,
-                    'operating_suite_id' => $suite1->id,
-                    'lead_surgeon_id' => $doctor->id,
-                    'anesthetist_id' => $doctor->id,
-                    'scrub_nurse_id' => $nurse->id ?? $doctor->id,
-                    'scheduled_start' => now()->subMinutes(45),
-                    'scheduled_end' => now()->addMinutes(45),
-                    'urgency' => 'Emergency',
-                    'status' => 'PACU',
-                ]
-            );
-
-            // WHO Checklist
-            WhoSurgicalChecklist::firstOrCreate(
-                ['tenant_id' => $tenant->id, 'surgical_booking_id' => $surgBooking->id],
-                [
-                    'sign_in_completed_at' => now()->subMinutes(40),
-                    'sign_in_verified_by' => $doctor->id,
-                    'time_out_completed_at' => now()->subMinutes(35),
-                    'time_out_verified_by' => $doctor->id,
-                    'sign_out_completed_at' => now()->subMinutes(5),
-                    'sign_out_verified_by' => $doctor->id,
-                    'sponge_and_needle_count_correct' => true,
-                    'specimens_labeled_correctly' => true,
-                ]
-            );
-
-            // PACU Score
-            $matWard = Ward::where('name', 'Maternity Ward (Maternity/Postnatal)')->first();
-            PacuRecoveryRecord::firstOrCreate(
-                ['tenant_id' => $tenant->id, 'surgical_booking_id' => $surgBooking->id],
-                [
-                    'recorded_by_id' => $doctor->id,
-                    'recorded_at' => now()->subMinutes(2),
-                    'consciousness_score' => 2,
-                    'activity_score' => 2,
-                    'respiration_score' => 2,
-                    'circulation_score' => 2,
-                    'oxygen_saturation_score' => 2,
-                    'total_aldrete_score' => 10,
-                    'discharge_ready' => true,
-                    'destination_ward_id' => $matWard ? $matWard->id : null,
-                    'notes' => 'Patient awake, responding well, baby stable, Aldrete 10/10.',
-                ]
-            );
-        }
-
-        // ==============================================================
-        // 16. SECTION 16: CLINICAL MORBIDITY & HOSPITAL INTELLIGENCE
-        // ==============================================================
-        $patients = Patient::where('tenant_id', $tenant->id)->get();
-        $encounters = Encounter::where('tenant_id', $tenant->id)->get();
+        // Seed fast-moving dispensed stock movements & near-expiry batch for inventory telemetry
         $primaryDoctor = User::where('tenant_id', $tenant->id)->where('email', 'doctor@afyanova.local')->first() ?? $doctor;
+        $batches = InventoryBatch::with('medication')->where('tenant_id', $tenant->id)->get();
+        foreach ($batches->take(6) as $idx => $b) {
+            StockMovement::create([
+                'tenant_id' => $tenant->id,
+                'facility_id' => $facility->id,
+                'medication_id' => $b->medication_id,
+                'batch_id' => $b->id,
+                'movement_type' => 'Dispensed',
+                'quantity_change' => -(25 + ($idx * 15)),
+                'quantity_before' => $b->current_quantity + (25 + ($idx * 15)),
+                'quantity_after' => $b->current_quantity,
+                'reference_type' => 'Dispensation',
+                'reference_id' => $b->id,
+                'notes' => 'Routine Pharmacy Dispensation',
+                'performed_by' => $primaryDoctor->id,
+                'created_at' => now()->subDays(rand(1, 10)),
+            ]);
+        }
 
-        if ($encounters->isNotEmpty() && $patients->isNotEmpty()) {
-            $sampleDiagnoses = [
-                ['code' => 'B54', 'desc' => 'Unspecified Malaria (Malaria Kali)', 'certainty' => 'Confirmed', 'type' => 'Primary', 'weight' => 8],
-                ['code' => 'I10', 'desc' => 'Essential (Primary) Hypertension', 'certainty' => 'Confirmed', 'type' => 'Primary', 'weight' => 6],
-                ['code' => 'E11.9', 'desc' => 'Type 2 Diabetes Mellitus without complications', 'certainty' => 'Confirmed', 'type' => 'Primary', 'weight' => 5],
-                ['code' => 'J20.9', 'desc' => 'Acute Bronchitis & Upper Respiratory Infection', 'certainty' => 'Suspected', 'type' => 'Primary', 'weight' => 4],
-                ['code' => 'N39.0', 'desc' => 'Urinary Tract Infection, site not specified', 'certainty' => 'Confirmed', 'type' => 'Primary', 'weight' => 4],
-                ['code' => 'A09', 'desc' => 'Infectious Gastroenteritis & Colitis', 'certainty' => 'Confirmed', 'type' => 'Primary', 'weight' => 3],
-                ['code' => 'S51.9', 'desc' => 'Open Wound & Laceration of Forearm', 'certainty' => 'Confirmed', 'type' => 'Primary', 'weight' => 2],
-                ['code' => 'K29.7', 'desc' => 'Gastritis, unspecified', 'certainty' => 'Confirmed', 'type' => 'Primary', 'weight' => 2],
-                ['code' => 'A00.9', 'desc' => 'Cholera, unspecified (Kipindupindu)', 'certainty' => 'Confirmed', 'type' => 'Primary', 'weight' => 1],
-                ['code' => 'B05.9', 'desc' => 'Measles without complication (Surua)', 'certainty' => 'Suspected', 'type' => 'Primary', 'weight' => 1],
-            ];
-
-            foreach ($sampleDiagnoses as $sDiag) {
-                for ($i = 0; $i < $sDiag['weight']; $i++) {
-                    $pt = $patients[$i % $patients->count()];
-                    $enc = $encounters[$i % $encounters->count()];
-
-                    Diagnosis::firstOrCreate(
-                        [
-                            'tenant_id' => $tenant->id,
-                            'encounter_id' => $enc->id,
-                            'patient_id' => $pt->id,
-                            'icd_10_code' => $sDiag['code'],
-                        ],
-                        [
-                            'description' => $sDiag['desc'],
-                            'certainty' => $sDiag['certainty'],
-                            'type' => $sDiag['type'],
-                            'diagnosed_by' => $primaryDoctor->id,
-                            'created_at' => now()->subDays(rand(0, 20)),
-                        ]
-                    );
-                }
-            }
-
-            // Seed fast-moving dispensed stock movements
-            $batches = InventoryBatch::with('medication')->where('tenant_id', $tenant->id)->get();
-            foreach ($batches->take(6) as $idx => $b) {
-                StockMovement::create([
-                    'tenant_id' => $tenant->id,
-                    'facility_id' => $facility->id,
-                    'medication_id' => $b->medication_id,
-                    'batch_id' => $b->id,
-                    'movement_type' => 'Dispensed',
-                    'quantity_change' => -(25 + ($idx * 15)),
-                    'quantity_before' => $b->current_quantity + (25 + ($idx * 15)),
-                    'quantity_after' => $b->current_quantity,
-                    'reference_type' => 'Dispensation',
-                    'reference_id' => $b->id,
-                    'notes' => 'Routine Pharmacy Dispensation',
-                    'performed_by' => $primaryDoctor->id,
-                    'created_at' => now()->subDays(rand(1, 10)),
-                ]);
-            }
-
-            // Seed a near-expiry critical batch (< 30 days)
-            if ($batches->isNotEmpty()) {
-                $nearExpiryBatch = $batches->first();
-                $nearExpiryBatch->update([
-                    'expiry_date' => now()->addDays(18),
-                ]);
-            }
+        // Seed a near-expiry critical batch (< 30 days)
+        if ($batches->isNotEmpty()) {
+            $nearExpiryBatch = $batches->first();
+            $nearExpiryBatch->update([
+                'expiry_date' => now()->addDays(18),
+            ]);
         }
 
         // ==============================================================
@@ -1749,6 +702,7 @@ class DatabaseSeeder extends Seeder
             ['name' => 'Record ANC Visit', 'slug' => 'clinical.anc.record', 'domain' => 'Clinical'],
             ['name' => 'Record Partograph Entry', 'slug' => 'clinical.partograph.record', 'domain' => 'Clinical'],
             ['name' => 'Manage Problem List', 'slug' => 'clinical.problem-list.manage', 'domain' => 'Clinical'],
+            ['name' => 'Break-Glass Emergency Access', 'slug' => 'clinical.break_glass', 'domain' => 'Clinical'],
             ['name' => 'Override Another Provider\'s Encounter', 'slug' => 'clinical.encounter.override', 'domain' => 'Clinical'],
             ['name' => 'Add Clinical Note', 'slug' => 'clinical.notes.create', 'domain' => 'Clinical'],
             ['name' => 'Record Patient Allergy', 'slug' => 'clinical.allergy.record', 'domain' => 'Clinical'],
@@ -1868,6 +822,7 @@ class DatabaseSeeder extends Seeder
             ['name' => 'Assign User Roles', 'slug' => 'identity.roles.assign', 'domain' => 'Identity'],
             ['name' => 'Manage Role Permissions', 'slug' => 'identity.permissions.manage', 'domain' => 'Identity'],
             ['name' => 'View Security Audit Trail', 'slug' => 'audit.log.view', 'domain' => 'Audit'],
+            ['name' => 'Superadmin Platform Access', 'slug' => 'platform.superadmin.access', 'domain' => 'Platform'],
         ];
 
         $createdPermissions = [];
@@ -1879,19 +834,24 @@ class DatabaseSeeder extends Seeder
             $createdPermissions[$p['slug']] = $perm->id;
         }
 
-        // Standard 10 System Roles
+        // Standard System Roles
         $standardRoles = [
+            'super-admin' => [
+                'name' => 'Platform Superadmin',
+                'desc' => 'Global SaaS platform control plane, tenant provisioning, and cross-hospital support.',
+                'perms' => array_keys($createdPermissions),
+            ],
             'tenant-admin' => [
                 'name' => 'Tenant Administrator',
                 'desc' => 'Executive administration, user provisioning, facility scoping, and audit oversight.',
-                'perms' => array_keys($createdPermissions), // All except clinical note signing
+                'perms' => array_filter(array_keys($createdPermissions), fn ($s) => $s !== 'platform.superadmin.access'),
             ],
             'doctor' => [
                 'name' => 'Medical Officer / Clinician',
                 'desc' => 'Clinical diagnosis, SOAP charting, lab ordering, Rx prescriptions, and theatre surgery.',
                 'perms' => [
                     'clinical.encounter.create', 'clinical.encounter.view', 'clinical.encounter.update', 'clinical.encounter.close',
-                    'clinical.encounter.override',
+                    'clinical.encounter.override', 'clinical.break_glass',
                     'clinical.notes.sign', 'clinical.notes.create', 'clinical.vitals.record', 'clinical.diagnosis.manage',
                     'clinical.consent.record', 'clinical.referral.create', 'clinical.immunization.administer',
                     'clinical.anc.record', 'clinical.partograph.record', 'clinical.problem-list.manage',
@@ -1905,7 +865,7 @@ class DatabaseSeeder extends Seeder
                     'inventory.dda.record',
                     'patient.registry.view',
                     'reports.clinical.view',
-                    'scheduling.queue.view', 'scheduling.appointment.view',
+                    'scheduling.queue.call', 'scheduling.queue.transfer', 'scheduling.queue.view', 'scheduling.appointment.view',
                 ],
             ],
             'nurse' => [
@@ -2340,6 +1300,115 @@ class DatabaseSeeder extends Seeder
                 'cost' => 3500.00,
                 'price' => 5500.00,
                 'billable' => true,
+            ],
+            // Laboratory Consumables / Vacutainers
+            [
+                'code' => 'MSD-LAB-EDTA-01',
+                'name' => 'Vacutainer EDTA K2/K3 Purple Top Tube 4ml',
+                'generic' => 'Blood Collection Tube (EDTA K2/K3)',
+                'category' => 'Laboratory Consumables',
+                'base_uom' => $uomPc->id,
+                'purch_uom' => $uomBox->id,
+                'ratio' => 100,
+                'cost' => 300.00,
+                'price' => 500.00,
+                'billable' => false,
+            ],
+            [
+                'code' => 'MSD-LAB-SST-01',
+                'name' => 'Vacutainer SST Gel Separator Gold Top Tube 5ml',
+                'generic' => 'Blood Collection Tube (Serum Clot / Gel)',
+                'category' => 'Laboratory Consumables',
+                'base_uom' => $uomPc->id,
+                'purch_uom' => $uomBox->id,
+                'ratio' => 100,
+                'cost' => 350.00,
+                'price' => 600.00,
+                'billable' => false,
+            ],
+            [
+                'code' => 'MSD-LAB-RED-01',
+                'name' => 'Vacutainer Plain Red Top Clot Activator Tube 5ml',
+                'generic' => 'Blood Collection Tube (Plain Red)',
+                'category' => 'Laboratory Consumables',
+                'base_uom' => $uomPc->id,
+                'purch_uom' => $uomBox->id,
+                'ratio' => 100,
+                'cost' => 280.00,
+                'price' => 500.00,
+                'billable' => false,
+            ],
+            [
+                'code' => 'MSD-LAB-CIT-01',
+                'name' => 'Vacutainer Sodium Citrate 3.2% Light Blue Top Tube 2.7ml',
+                'generic' => 'Blood Collection Tube (Sodium Citrate 3.2%)',
+                'category' => 'Laboratory Consumables',
+                'base_uom' => $uomPc->id,
+                'purch_uom' => $uomBox->id,
+                'ratio' => 100,
+                'cost' => 400.00,
+                'price' => 650.00,
+                'billable' => false,
+            ],
+            [
+                'code' => 'MSD-LAB-GLU-01',
+                'name' => 'Vacutainer Sodium Fluoride / Potassium Oxalate Grey Top Tube 2ml',
+                'generic' => 'Blood Collection Tube (Fluoride Oxalate)',
+                'category' => 'Laboratory Consumables',
+                'base_uom' => $uomPc->id,
+                'purch_uom' => $uomBox->id,
+                'ratio' => 100,
+                'cost' => 320.00,
+                'price' => 550.00,
+                'billable' => false,
+            ],
+            [
+                'code' => 'MSD-LAB-URI-01',
+                'name' => 'Sterile Urine Specimen Container 60ml Yellow Cap',
+                'generic' => 'Specimen Container (Urine)',
+                'category' => 'Laboratory Consumables',
+                'base_uom' => $uomPc->id,
+                'purch_uom' => $uomBox->id,
+                'ratio' => 100,
+                'cost' => 450.00,
+                'price' => 800.00,
+                'billable' => false,
+            ],
+            [
+                'code' => 'MSD-LAB-STL-01',
+                'name' => 'Stool Specimen Container with Scoop/Spoon 30ml',
+                'generic' => 'Specimen Container (Stool)',
+                'category' => 'Laboratory Consumables',
+                'base_uom' => $uomPc->id,
+                'purch_uom' => $uomBox->id,
+                'ratio' => 100,
+                'cost' => 450.00,
+                'price' => 800.00,
+                'billable' => false,
+            ],
+            [
+                'code' => 'MSD-LAB-SPT-01',
+                'name' => 'Sputum Specimen Container with Screw Cap 50ml',
+                'generic' => 'Specimen Container (Sputum)',
+                'category' => 'Laboratory Consumables',
+                'base_uom' => $uomPc->id,
+                'purch_uom' => $uomBox->id,
+                'ratio' => 100,
+                'cost' => 500.00,
+                'price' => 900.00,
+                'billable' => false,
+            ],
+            [
+                'code' => 'MSD-LAB-SWB-01',
+                'name' => 'Sterile Cotton / Dacron Swab with Transport Tube',
+                'generic' => 'Microbiology Specimen Swab',
+                'category' => 'Laboratory Consumables',
+                'base_uom' => $uomPc->id,
+                'purch_uom' => $uomBox->id,
+                'ratio' => 100,
+                'cost' => 350.00,
+                'price' => 600.00,
+                'billable' => false,
             ],
         ];
 

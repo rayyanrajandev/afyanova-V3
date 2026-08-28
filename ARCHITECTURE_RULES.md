@@ -51,3 +51,12 @@ A feature is **NOT** done until:
 ## 10. Architecture Change Control
 - You cannot silently override or ignore an architectural decision.
 - If a new requirement conflicts with existing architecture, you must draft an Architectural Decision Record (ADR), propose the change, explain the risks, and secure approval before modifying code.
+
+## 11. Target Market Invariant: Private & Commercial Healthcare
+- AfyaNova V3 is designed specifically for **private hospitals, polyclinics, specialist medical centres, and commercial health enterprises**.
+- Target facilities have **dedicated, specialized departmental staff** (Cashiers, Phlebotomists, Lab Scientists, Pharmacists, Visiting Consultants, Insurance Billing Officers, Theatre Staff, Inpatient Nurses).
+- All workflows must optimize for private hospital commercial realities:
+  1. Multi-scheme itemized tariff pricing & co-pay billing (NHIF Private Wing, Jubilee, AAR, Strategis, International Insurers).
+  2. Visiting specialist doctor fee-sharing & commission reconciliation.
+  3. Pre-authorization & corporate credit line management with LPOs.
+  4. End-to-end departmental handoffs with strict turnaround-time (TAT) SLAs and audit trails.

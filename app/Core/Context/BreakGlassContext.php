@@ -6,7 +6,8 @@ namespace App\Core\Context;
  * Request-scoped: which patient (if any) an emergency break-glass
  * override, granted by BreakGlassController and read by
  * BreakGlassScope middleware, applies to for the current request.
- * Consumed by Patient::booted()'s facility-visibility scope.
+ * Consumed by Patient::booted()'s facility-visibility scope, and by
+ * HasFacilityScope for any other facility-scoped, patient-tied model.
  */
 class BreakGlassContext
 {

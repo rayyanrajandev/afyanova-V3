@@ -4,6 +4,7 @@ namespace App\Domains\Inpatient\Models;
 
 use App\Core\Traits\Auditable;
 use App\Core\Traits\BelongsToTenant;
+use App\Core\Traits\HasFacilityScope;
 use App\Core\Traits\HasUuidv7;
 use App\Domains\Clinical\Models\Encounter;
 use App\Domains\Identity\Models\User;
@@ -83,7 +84,7 @@ use Illuminate\Support\Carbon;
  */
 class Admission extends Model
 {
-    use Auditable, BelongsToTenant, HasUuidv7, SoftDeletes;
+    use Auditable, BelongsToTenant, HasFacilityScope, HasUuidv7, SoftDeletes;
 
     const AUDIT_CATEGORY = 'INPATIENT_ADMISSION';
 

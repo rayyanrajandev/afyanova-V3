@@ -12,8 +12,21 @@ class AuthorizationService
      */
     public function hasPermission(User $user, string $permissionSlug, ?string $facilityId = null, ?string $departmentId = null): bool
     {
-        // Tenant Admin has full platform access except clinical safety violations
+        // Platform Superadmin has global platform access
+        if ($this->isSuperAdmin($user)) {
+            if (in_array($permissionSlug, ['clinical.notes.sign', 'pharmacy.dispense.execute', 'lab.result.verify'])) {
+                return $this->evaluateAssignments($user, $permissionSlug, $facilityId, $departmentId);
+            }
+
+            return true;
+        }
+
+        // Tenant Admin has full tenant access except clinical safety violations
         if ($this->isTenantAdmin($user)) {
+            if ($permissionSlug === 'platform.superadmin.access') {
+                return false;
+            }
+
             // Enforce clinical safety boundary: Admins cannot sign clinical notes or dispense medication without clinical credentials
             if (in_array($permissionSlug, ['clinical.notes.sign', 'pharmacy.dispense.execute', 'lab.result.verify'])) {
                 // Must have explicit clinician/pharmacist role assignment
@@ -24,6 +37,21 @@ class AuthorizationService
         }
 
         return $this->evaluateAssignments($user, $permissionSlug, $facilityId, $departmentId);
+    }
+
+    /**
+     * Whether the user holds a global-scope assignment to the 'super-admin' role.
+     */
+    public function isSuperAdmin(User $user): bool
+    {
+        $cacheKey = "user:{$user->id}:is-super-admin";
+
+        return Cache::remember($cacheKey, 3600, function () use ($user) {
+            return $user->roleAssignments()
+                ->whereNull('facility_id')
+                ->whereHas('role', fn ($query) => $query->whereIn('slug', ['super-admin', 'platform-admin']))
+                ->exists();
+        });
     }
 
     /**

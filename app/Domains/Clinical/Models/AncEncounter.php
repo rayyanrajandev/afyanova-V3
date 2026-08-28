@@ -4,6 +4,7 @@ namespace App\Domains\Clinical\Models;
 
 use App\Core\Traits\Auditable;
 use App\Core\Traits\BelongsToTenant;
+use App\Core\Traits\HasFacilityScope;
 use App\Core\Traits\HasUuidv7;
 use App\Domains\Identity\Models\User;
 use App\Domains\Patient\Models\Patient;
@@ -76,7 +77,7 @@ use Illuminate\Support\Carbon;
  */
 class AncEncounter extends Model
 {
-    use Auditable, BelongsToTenant, HasUuidv7;
+    use Auditable, BelongsToTenant, HasFacilityScope, HasUuidv7;
 
     const AUDIT_CATEGORY = 'CLINICAL';
 

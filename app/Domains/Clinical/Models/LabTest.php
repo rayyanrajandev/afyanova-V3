@@ -4,9 +4,11 @@ namespace App\Domains\Clinical\Models;
 
 use App\Core\Traits\BelongsToTenant;
 use App\Core\Traits\HasUuidv7;
+use App\Domains\Inventory\Models\ItemMaster;
 use App\Domains\Tenancy\Models\Tenant;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
@@ -65,5 +67,13 @@ class LabTest extends Model
     public function orderItems(): HasMany
     {
         return $this->hasMany(LabOrderItem::class);
+    }
+
+    /**
+     * @return BelongsTo<ItemMaster, $this>
+     */
+    public function inventoryItem(): BelongsTo
+    {
+        return $this->belongsTo(ItemMaster::class, 'inventory_item_id');
     }
 }

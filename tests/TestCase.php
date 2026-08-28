@@ -2,7 +2,6 @@
 
 namespace Tests;
 
-use App\Core\Context\TenantContext;
 use App\Domains\Billing\Models\ChargeMasterItem;
 use App\Domains\Identity\Models\Permission;
 use App\Domains\Identity\Models\Role;
@@ -31,8 +30,7 @@ abstract class TestCase extends BaseTestCase
             'status' => 'active',
         ]);
 
-        $context = app(TenantContext::class);
-        $context->setTenantId($this->tenant->id);
+        setTestTenantContext($this->tenant->id);
 
         $this->facility = Facility::create([
             'tenant_id' => $this->tenant->id,
@@ -55,6 +53,7 @@ abstract class TestCase extends BaseTestCase
         $baselinePermissions = [
             'clinical.notes.sign' => ['name' => 'Sign Clinical Notes', 'domain' => 'Clinical'],
             'clinical.notes.create' => ['name' => 'Add Clinical Note', 'domain' => 'Clinical'],
+            'clinical.diagnosis.manage' => ['name' => 'Manage Diagnoses', 'domain' => 'Clinical'],
             'clinical.vitals.record' => ['name' => 'Record Vital Signs', 'domain' => 'Clinical'],
             'clinical.encounter.create' => ['name' => 'Start Encounter', 'domain' => 'Clinical'],
             'lab.order.create' => ['name' => 'Order Lab Investigations', 'domain' => 'Clinical'],

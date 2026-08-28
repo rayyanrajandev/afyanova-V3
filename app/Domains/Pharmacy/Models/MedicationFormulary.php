@@ -5,10 +5,13 @@ namespace App\Domains\Pharmacy\Models;
 use App\Core\Traits\Auditable;
 use App\Core\Traits\BelongsToTenant;
 use App\Core\Traits\HasUuidv7;
+use App\Domains\Billing\Models\ChargeMasterItem;
+use App\Domains\Inventory\Models\ItemMaster;
 use App\Domains\Tenancy\Models\Tenant;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 
 /**
@@ -66,7 +69,53 @@ class MedicationFormulary extends Model
         'is_active' => 'boolean',
     ];
 
-    protected $appends = ['total_stock_on_hand', 'active_batches_count', 'earliest_expiry_date', 'stock_status'];
+    protected $appends = ['total_stock_on_hand', 'active_batches_count', 'earliest_expiry_date', 'stock_status', 'unit_price', 'reorder_level'];
+
+    public function getUnitPriceAttribute(): float
+    {
+        if ($this->charge_code) {
+            $item = ChargeMasterItem::where('code', $this->charge_code)->where('is_active', true)->first();
+            if ($item) {
+                return (float) $item->unit_price;
+            }
+        }
+
+        return 0.0;
+    }
+
+    public function getReorderLevelAttribute(): int
+    {
+        if ($this->relationLoaded('itemMaster') && $this->itemMaster) {
+            return (int) $this->itemMaster->reorder_level;
+        }
+
+        return 50;
+    }
+
+    public function scopePharmaceuticalOnly($query)
+    {
+        $nonPharmaceuticals = [
+            'Surgical_Consumable',
+            'Lab_Reagent',
+            'IPC_Chemical',
+            'Stationery_MTUHA',
+            'Medical_Gas',
+            'Linen_Apparel',
+            'Nutrition_Food',
+            'Fixed_Asset',
+        ];
+
+        return $query->whereNotIn('drug_class', $nonPharmaceuticals)
+            ->whereNotIn('form', $nonPharmaceuticals);
+    }
+
+    /**
+     * @return HasOne<ItemMaster, $this>
+     */
+    public function itemMaster(): HasOne
+    {
+        return $this->hasOne(ItemMaster::class, 'medication_id');
+    }
 
     /**
      * @return HasMany<InventoryBatch, $this>
@@ -144,7 +193,10 @@ class MedicationFormulary extends Model
         if ($stock <= 0) {
             return 'Stockout';
         }
-        if ($stock <= 50) {
+
+        $reorderLevel = $this->reorder_level;
+
+        if ($stock <= $reorderLevel) {
             return 'Low Stock';
         }
 

@@ -19,7 +19,11 @@ class EvaluateLabResultRangeAction
         $patient = $patient ?? $item->labOrder?->patient;
         $gender = $patient?->gender ? ucfirst(strtolower($patient->gender)) : 'All';
         $dob = $patient?->dob ? Carbon::parse($patient->dob) : null;
-        $ageDays = $dob ? $dob->diffInDays(now()) : 3650; // Default ~10y if unknown
+        // diffInDays() returns a float (sub-day precision) — age_min_days/
+        // age_max_days are integer columns, and Postgres rejects a float
+        // parameter bound against one (SQLite silently coerces it, which is
+        // why this only ever surfaced running the suite against Postgres).
+        $ageDays = $dob ? (int) $dob->diffInDays(now()) : 3650; // Default ~10y if unknown
 
         $range = LabTestRange::where('lab_test_id', $item->lab_test_id)
             ->where(function ($q) use ($gender) {

@@ -4,9 +4,11 @@ namespace App\Domains\Scheduling\Models;
 
 use App\Core\Traits\Auditable;
 use App\Core\Traits\BelongsToTenant;
+use App\Core\Traits\HasFacilityScope;
 use App\Core\Traits\HasUuidv7;
 use App\Domains\Clinical\Models\Encounter;
 use App\Domains\Patient\Models\Patient;
+use App\Domains\Scheduling\Enums\QueueTicketStatus;
 use App\Domains\Tenancy\Models\Tenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -21,7 +23,7 @@ use Illuminate\Support\Carbon;
  * @property string $ticket_number
  * @property string $priority
  * @property string $current_service_point
- * @property string $status
+ * @property QueueTicketStatus $status
  * @property Carbon $joined_queue_at
  * @property Carbon|null $called_at
  * @property Carbon|null $completed_at
@@ -53,7 +55,7 @@ use Illuminate\Support\Carbon;
  */
 class QueueTicket extends Model
 {
-    use Auditable, BelongsToTenant, HasUuidv7;
+    use Auditable, BelongsToTenant, HasFacilityScope, HasUuidv7;
 
     const AUDIT_CATEGORY = 'SCHEDULING';
 
@@ -61,6 +63,7 @@ class QueueTicket extends Model
 
     protected $casts = [
         'id' => 'string',
+        'status' => QueueTicketStatus::class,
         'joined_queue_at' => 'datetime',
         'called_at' => 'datetime',
         'completed_at' => 'datetime',

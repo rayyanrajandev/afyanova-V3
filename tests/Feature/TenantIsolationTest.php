@@ -1,6 +1,5 @@
 <?php
 
-use App\Core\Context\TenantContext;
 use App\Domains\Billing\Actions\GenerateInvoiceAction;
 use App\Domains\Billing\Models\ChargeMasterItem;
 use App\Domains\Clinical\Actions\StartEncounterAction;
@@ -29,7 +28,7 @@ function buildIsolatedTenant(string $slug): array
         'status' => 'active',
     ]);
 
-    app(TenantContext::class)->setTenantId($tenant->id);
+    setTestTenantContext($tenant->id);
 
     $facility = Facility::create([
         'tenant_id' => $tenant->id,
@@ -101,7 +100,7 @@ test('a user cannot list another tenant\'s facilities via the access-control wor
     // buildIsolatedTenant('zeta') left the global TenantContext pointed at
     // zeta; AssignUserRoleAction looks up the user via a tenant-scoped
     // query, so it must be switched back to epsilon before granting a[user] a role.
-    app(TenantContext::class)->setTenantId($a['tenant']->id);
+    setTestTenantContext($a['tenant']->id);
 
     $role = Role::create(['tenant_id' => $a['tenant']->id, 'slug' => 'identity-admin', 'name' => 'Identity Admin']);
     $permission = Permission::firstOrCreate(

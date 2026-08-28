@@ -98,11 +98,24 @@ class RecordProcedureExecutionAction
                 }
             }
 
-            // Update order status
-            $order->update([
-                'status' => 'Completed',
-                'completed_at' => now(),
-            ]);
+            // Update order status: If marked as ongoing multi-dose course with remaining doses, keep InProgress
+            $isCourseComplete = true;
+            if (isset($data['is_course_completed']) && ! $data['is_course_completed']) {
+                $isCourseComplete = false;
+            } elseif (isset($data['remaining_doses']) && (int) $data['remaining_doses'] > 0) {
+                $isCourseComplete = false;
+            }
+
+            if ($isCourseComplete) {
+                $order->update([
+                    'status' => 'Completed',
+                    'completed_at' => now(),
+                ]);
+            } else {
+                $order->update([
+                    'status' => 'InProgress',
+                ]);
+            }
 
             return $execution->fresh(['order.patient', 'performedBy', 'consumables']);
         });

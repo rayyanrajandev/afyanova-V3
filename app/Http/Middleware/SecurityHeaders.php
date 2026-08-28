@@ -57,9 +57,7 @@ class SecurityHeaders
         // browser allows only those specific tags and nothing injected later.
         // style-src keeps 'unsafe-inline' — Tailwind emits styles at runtime
         // and there is no practical nonce path for that in a Vite/Vue setup.
-        // fonts.bunny.net is explicitly whitelisted for the Figtree font only.
-        // connect-src includes ws:/wss: so Vite's HMR websocket works in dev.
-        $response->headers->set('Content-Security-Policy', implode('; ', [
+        $cspDirectives = [
             "default-src 'self'",
             "script-src 'self' 'nonce-{$nonce}'",
             "style-src 'self' 'unsafe-inline' https://fonts.bunny.net",
@@ -69,8 +67,13 @@ class SecurityHeaders
             "frame-ancestors 'none'",
             "base-uri 'self'",
             "form-action 'self'",
-            'upgrade-insecure-requests',
-        ]));
+        ];
+
+        if ($request->secure() || app()->environment('production') || app()->runningUnitTests()) {
+            $cspDirectives[] = 'upgrade-insecure-requests';
+        }
+
+        $response->headers->set('Content-Security-Policy', implode('; ', $cspDirectives));
 
         return $response;
     }

@@ -22,6 +22,7 @@ class CreateCustomLabTestAction
                     'name' => $data['name'],
                     'category' => $data['category'] ?? 'General',
                     'specimen_type' => $data['specimen_type'] ?? 'Blood',
+                    'inventory_item_id' => $data['inventory_item_id'] ?? null,
                     'turnaround_time_minutes' => intval($data['turnaround_time_minutes'] ?? 30),
                     'price' => floatval($data['price'] ?? 0.00),
                     'parameters' => $data['parameters'] ?? [],

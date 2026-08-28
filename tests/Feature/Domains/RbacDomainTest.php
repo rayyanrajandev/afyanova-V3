@@ -1,6 +1,5 @@
 <?php
 
-use App\Core\Context\TenantContext;
 use App\Domains\Identity\Actions\AssignUserRoleAction;
 use App\Domains\Identity\Actions\UpdateRolePermissionsAction;
 use App\Domains\Identity\Models\Permission;
@@ -20,7 +19,7 @@ beforeEach(function () {
         'domain' => 'afya.local',
         'status' => 'Active',
     ]);
-    app(TenantContext::class)->setTenantId($this->tenant->id);
+    setTestTenantContext($this->tenant->id);
 
     $this->facilityA = Facility::create([
         'tenant_id' => $this->tenant->id,

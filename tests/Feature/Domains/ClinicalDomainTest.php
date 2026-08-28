@@ -1,6 +1,8 @@
 <?php
 
 use App\Domains\Clinical\Actions\AmendClinicalNoteAction;
+use App\Domains\Clinical\Actions\AmendDiagnosisAction;
+use App\Domains\Clinical\Actions\CreateDiagnosisAction;
 use App\Domains\Clinical\Actions\RecordVitalsAction;
 use App\Domains\Clinical\Actions\SignClinicalNoteAction;
 use App\Domains\Clinical\Actions\StartEncounterAction;
@@ -8,6 +10,7 @@ use App\Domains\Clinical\Exceptions\ClinicalImmutabilityException;
 use App\Domains\Clinical\Models\Allergy;
 use App\Domains\Clinical\Models\ClinicalNote;
 use App\Domains\Clinical\Models\ClinicalVital;
+use App\Domains\Clinical\Models\Diagnosis;
 use App\Domains\Clinical\Models\Encounter;
 use App\Domains\Patient\Actions\RegisterPatientAction;
 
@@ -149,6 +152,66 @@ test('clinical notes follow medico-legal signing and amendment immutability', fu
         ->and($amendedNote->is_amendment)->toBeTrue()
         ->and($amendedNote->amended_note_id)->toBe($signedNote->id)
         ->and($amendedNote->amendment_reason)->toBe('Added fever symptom reported post-consultation');
+});
+
+test('diagnosis can be recorded against an encounter and later amended with an audit trail', function () {
+    $env = $this->setupTenantEnvironment();
+    $user = $env['user'];
+    $this->actingAs($user);
+
+    $patient = app(RegisterPatientAction::class)->execute([
+        'first_name' => 'Neema',
+        'last_name' => 'Mwakalindile',
+        'gender' => 'Female',
+    ]);
+
+    $encounter = app(StartEncounterAction::class)->execute([
+        'tenant_id' => $env['tenant']->id,
+        'patient_id' => $patient->id,
+        'facility_id' => $env['facility']->id,
+        'department_id' => null,
+        'provider_id' => $user->id,
+        'encounter_type' => 'OPD',
+    ]);
+
+    // 1. Record via the controller route — this is the path that was
+    // entirely missing before: Diagnosis::create() had no live caller.
+    $response = $this->post(route('clinical.diagnoses.store', $encounter->id), [
+        'icd_10_code' => 'B50.9',
+        'description' => 'Acute Uncomplicated P. falciparum Malaria',
+        'certainty' => 'Confirmed',
+        'type' => 'Primary',
+    ]);
+    $response->assertSessionHasNoErrors();
+
+    $diagnosis = Diagnosis::where('encounter_id', $encounter->id)->first();
+    expect($diagnosis)->not->toBeNull()
+        ->and($diagnosis->icd_10_code)->toBe('B50.9')
+        ->and($diagnosis->certainty)->toBe('Confirmed')
+        ->and($diagnosis->diagnosed_by)->toBe($user->id)
+        ->and($diagnosis->is_deprecated)->toBeFalse();
+
+    $this->assertDatabaseHas('diagnoses', [
+        'encounter_id' => $encounter->id,
+        'icd_10_code' => 'B50.9',
+    ]);
+
+    // 2. Amend it — deprecates the original, creates a linked replacement.
+    // This is the flow AmendDiagnosisAction always supported; it just never
+    // had a first diagnosis to amend until CreateDiagnosisAction existed.
+    $amended = app(AmendDiagnosisAction::class)->execute($diagnosis, [
+        'icd_10_code' => 'B50.9',
+        'description' => 'Severe P. falciparum Malaria with jaundice',
+        'certainty' => 'Confirmed',
+        'type' => 'Primary',
+    ], 'Reclassified as severe after jaundice noted on review');
+
+    $diagnosis->refresh();
+
+    expect($diagnosis->is_deprecated)->toBeTrue()
+        ->and($amended->is_amendment)->toBeTrue()
+        ->and($amended->amended_diagnosis_id)->toBe($diagnosis->id)
+        ->and($amended->amendment_reason)->toBe('Reclassified as severe after jaundice noted on review');
 });
 
 test('complete end-to-end tanzania consultation workflow persists correctly to database', function () {

@@ -11,6 +11,8 @@ use App\Domains\Billing\Models\LedgerAccount;
 use App\Domains\Billing\Models\LedgerTransaction;
 use App\Domains\Billing\Models\Payment;
 use App\Domains\Identity\Models\User;
+use App\Domains\Scheduling\Enums\QueueTicketStatus;
+use App\Domains\Scheduling\Models\QueueTicket;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
@@ -54,6 +56,16 @@ class RecordPaymentAction
                 'paid_amount' => $newPaid,
                 'status' => $isFullyPaid ? 'Paid' : 'Partially Paid',
             ]);
+
+            // If consultation fee is fully settled, advance the patient queue ticket to Doctor consultation
+            if ($isFullyPaid && $lockedInvoice->encounter_id) {
+                QueueTicket::where('encounter_id', $lockedInvoice->encounter_id)
+                    ->where('status', QueueTicketStatus::Waiting)
+                    ->where('current_service_point', 'Cashier')
+                    ->update([
+                        'current_service_point' => 'Doctor',
+                    ]);
+            }
 
             // 2. Create Payment Receipt Record
             $receiptNumber = 'RCP-'.date('Y').'-'.strtoupper(Str::random(6));

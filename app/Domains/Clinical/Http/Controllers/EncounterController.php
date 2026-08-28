@@ -12,6 +12,9 @@ use App\Domains\Identity\Services\AuthorizationService;
 use App\Domains\Patient\Models\Patient;
 use App\Domains\Pharmacy\Models\MedicationFormulary;
 use App\Domains\Procedure\Models\ProcedureCatalog;
+use App\Domains\Scheduling\Enums\QueueTicketStatus;
+use App\Domains\Scheduling\Models\Appointment;
+use App\Domains\Scheduling\Models\QueueTicket;
 use App\Domains\Tenancy\Models\Facility;
 use App\Domains\Tenancy\Models\Tenant;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -37,6 +40,7 @@ class EncounterController extends Controller
             'completeEncounter' => 'clinical.encounter.update',
             'orderProcedure' => 'procedure.order.create',
             'createNote' => 'clinical.notes.create',
+            'recordDiagnosis' => 'clinical.diagnosis.manage',
             'signNote' => 'clinical.notes.sign',
             'recordVitals' => 'clinical.vitals.record',
             'prescribe' => 'pharmacy.prescription.create',
@@ -49,10 +53,12 @@ class EncounterController extends Controller
             'administerImmunization' => 'clinical.immunization.administer',
         ]);
 
-        // 1. Fetch only Active (non-closed) Encounters
+        // 1. Fetch only Active (non-closed) OPD Consultations
         $encounters = Encounter::with([
             'patient.allergies',
+            'patient.policies.insuranceCompany',
             'provider',
+            'invoices.lineItems',
             'vitals',
             'notes',
             'diagnoses',
@@ -70,15 +76,30 @@ class EncounterController extends Controller
             'radiologyOrders.studies',
         ])
             ->where('status', '!=', 'Closed')
+            ->whereIn('encounter_type', ['OPD', 'OPD Consultation', 'Emergency', 'Consultation', 'Treatment_Followup'])
             ->latest('created_at')
             ->take(50)
             ->get();
 
         $activePatientIds = $encounters->pluck('patient_id')->filter()->unique()->toArray();
 
-        // 2. Waiting Patients: Registered patients who do NOT currently have an open/active consultation
+        // 2. Waiting Patients: Patients holding an active Doctor/Triage Queue Ticket
+        $activeQueuePatientIds = QueueTicket::whereIn('status', [QueueTicketStatus::Waiting, QueueTicketStatus::InProgress])
+            ->whereIn('current_service_point', ['Triage', 'Doctor'])
+            ->where(function ($q) {
+                $q->whereNull('encounter_id')
+                    ->orWhereHas('encounter', function ($encQuery) {
+                        $encQuery->where('status', '!=', 'Closed')
+                            ->whereIn('encounter_type', ['OPD', 'OPD Consultation', 'Emergency', 'Consultation', 'Treatment_Followup']);
+                    });
+            })
+            ->pluck('patient_id')
+            ->filter()
+            ->unique()
+            ->toArray();
+
         $waitingPatients = Patient::with(['allergies', 'latestVital', 'vitals'])
-            ->whereNotIn('id', $activePatientIds)
+            ->whereIn('id', $activeQueuePatientIds)
             ->latest()
             ->take(50)
             ->get();
@@ -89,7 +110,7 @@ class EncounterController extends Controller
             ->take(50)
             ->get();
 
-        $formularies = MedicationFormulary::where('is_active', true)->get();
+        $formularies = MedicationFormulary::where('is_active', true)->pharmaceuticalOnly()->get();
         $labTests = LabTest::where('is_active', true)->get();
         $procedureCatalogs = ProcedureCatalog::where('is_active', true)->get();
         $recentLabOrders = LabOrder::with(['items.labTest', 'patient', 'orderingProvider', 'encounter'])
@@ -137,6 +158,11 @@ class EncounterController extends Controller
 
         $encounter = $action->execute($validated);
 
+        // Update any checked-in appointments to In Progress
+        Appointment::where('patient_id', $validated['patient_id'])
+            ->where('status', 'Checked-In')
+            ->update(['status' => 'In Progress']);
+
         // Auto-link any existing recent unattached triage vitals recorded for this patient within last 24h
         ClinicalVital::where('patient_id', $validated['patient_id'])
             ->whereNull('encounter_id')
@@ -156,6 +182,7 @@ class EncounterController extends Controller
             'completeEncounter' => 'clinical.encounter.update',
             'orderProcedure' => 'procedure.order.create',
             'createNote' => 'clinical.notes.create',
+            'recordDiagnosis' => 'clinical.diagnosis.manage',
             'signNote' => 'clinical.notes.sign',
             'recordVitals' => 'clinical.vitals.record',
             'prescribe' => 'pharmacy.prescription.create',
@@ -177,8 +204,10 @@ class EncounterController extends Controller
 
         $encounter->load([
             'patient.allergies',
+            'patient.policies.insuranceCompany',
             'patient.latestVital',
             'provider',
+            'invoices.lineItems',
             'vitals',
             'notes',
             'diagnoses',
@@ -198,7 +227,9 @@ class EncounterController extends Controller
 
         $encounters = Encounter::with([
             'patient.allergies',
+            'patient.policies.insuranceCompany',
             'provider',
+            'invoices.lineItems',
             'vitals',
             'notes',
             'diagnoses',
@@ -216,14 +247,30 @@ class EncounterController extends Controller
             'radiologyOrders.studies',
         ])
             ->where('status', '!=', 'Closed')
+            ->whereIn('encounter_type', ['OPD', 'OPD Consultation', 'Emergency', 'Consultation', 'Treatment_Followup'])
             ->latest('created_at')
             ->take(50)
             ->get();
 
         $activePatientIds = $encounters->pluck('patient_id')->filter()->unique()->toArray();
 
+        // Waiting Patients: Patients holding an active Doctor/Triage Queue Ticket
+        $activeQueuePatientIds = QueueTicket::whereIn('status', [QueueTicketStatus::Waiting, QueueTicketStatus::InProgress])
+            ->whereIn('current_service_point', ['Triage', 'Doctor'])
+            ->where(function ($q) {
+                $q->whereNull('encounter_id')
+                    ->orWhereHas('encounter', function ($encQuery) {
+                        $encQuery->where('status', '!=', 'Closed')
+                            ->whereIn('encounter_type', ['OPD', 'OPD Consultation', 'Emergency', 'Consultation', 'Treatment_Followup']);
+                    });
+            })
+            ->pluck('patient_id')
+            ->filter()
+            ->unique()
+            ->toArray();
+
         $waitingPatients = Patient::with(['allergies', 'latestVital', 'vitals'])
-            ->whereNotIn('id', $activePatientIds)
+            ->whereIn('id', $activeQueuePatientIds)
             ->latest()
             ->take(50)
             ->get();
@@ -233,7 +280,7 @@ class EncounterController extends Controller
             ->take(50)
             ->get();
 
-        $formularies = MedicationFormulary::where('is_active', true)->get();
+        $formularies = MedicationFormulary::where('is_active', true)->pharmaceuticalOnly()->get();
         $labTests = LabTest::where('is_active', true)->get();
         $procedureCatalogs = ProcedureCatalog::where('is_active', true)->get();
         $recentLabOrders = LabOrder::with(['items.labTest', 'patient', 'orderingProvider', 'encounter'])
@@ -258,10 +305,26 @@ class EncounterController extends Controller
     {
         $this->authorize('update', $encounter);
 
+        $now = now();
         $encounter->update([
             'status' => 'Closed',
-            'end_time' => now(),
+            'end_time' => $now,
         ]);
+
+        // Complete linked queue tickets so patient leaves the waiting queue
+        QueueTicket::where('encounter_id', $encounter->id)
+            ->whereIn('status', [QueueTicketStatus::Waiting, QueueTicketStatus::InProgress])
+            ->update([
+                'status' => QueueTicketStatus::Completed,
+                'completed_at' => $now,
+            ]);
+
+        // Complete linked appointments so Reception dashboard reflects completed visit
+        Appointment::where('patient_id', $encounter->patient_id)
+            ->whereIn('status', ['Scheduled', 'Checked-In', 'In Progress'])
+            ->update([
+                'status' => 'Completed',
+            ]);
 
         return redirect()->route('workspace.clinical')
             ->with('success', 'Consultation encounter completed and closed successfully.');

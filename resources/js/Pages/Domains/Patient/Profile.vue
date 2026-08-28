@@ -37,7 +37,8 @@ import {
     Film,
     RefreshCw,
     CheckCircle,
-    XCircle
+    XCircle,
+    GitMerge
 } from '@lucide/vue';
 import AfyaShell from '@/Layouts/AfyaShell.vue';
 import AfyaWorkspace from '@/Components/Workspace/AfyaWorkspace.vue';
@@ -62,17 +63,23 @@ import AfyaStatusBadge from '@/Components/Afya/AfyaStatusBadge.vue';
 import AfyaPatientIdentity from '@/Components/Afya/AfyaPatientIdentity.vue';
 import AfyaClinicalAlert from '@/Components/Afya/AfyaClinicalAlert.vue';
 import AfyaInput from '@/Components/Afya/AfyaInput.vue';
+import AfyaDatePicker from '@/Components/Afya/AfyaDatePicker.vue';
 import Modal from '@/Components/Modal.vue';
 import InputError from '@/Components/InputError.vue';
+import PatientMergeModal from '@/Components/Patient/PatientMergeModal.vue';
 
 const props = defineProps({
     can: {
         type: Object,
-        default: () => ({ radiology: true, billing: true }),
+        default: () => ({ radiology: true, billing: true, mergePatient: true }),
     },
     patient: {
         type: Object,
         required: true,
+    },
+    availablePatients: {
+        type: Array,
+        default: () => [],
     },
     tab: {
         type: String,
@@ -83,6 +90,7 @@ const props = defineProps({
 // URL query synchronized tab state
 const activeTab = ref(props.tab || 'overview');
 const showContext = ref(true);
+const showMergeModal = ref(false);
 
 const setTab = (tabId) => {
     activeTab.value = tabId;
@@ -460,18 +468,28 @@ const totalOutstanding = computed(() => {
                 >
                     <template #actions>
                         <div class="flex items-center gap-1.5">
-                            <Link :href="route('encounters.workspace', encounters[0]?.id || 'demo')">
+                            <Link v-if="can.clinical" :href="route('encounters.workspace', encounters[0]?.id || 'demo')">
                                 <Button variant="default" size="sm" class="gap-1.5">
                                     <Stethoscope class="w-3.5 h-3.5" />
                                     <span>Start Consultation</span>
                                 </Button>
                             </Link>
-                            <Link :href="route('billing.desk')">
+                            <Link v-if="can.billing" :href="route('billing.desk')">
                                 <Button variant="outline" size="sm" class="gap-1.5">
                                     <Receipt class="w-3.5 h-3.5" />
                                     <span>Point of Sale</span>
                                 </Button>
                             </Link>
+                            <Button
+                                v-if="can.mergePatient"
+                                variant="outline"
+                                size="sm"
+                                class="gap-1.5 text-amber-600 hover:text-amber-700 dark:text-amber-400 border-amber-300 dark:border-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/40"
+                                @click="showMergeModal = true"
+                            >
+                                <GitMerge class="w-3.5 h-3.5" />
+                                <span>Merge Record</span>
+                            </Button>
                         </div>
                     </template>
 
@@ -664,9 +682,10 @@ const totalOutstanding = computed(() => {
                                         <TableCell class="text-xs">{{ enc.reason_for_visit || 'Routine Care' }}</TableCell>
                                         <TableCell><AfyaStatusBadge :status="enc.status" dot /></TableCell>
                                         <TableCell class="text-right">
-                                            <Link :href="route('encounters.workspace', enc.id)">
+                                            <Link v-if="can.clinical" :href="route('encounters.workspace', enc.id)">
                                                 <Button variant="subtle" size="sm">Open Chart</Button>
                                             </Link>
+                                            <span v-else class="text-muted-foreground text-[10px]">—</span>
                                         </TableCell>
                                     </TableRow>
 
@@ -1057,17 +1076,17 @@ const totalOutstanding = computed(() => {
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead>Invoice #</TableHead>
-                                        <TableHead>Date</TableHead>
-                                        <TableHead>Total Amount</TableHead>
-                                        <TableHead>Paid Amount</TableHead>
-                                        <TableHead>Balance Due</TableHead>
-                                        <TableHead>Status</TableHead>
+                                        <TableHead class="min-w-[175px] whitespace-nowrap">Invoice #</TableHead>
+                                        <TableHead class="min-w-[100px] whitespace-nowrap">Date</TableHead>
+                                        <TableHead class="whitespace-nowrap">Total Amount</TableHead>
+                                        <TableHead class="whitespace-nowrap">Paid Amount</TableHead>
+                                        <TableHead class="whitespace-nowrap">Balance Due</TableHead>
+                                        <TableHead class="whitespace-nowrap">Status</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     <TableRow v-for="inv in invoices" :key="inv.id">
-                                        <TableCell class="font-mono font-bold text-foreground">{{ inv.invoice_number }}</TableCell>
+                                        <TableCell class="font-mono font-bold text-foreground whitespace-nowrap">{{ inv.invoice_number }}</TableCell>
                                         <TableCell class="font-mono text-xs">{{ new Date(inv.created_at).toLocaleDateString() }}</TableCell>
                                         <TableCell class="font-mono">TZS {{ formatCurrency(inv.total_amount) }}</TableCell>
                                         <TableCell class="font-mono text-emerald-700">TZS {{ formatCurrency(inv.paid_amount) }}</TableCell>
@@ -1167,11 +1186,11 @@ const totalOutstanding = computed(() => {
                             placeholder="e.g. I10"
                             :error="problemForm.errors.icd10_code"
                         />
-                        <AfyaInput
+                        <AfyaDatePicker
                             v-model="problemForm.onset_date"
-                            type="date"
                             label="Onset Date"
                             :error="problemForm.errors.onset_date"
+                            :max="new Date().toISOString().split('T')[0]"
                         />
                         <div class="space-y-1">
                             <label class="block text-xs font-semibold text-foreground">Clinical Status</label>
@@ -1411,5 +1430,13 @@ const totalOutstanding = computed(() => {
                 </form>
             </div>
         </Modal>
+
+        <!-- Patient Merge Modal -->
+        <PatientMergeModal
+            :show="showMergeModal"
+            :primary-patient="patient"
+            :available-patients="availablePatients || []"
+            @close="showMergeModal = false"
+        />
     </AfyaShell>
 </template>

@@ -19,7 +19,19 @@ class ProcedureOrderPolicy
 
     public function execute(User $user, ProcedureOrder $order): bool
     {
-        return $this->auth->hasPermission($user, 'procedure.order.execute', $order->encounter?->facility_id);
+        $facilityId = $order->encounter?->facility_id;
+
+        if ($this->auth->hasPermission($user, 'procedure.order.execute', $facilityId)) {
+            return true;
+        }
+
+        if ($this->auth->hasPermission($user, 'procedure.execute.dressing', $facilityId)) {
+            $tierLevel = $order->catalog?->tier_level;
+
+            return $tierLevel === 'Tier1_Minor' || $tierLevel === null;
+        }
+
+        return false;
     }
 
     public function bookSurgery(User $user, ProcedureOrder $order): bool

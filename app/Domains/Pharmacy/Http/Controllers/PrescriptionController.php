@@ -26,6 +26,8 @@ class PrescriptionController extends Controller
             'route' => 'required|string',
             'quantity' => 'required|integer|min:1',
             'instructions' => 'nullable|string',
+            'allergy_override_reason' => 'nullable|string',
+            'override_reason' => 'nullable|string',
         ]);
 
         $validated['encounter_id'] = $encounter->id;

@@ -10,27 +10,26 @@ use Illuminate\Support\Facades\DB;
 
 class SearchPatientsAction
 {
-    public function execute(string $searchTerm = '', int $limit = 50): Collection
+    /**
+     * @param  bool  $includeBilling  Whether the caller has confirmed the
+     *                                requesting user holds billing.invoice.view — resources/js's
+     *                                Search page reads outstanding-balance totals directly off
+     *                                `patient.invoices`, so that relation is only worth the query
+     *                                (and the exposure) when the caller has already checked the
+     *                                permission. Clinical relations (vitals/notes/diagnoses/
+     *                                prescriptions) and appointments are intentionally never
+     *                                eager-loaded here — resources/js/Pages/Domains/Patient/Search.vue
+     *                                doesn't render any of them.
+     */
+    public function execute(string $searchTerm = '', int $limit = 50, bool $includeBilling = false): Collection
     {
+        $relations = ['identifiers', 'contacts', 'emergencyContacts', 'allergies'];
+        if ($includeBilling) {
+            $relations[] = 'invoices.lineItems';
+        }
+
         $query = Patient::query()
-            ->with([
-                'identifiers',
-                'contacts',
-                'emergencyContacts',
-                'allergies',
-                'encounters' => function ($q) {
-                    $q->with([
-                        'provider',
-                        'vitals',
-                        'notes',
-                        'diagnoses',
-                        'prescriptions.medication',
-                        'invoices.lineItems',
-                    ])->latest('start_time');
-                },
-                'appointments.provider',
-                'invoices.lineItems',
-            ])
+            ->with($relations)
             ->where('status', '!=', 'Merged');
 
         // When search is empty, return latest registered patients

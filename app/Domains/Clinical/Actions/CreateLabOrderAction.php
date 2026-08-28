@@ -5,6 +5,7 @@ namespace App\Domains\Clinical\Actions;
 use App\Domains\Billing\Exceptions\InvoiceImmutabilityException;
 use App\Domains\Billing\Models\Invoice;
 use App\Domains\Billing\Models\InvoiceLineItem;
+use App\Domains\Billing\Services\InvoiceNumberGenerator;
 use App\Domains\Clinical\Models\Encounter;
 use App\Domains\Clinical\Models\LabOrder;
 use App\Domains\Clinical\Models\LabOrderItem;
@@ -14,6 +15,10 @@ use Illuminate\Support\Str;
 
 class CreateLabOrderAction
 {
+    public function __construct(
+        protected InvoiceNumberGenerator $invoiceNumbers,
+    ) {}
+
     public function execute(Encounter $encounter, array $testIds, string $priority = 'Routine', ?string $clinicalNotes = null): LabOrder
     {
         return DB::transaction(function () use ($encounter, $testIds, $priority, $clinicalNotes) {
@@ -77,11 +82,8 @@ class CreateLabOrderAction
                 ->first();
 
             if (! $invoice) {
-                $invCount = Invoice::whereDate('created_at', today())->count() + 1;
-                $invNumber = sprintf('INV-%s-%03d', $datePrefix, $invCount);
-
                 $invoice = Invoice::create([
-                    'invoice_number' => $invNumber,
+                    'invoice_number' => $this->invoiceNumbers->generate(),
                     'facility_id' => $encounter->facility_id,
                     'encounter_id' => $encounter->id,
                     'patient_id' => $encounter->patient_id,

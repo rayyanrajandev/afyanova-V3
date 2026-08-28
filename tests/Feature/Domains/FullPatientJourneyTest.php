@@ -170,24 +170,24 @@ test('end-to-end outpatient healthcare journey runs flawlessly across all domain
     // -------------------------------------------------------------
     // PHASE 5: CASHIER BILLING & DOUBLE-ENTRY LEDGER
     // -------------------------------------------------------------
-    // The invoice was automatically generated and accumulated charges (15,000 Consultation + 2,700 Pharmacy)
+    // The invoice was automatically generated and accumulated charges (20,000 Consultation from ChargeMaster + 2,700 Pharmacy)
     $invoice = $encounter->invoices()->first();
     expect($invoice->status)->toBe('Open')
-        ->and((float) $invoice->total_amount)->toBe(17700.00)
+        ->and((float) $invoice->total_amount)->toBe(22700.00)
         ->and($invoice->lineItems)->toHaveCount(2);
 
     // Settle invoice in full via Cashier (Tigo Pesa)
-    $tx = app(RecordPaymentAction::class)->execute($invoice, 17700.00, 'TigoPesa');
+    $tx = app(RecordPaymentAction::class)->execute($invoice, 22700.00, 'TigoPesa');
 
     $invoice->refresh();
     expect($invoice->status)->toBe('Paid')
-        ->and((float) $invoice->paid_amount)->toBe(17700.00);
+        ->and((float) $invoice->paid_amount)->toBe(22700.00);
 
     // Assert Double-Entry Ledger Zero Balance Integrity
     $totalDebits = (float) $tx->entries()->sum('debit');
     $totalCredits = (float) $tx->entries()->sum('credit');
 
-    expect($totalDebits)->toBe(17700.00)
-        ->and($totalCredits)->toBe(17700.00)
-        ->and($totalDebits - $totalCredits)->toBe(0.0);
+    expect($totalDebits)->toBe(22700.00)
+        ->and($totalCredits)->toBe(22700.00)
+        ->and($totalDebits - $totalCredits)->toBe(0.00);
 });

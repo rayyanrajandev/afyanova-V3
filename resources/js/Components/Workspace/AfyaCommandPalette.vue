@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue';
-import { router } from '@inertiajs/vue3';
+import { router, usePage } from '@inertiajs/vue3';
 import { 
     Search, 
     LayoutDashboard, 
@@ -18,7 +18,15 @@ import {
     PanelRight,
     DollarSign,
     UserPlus,
-    Activity
+    Activity,
+    Bed,
+    Scissors,
+    FlaskConical,
+    ScanLine,
+    ShieldCheck,
+    Package,
+    Shield,
+    TrendingUp
 } from '@lucide/vue';
 import { cn } from '@/lib/utils';
 import { useWorkspacePreferences } from '@/Composables/useWorkspacePreferences';
@@ -37,30 +45,55 @@ const selectedIndex = ref(0);
 const inputRef = ref(null);
 
 const { cycleSidebarState, toggleContext } = useWorkspacePreferences();
+const page = usePage();
+
+const userPermissions = computed(() => page.props.auth?.permissions || []);
+const isTenantAdmin = computed(() => {
+    const roles = page.props.auth?.roles || [];
+    return roles.some(r => r.name === 'tenant-admin' || r.slug === 'tenant-admin');
+});
+
+const hasAccess = (item) => {
+    if (!item.permAny || item.permAny.length === 0) return true;
+    if (isTenantAdmin.value) return true;
+    return item.permAny.some(perm => userPermissions.value.includes(perm));
+};
 
 const navigationItems = [
     // Primary Workspaces
-    { id: 'dash', label: 'Hospital Telemetry Dashboard', group: 'Workspaces', icon: LayoutDashboard, route: '/dashboard', shortcut: '⌘D' },
-    { id: 'pat', label: 'Master Patient Index (MPI)', group: 'Workspaces', icon: Users, route: '/patients', shortcut: '⌘M' },
-    { id: 'clin', label: 'Clinical Consultation Workstation', group: 'Workspaces', icon: Stethoscope, route: '/workspace/clinical', shortcut: '⌘E' },
-    { id: 'pharm', label: 'Pharmacy Dispensary Desk', group: 'Workspaces', icon: Pill, route: '/pharmacy', shortcut: '⌘P' },
-    { id: 'bill', label: 'Cashier POS & Billing Desk', group: 'Workspaces', icon: DollarSign, route: '/billing/desk', shortcut: '⌘$' },
-    { id: 'queue', label: 'Live Triage & Patient Queue', group: 'Workspaces', icon: Clock, route: '/queue', shortcut: '⌘Q' },
-    { id: 'app', label: 'Appointments Calendar & Scheduling', group: 'Workspaces', icon: Calendar, route: '/appointments', shortcut: '⌘A' },
+    { id: 'dash', label: 'Hospital Telemetry Dashboard', group: 'Workspaces', icon: LayoutDashboard, route: '/dashboard', shortcut: '⌘D', permAny: [] },
+    { id: 'pat', label: 'Master Patient Index (MPI)', group: 'Workspaces', icon: Users, route: '/patients', shortcut: '⌘M', permAny: ['patient.registry.view'] },
+    { id: 'clin', label: 'Clinical Consultation Workstation', group: 'Workspaces', icon: Stethoscope, route: '/workspace/clinical', shortcut: '⌘E', permAny: ['clinical.encounter.view'] },
+    { id: 'inpatient', label: 'Inpatient Wards & Beds', group: 'Workspaces', icon: Bed, route: '/inpatient', permAny: ['inpatient.ward.view'] },
+    { id: 'procedures', label: 'Procedures & Surgery Suites', group: 'Workspaces', icon: Scissors, route: '/procedures', permAny: ['procedure.order.view'] },
+    { id: 'laboratory', label: 'Laboratory Workbench', group: 'Workspaces', icon: FlaskConical, route: '/laboratory', permAny: ['lab.order.view'] },
+    { id: 'radiology', label: 'Radiology & Imaging', group: 'Workspaces', icon: ScanLine, route: '/radiology', permAny: ['radiology.order.view'] },
+    { id: 'insurance', label: 'Insurance & Claims Desk', group: 'Workspaces', icon: ShieldCheck, route: '/insurance', permAny: ['insurance.claim.view'] },
+    { id: 'bill', label: 'Cashier POS & Billing Desk', group: 'Workspaces', icon: DollarSign, route: '/billing/desk', shortcut: '⌘$', permAny: ['billing.invoice.view'] },
+    { id: 'pharm', label: 'Pharmacy Dispensary Desk', group: 'Workspaces', icon: Pill, route: '/pharmacy', shortcut: '⌘P', permAny: ['pharmacy.prescription.view', 'pharmacy.inventory.view'] },
+    { id: 'inventory', label: 'Inventory & Central Warehouse', group: 'Workspaces', icon: Package, route: '/inventory', permAny: ['inventory.stock.view', 'inventory.catalog.view', 'inventory.requisition.view', 'inventory.transfer.view', 'inventory.po.view', 'inventory.predictive.view', 'inventory.grn.view', 'inventory.dda.view', 'inventory.gas.view', 'inventory.stocktake.view'] },
+    { id: 'reports', label: 'Hospital Analytics & BI', group: 'Workspaces', icon: TrendingUp, route: '/reports', permAny: ['reports.clinical.view', 'reports.financial.view', 'reports.pharmacoeconomic.view', 'reports.analytics.view'] },
+    { id: 'access-control', label: 'Access Control & RBAC', group: 'Workspaces', icon: Shield, route: '/access-control', permAny: ['identity.user.manage', 'identity.role.manage'] },
+    { id: 'queue', label: 'Live Triage & Patient Queue', group: 'Workspaces', icon: Clock, route: '/queue', shortcut: '⌘Q', permAny: ['scheduling.appointment.view', 'scheduling.queue.view'] },
+    { id: 'app', label: 'Appointments Calendar & Scheduling', group: 'Workspaces', icon: Calendar, route: '/appointments', shortcut: '⌘A', permAny: ['scheduling.appointment.view'] },
     
     // Quick Actions
-    { id: 'reg', label: 'Register New Patient (MPI)', group: 'Quick Actions', icon: UserPlus, route: '/patients/create', shortcut: '⌘N' },
-    { id: 'vitals', label: 'Record Triage Vitals', group: 'Quick Actions', icon: Activity, route: '/queue' },
+    { id: 'reg', label: 'Register New Patient (MPI)', group: 'Quick Actions', icon: UserPlus, route: '/patients/create', shortcut: '⌘N', permAny: ['patient.registry.create'] },
+    { id: 'vitals', label: 'Record Triage Vitals', group: 'Quick Actions', icon: Activity, route: '/queue', permAny: ['clinical.vitals.record', 'scheduling.queue.view'] },
 
     // Workspace Controls
-    { id: 'toggle-sidebar', label: 'Toggle Module Navigation Sidebar', group: 'Workspace Controls', icon: Sidebar, action: 'sidebar', shortcut: '⌘B' },
-    { id: 'toggle-context', label: 'Toggle Context Inspector Panel', group: 'Workspace Controls', icon: PanelRight, action: 'context', shortcut: '⌘I' },
+    { id: 'toggle-sidebar', label: 'Toggle Module Navigation Sidebar', group: 'Workspace Controls', icon: Sidebar, action: 'sidebar', shortcut: '⌘B', permAny: [] },
+    { id: 'toggle-context', label: 'Toggle Context Inspector Panel', group: 'Workspace Controls', icon: PanelRight, action: 'context', shortcut: '⌘I', permAny: [] },
 ];
 
+const accessibleItems = computed(() => {
+    return navigationItems.filter(item => hasAccess(item));
+});
+
 const filteredItems = computed(() => {
-    if (!query.value.trim()) return navigationItems;
+    if (!query.value.trim()) return accessibleItems.value;
     const q = query.value.toLowerCase();
-    return navigationItems.filter(item => 
+    return accessibleItems.value.filter(item => 
         item.label.toLowerCase().includes(q) || 
         item.group.toLowerCase().includes(q) ||
         (item.shortcut && item.shortcut.toLowerCase().includes(q))

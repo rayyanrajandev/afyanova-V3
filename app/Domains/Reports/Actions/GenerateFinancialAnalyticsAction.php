@@ -5,14 +5,16 @@ namespace App\Domains\Reports\Actions;
 use App\Domains\Billing\Models\Invoice;
 use App\Domains\Billing\Models\InvoiceLineItem;
 use App\Domains\Insurance\Models\InsuranceClaim;
-use App\Domains\Tenancy\Models\Tenant;
 use Illuminate\Support\Carbon;
 
 class GenerateFinancialAnalyticsAction
 {
     public function execute(?string $tenantId = null, ?string $startDate = null, ?string $endDate = null): array
     {
-        $tenantId = $tenantId ?? auth()->user()?->tenant_id ?? Tenant::first()?->id;
+        // No Tenant::first() fallback: silently generating this report
+        // against an arbitrary other tenant when neither the caller nor
+        // the acting user supplies one is a landmine, not a safety net.
+        $tenantId = $tenantId ?? auth()->user()?->tenant_id;
 
         $invoiceQuery = Invoice::with(['lineItems', 'patient', 'encounter'])
             ->where('tenant_id', $tenantId);

@@ -29,7 +29,9 @@ import {
     FileSpreadsheet,
     Building2,
     PieChart,
-    Package
+    Package,
+    FileCode,
+    Download
 } from '@lucide/vue';
 import AfyaShell from '@/Layouts/AfyaShell.vue';
 import AfyaWorkspace from '@/Components/Workspace/AfyaWorkspace.vue';
@@ -73,6 +75,10 @@ const props = defineProps({
         type: Object,
         default: () => ({}),
     },
+    mtuha: {
+        type: Object,
+        default: () => ({}),
+    },
     filters: {
         type: Object,
         default: () => ({ preset: 'month', start_date: null, end_date: null }),
@@ -81,8 +87,7 @@ const props = defineProps({
 
 const { preferences, openContext } = useWorkspacePreferences();
 
-// View State: 'morbidity' | 'notifiable' | 'financial' | 'payermix' | 'pharmaco' | 'operations'
-// Each tab reads from one of the 4 gated data props; map tab -> underlying can-key.
+// View State: 'morbidity' | 'notifiable' | 'financial' | 'payermix' | 'pharmaco' | 'operations' | 'mtuha_book1' | 'mtuha_book2' | 'mtuha_book5'
 const sectionSource = {
     morbidity: 'morbidity',
     notifiable: 'morbidity',
@@ -90,6 +95,9 @@ const sectionSource = {
     payermix: 'financial',
     pharmaco: 'pharmaco',
     operations: 'operational',
+    mtuha_book1: 'mtuha',
+    mtuha_book2: 'mtuha',
+    mtuha_book5: 'mtuha',
 };
 const firstAvailableSection = Object.keys(sectionSource).find(s => props.can[sectionSource[s]]) ?? null;
 const activeSection = ref(firstAvailableSection);
@@ -98,6 +106,14 @@ const selectedDepartment = ref(null);
 const selectedPayer = ref(null);
 const selectedMedication = ref(null);
 const searchQuery = ref('');
+
+const exportDhis2 = () => {
+    window.open(route('reports.mtuha.export', { format: 'dhis2', start_date: props.filters.start_date, end_date: props.filters.end_date }));
+};
+
+const exportMtuhaCsv = () => {
+    window.open(route('reports.mtuha.export', { format: 'csv', start_date: props.filters.start_date, end_date: props.filters.end_date }));
+};
 
 const setPreset = (presetName) => {
     router.get(route('reports.workspace'), { preset: presetName }, {
@@ -255,45 +271,76 @@ const contextIcon = computed(() => {
                         @click="activeSection = 'operations'"
                     />
 
+                    <!-- Section: MTUHA MoH Reporting -->
+                    <div v-if="state !== 'collapsed' && can.mtuha" class="px-2 pt-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground border-t border-border/40 mt-2">
+                        MoH MTUHA & DHIS2
+                    </div>
+                    <AfyaSidebarItem
+                        v-if="can.mtuha"
+                        :icon="FileSpreadsheet"
+                        label="Book 1 - OPD Registry"
+                        :active="activeSection === 'mtuha_book1'"
+                        :collapsed="state === 'collapsed'"
+                        :badge="mtuha.book1?.summary?.total_opd_attendances"
+                        @click="activeSection = 'mtuha_book1'"
+                    />
+                    <AfyaSidebarItem
+                        v-if="can.mtuha"
+                        :icon="Building2"
+                        label="Book 2 - IPD & Mortality"
+                        :active="activeSection === 'mtuha_book2'"
+                        :collapsed="state === 'collapsed'"
+                        :badge="mtuha.book2?.summary?.total_admissions"
+                        @click="activeSection = 'mtuha_book2'"
+                    />
+                    <AfyaSidebarItem
+                        v-if="can.mtuha"
+                        :icon="FlaskConical"
+                        label="Book 5 - Lab & Logistics"
+                        :active="activeSection === 'mtuha_book5'"
+                        :collapsed="state === 'collapsed'"
+                        @click="activeSection = 'mtuha_book5'"
+                    />
+
                     <!-- Section 4: Time Period Filter Strip -->
                     <div v-if="state !== 'collapsed'" class="mt-4 pt-3 border-t border-border/40 px-2 space-y-1.5">
                         <div class="text-[9px] font-bold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
                             <span>Reporting Period</span>
                             <Calendar class="w-3 h-3 text-primary" />
                         </div>
-                        <div class="grid grid-cols-2 gap-1 text-[10px]">
+                        <div class="grid grid-cols-2 gap-1 text-[10.5px]">
                             <button 
                                 @click="setPreset('all')"
-                                :class="filters.preset === 'all' ? 'bg-primary text-primary-foreground font-bold shadow-2xs col-span-2' : 'bg-muted/50 hover:bg-muted text-muted-foreground col-span-2'"
-                                class="px-2 py-1 rounded text-center transition-colors font-medium"
+                                :class="filters.preset === 'all' ? 'bg-primary text-primary-foreground font-bold shadow-2xs col-span-2' : 'bg-muted/40 hover:bg-muted text-muted-foreground col-span-2'"
+                                class="px-2 py-1 rounded-md text-center transition-all font-medium"
                             >
                                 All Time Records
                             </button>
                             <button 
                                 @click="setPreset('today')"
-                                :class="filters.preset === 'today' ? 'bg-primary text-primary-foreground font-bold shadow-2xs' : 'bg-muted/50 hover:bg-muted text-muted-foreground'"
-                                class="px-2 py-1 rounded text-center transition-colors font-medium"
+                                :class="filters.preset === 'today' ? 'bg-primary text-primary-foreground font-bold shadow-2xs' : 'bg-muted/40 hover:bg-muted text-muted-foreground'"
+                                class="px-2 py-1 rounded-md text-center transition-all font-medium"
                             >
                                 Today
                             </button>
                             <button 
                                 @click="setPreset('week')"
-                                :class="filters.preset === 'week' ? 'bg-primary text-primary-foreground font-bold shadow-2xs' : 'bg-muted/50 hover:bg-muted text-muted-foreground'"
-                                class="px-2 py-1 rounded text-center transition-colors font-medium"
+                                :class="filters.preset === 'week' ? 'bg-primary text-primary-foreground font-bold shadow-2xs' : 'bg-muted/40 hover:bg-muted text-muted-foreground'"
+                                class="px-2 py-1 rounded-md text-center transition-all font-medium"
                             >
                                 This Week
                             </button>
                             <button 
                                 @click="setPreset('month')"
-                                :class="filters.preset === 'month' ? 'bg-primary text-primary-foreground font-bold shadow-2xs' : 'bg-muted/50 hover:bg-muted text-muted-foreground'"
-                                class="px-2 py-1 rounded text-center transition-colors font-medium"
+                                :class="filters.preset === 'month' ? 'bg-primary text-primary-foreground font-bold shadow-2xs' : 'bg-muted/40 hover:bg-muted text-muted-foreground'"
+                                class="px-2 py-1 rounded-md text-center transition-all font-medium"
                             >
                                 This Month
                             </button>
                             <button 
                                 @click="setPreset('year')"
-                                :class="filters.preset === 'year' ? 'bg-primary text-primary-foreground font-bold shadow-2xs' : 'bg-muted/50 hover:bg-muted text-muted-foreground'"
-                                class="px-2 py-1 rounded text-center transition-colors font-medium"
+                                :class="filters.preset === 'year' ? 'bg-primary text-primary-foreground font-bold shadow-2xs' : 'bg-muted/40 hover:bg-muted text-muted-foreground'"
+                                class="px-2 py-1 rounded-md text-center transition-all font-medium"
                             >
                                 This Year
                             </button>
@@ -315,6 +362,28 @@ const contextIcon = computed(() => {
                             <span class="text-[10px] font-mono text-muted-foreground bg-muted px-2 py-1 rounded border border-border/50">
                                 Period: {{ filters.start_date || 'All' }} to {{ filters.end_date || 'Present' }}
                             </span>
+                            <Button
+                                v-if="can.mtuha"
+                                variant="outline"
+                                size="sm"
+                                class="h-7 text-xs font-bold gap-1 text-indigo-600 dark:text-indigo-400 border-indigo-300 dark:border-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 shadow-2xs"
+                                @click="exportDhis2"
+                                title="Export DHIS2 DataValueSet JSON formatted for MoH national HMIS sync"
+                            >
+                                <FileCode class="w-3 h-3" />
+                                <span>DHIS2 JSON</span>
+                            </Button>
+                            <Button
+                                v-if="can.mtuha"
+                                variant="outline"
+                                size="sm"
+                                class="h-7 text-xs font-bold gap-1 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 shadow-2xs"
+                                @click="exportMtuhaCsv"
+                                title="Download MoH MTUHA Tabular CSV summary"
+                            >
+                                <Download class="w-3 h-3" />
+                                <span>MoH CSV</span>
+                            </Button>
                             <Button 
                                 variant="outline" 
                                 size="sm" 
@@ -899,6 +968,178 @@ const contextIcon = computed(() => {
                                             </TableRow>
                                         </TableBody>
                                     </Table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ============================================================== -->
+                        <!-- VIEW 7: MTUHA BOOK 1 — OPD MORBIDITY & ATTENDANCES REGISTER    -->
+                        <!-- ============================================================== -->
+                        <div v-else-if="activeSection === 'mtuha_book1'" class="space-y-3">
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                <div class="bg-card p-3 rounded-lg border border-border/60 shadow-2xs">
+                                    <div class="text-[10px] font-bold uppercase text-muted-foreground">Total OPD Attendances</div>
+                                    <div class="text-lg font-extrabold text-primary font-mono mt-1">
+                                        {{ mtuha.book1?.summary?.total_opd_attendances || 0 }}
+                                    </div>
+                                    <div class="text-[10px] text-muted-foreground mt-0.5">Ministry Stat. OPD Register</div>
+                                </div>
+                                <div class="bg-card p-3 rounded-lg border border-border/60 shadow-2xs">
+                                    <div class="text-[10px] font-bold uppercase text-muted-foreground">Under-5 Years</div>
+                                    <div class="text-lg font-extrabold text-indigo-600 font-mono mt-1">
+                                        {{ mtuha.book1?.summary?.total_under_five || 0 }}
+                                    </div>
+                                    <div class="text-[10px] text-muted-foreground mt-0.5">
+                                        M: {{ mtuha.book1?.summary?.under_five_male || 0 }} • F: {{ mtuha.book1?.summary?.under_five_female || 0 }}
+                                    </div>
+                                </div>
+                                <div class="bg-card p-3 rounded-lg border border-border/60 shadow-2xs">
+                                    <div class="text-[10px] font-bold uppercase text-muted-foreground">5 Years and Above</div>
+                                    <div class="text-lg font-extrabold text-foreground font-mono mt-1">
+                                        {{ mtuha.book1?.summary?.total_over_five || 0 }}
+                                    </div>
+                                    <div class="text-[10px] text-muted-foreground mt-0.5">
+                                        M: {{ mtuha.book1?.summary?.over_five_male || 0 }} • F: {{ mtuha.book1?.summary?.over_five_female || 0 }}
+                                    </div>
+                                </div>
+                                <div class="bg-card p-3 rounded-lg border border-border/60 shadow-2xs">
+                                    <div class="text-[10px] font-bold uppercase text-muted-foreground">DHIS2 Synchronized</div>
+                                    <div class="text-lg font-extrabold text-emerald-600 font-mono mt-1">
+                                        Active
+                                    </div>
+                                    <div class="text-[10px] text-muted-foreground mt-0.5">MoH DataValueSet v3 Ready</div>
+                                </div>
+                            </div>
+
+                            <!-- OPD Morbidity Tally Table -->
+                            <div class="bg-card rounded-lg border border-border/60 overflow-hidden shadow-2xs">
+                                <div class="px-3 py-2 border-b border-border/60 bg-muted/20 flex items-center justify-between">
+                                    <span class="text-xs font-bold text-foreground uppercase tracking-wider">MoH OPD Morbidity Surveillance Tally (ICD-10)</span>
+                                </div>
+                                <Table class="w-full text-xs">
+                                    <TableHeader>
+                                        <TableRow class="h-7 text-[9.5px] uppercase font-bold text-muted-foreground bg-muted/10">
+                                            <TableHead class="py-1 px-3 w-20">ICD-10</TableHead>
+                                            <TableHead class="py-1 px-3">Disease / Clinical Diagnosis</TableHead>
+                                            <TableHead class="py-1 px-3 text-center">&lt; 5y Male</TableHead>
+                                            <TableHead class="py-1 px-3 text-center">&lt; 5y Female</TableHead>
+                                            <TableHead class="py-1 px-3 text-center">&gt;= 5y Male</TableHead>
+                                            <TableHead class="py-1 px-3 text-center">&gt;= 5y Female</TableHead>
+                                            <TableHead class="py-1 px-3 text-right">Total Cases</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        <TableRow
+                                            v-for="item in mtuha.book1?.top_morbidity_tallies || []"
+                                            :key="item.icd10_code"
+                                            class="h-8 border-b border-border/30 hover:bg-muted/20"
+                                        >
+                                            <TableCell class="py-1 px-3 font-mono font-bold text-primary text-[11px]">{{ item.icd10_code }}</TableCell>
+                                            <TableCell class="py-1 px-3 font-medium text-foreground">{{ item.description }}</TableCell>
+                                            <TableCell class="py-1 px-3 text-center font-mono text-muted-foreground">{{ item.under_5_male }}</TableCell>
+                                            <TableCell class="py-1 px-3 text-center font-mono text-muted-foreground">{{ item.under_5_female }}</TableCell>
+                                            <TableCell class="py-1 px-3 text-center font-mono text-muted-foreground">{{ item.over_5_male }}</TableCell>
+                                            <TableCell class="py-1 px-3 text-center font-mono text-muted-foreground">{{ item.over_5_female }}</TableCell>
+                                            <TableCell class="py-1 px-3 text-right font-mono font-bold text-foreground">{{ item.total_cases }}</TableCell>
+                                        </TableRow>
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        </div>
+
+                        <!-- ============================================================== -->
+                        <!-- VIEW 8: MTUHA BOOK 2 — IPD ADMISSIONS, DISCHARGES & MORTALITY  -->
+                        <!-- ============================================================== -->
+                        <div v-else-if="activeSection === 'mtuha_book2'" class="space-y-3">
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                <div class="bg-card p-3 rounded-lg border border-border/60 shadow-2xs">
+                                    <div class="text-[10px] font-bold uppercase text-muted-foreground">Total Admissions</div>
+                                    <div class="text-lg font-extrabold text-foreground font-mono mt-1">
+                                        {{ mtuha.book2?.summary?.total_admissions || 0 }}
+                                    </div>
+                                    <div class="text-[10px] text-muted-foreground mt-0.5">IPD Book 2 Registry</div>
+                                </div>
+                                <div class="bg-card p-3 rounded-lg border border-border/60 shadow-2xs">
+                                    <div class="text-[10px] font-bold uppercase text-muted-foreground">Total Discharges</div>
+                                    <div class="text-lg font-extrabold text-emerald-600 font-mono mt-1">
+                                        {{ mtuha.book2?.summary?.total_discharges || 0 }}
+                                    </div>
+                                    <div class="text-[10px] text-muted-foreground mt-0.5">
+                                        Alive: {{ mtuha.book2?.summary?.discharged_alive || 0 }} • Trx: {{ mtuha.book2?.summary?.transferred_out || 0 }}
+                                    </div>
+                                </div>
+                                <div class="bg-card p-3 rounded-lg border border-border/60 shadow-2xs">
+                                    <div class="text-[10px] font-bold uppercase text-muted-foreground">Total Deaths</div>
+                                    <div class="text-lg font-extrabold text-rose-600 font-mono mt-1">
+                                        {{ mtuha.book2?.summary?.total_deaths || 0 }}
+                                    </div>
+                                    <div class="text-[10px] text-muted-foreground mt-0.5">
+                                        U5: {{ mtuha.book2?.summary?.deaths_under_five || 0 }} • &gt;5y: {{ mtuha.book2?.summary?.deaths_five_and_above || 0 }}
+                                    </div>
+                                </div>
+                                <div class="bg-card p-3 rounded-lg border border-border/60 shadow-2xs">
+                                    <div class="text-[10px] font-bold uppercase text-muted-foreground">Bed Occupancy Rate (BOR)</div>
+                                    <div class="text-lg font-extrabold text-indigo-600 font-mono mt-1">
+                                        {{ mtuha.book2?.summary?.bed_occupancy_rate_pct || 0 }}%
+                                    </div>
+                                    <div class="text-[10px] text-muted-foreground mt-0.5">
+                                        ALOS: {{ mtuha.book2?.summary?.average_length_of_stay_days || 0 }} Days
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ============================================================== -->
+                        <!-- VIEW 9: MTUHA BOOK 5 — LAB & LOGISTICS TRACER SURVEILLANCE     -->
+                        <!-- ============================================================== -->
+                        <div v-else-if="activeSection === 'mtuha_book5'" class="space-y-3">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <!-- Lab Diagnostics -->
+                                <div class="bg-card p-4 rounded-xl border border-border/60 shadow-2xs space-y-2.5">
+                                    <div class="flex items-center gap-2 border-b border-border/40 pb-2">
+                                        <FlaskConical class="w-4 h-4 text-primary" />
+                                        <h4 class="font-bold text-xs text-foreground uppercase tracking-wider">Laboratory Diagnostic Surveillance</h4>
+                                    </div>
+                                    <div class="space-y-2 text-xs">
+                                        <div class="flex items-center justify-between p-2 bg-muted/20 rounded">
+                                            <span>Total Investigations Performed</span>
+                                            <strong class="font-mono">{{ mtuha.book5?.laboratory?.total_investigations_performed || 0 }}</strong>
+                                        </div>
+                                        <div class="flex items-center justify-between p-2 bg-muted/20 rounded">
+                                            <span>Malaria Tests (mRDT / Blood Slide)</span>
+                                            <strong class="font-mono">{{ mtuha.book5?.laboratory?.malaria_tests_performed || 0 }}</strong>
+                                        </div>
+                                        <div class="flex items-center justify-between p-2 bg-muted/20 rounded">
+                                            <span>Malaria Positivity Rate</span>
+                                            <strong class="font-mono text-rose-600">{{ mtuha.book5?.laboratory?.malaria_positivity_rate_pct || 0 }}% ({{ mtuha.book5?.laboratory?.malaria_positive_cases || 0 }} positive)</strong>
+                                        </div>
+                                        <div class="flex items-center justify-between p-2 bg-muted/20 rounded">
+                                            <span>Full Blood Pictures (FBP / CBC)</span>
+                                            <strong class="font-mono">{{ mtuha.book5?.laboratory?.full_blood_pictures_done || 0 }}</strong>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Pharmacy Essential Medicines Tracer -->
+                                <div class="bg-card p-4 rounded-xl border border-border/60 shadow-2xs space-y-2.5">
+                                    <div class="flex items-center gap-2 border-b border-border/40 pb-2">
+                                        <Pill class="w-4 h-4 text-emerald-600" />
+                                        <h4 class="font-bold text-xs text-foreground uppercase tracking-wider">Essential Medicines Availability</h4>
+                                    </div>
+                                    <div class="space-y-2 text-xs">
+                                        <div class="flex items-center justify-between p-2 bg-muted/20 rounded">
+                                            <span>Tracer Drug Items Monitored</span>
+                                            <strong class="font-mono">{{ mtuha.book5?.pharmacy_tracer_medicines?.total_managed_items || 0 }}</strong>
+                                        </div>
+                                        <div class="flex items-center justify-between p-2 bg-muted/20 rounded">
+                                            <span>Stockout Rate</span>
+                                            <strong class="font-mono text-amber-600">{{ mtuha.book5?.pharmacy_tracer_medicines?.stockout_rate_pct || 0 }}% ({{ mtuha.book5?.pharmacy_tracer_medicines?.stockout_items_count || 0 }} out)</strong>
+                                        </div>
+                                        <div class="flex items-center justify-between p-2 bg-muted/20 rounded">
+                                            <span>Tracer Availability Rate</span>
+                                            <strong class="font-mono text-emerald-600 font-bold">{{ mtuha.book5?.pharmacy_tracer_medicines?.availability_rate_pct || 100 }}%</strong>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

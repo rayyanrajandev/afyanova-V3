@@ -12,8 +12,9 @@ import {
     Plus,
     X,
     Loader2,
-    Save
-} from 'lucide-vue-next';
+    Save,
+    ConciergeBell,
+} from '@lucide/vue';
 import AfyaShell from '@/Layouts/AfyaShell.vue';
 import AfyaWorkspace from '@/Components/Workspace/AfyaWorkspace.vue';
 import AfyaSidebar from '@/Components/Workspace/AfyaSidebar.vue';
@@ -26,6 +27,8 @@ import InputError from '@/Components/InputError.vue';
 // UI Primitives & Design Foundation
 import Button from '@/Components/ui/Button.vue';
 import Input from '@/Components/ui/Input.vue';
+import AfyaDatePicker from '@/Components/Afya/AfyaDatePicker.vue';
+import SegmentedControl from '@/Components/ui/SegmentedControl.vue';
 import Card from '@/Components/ui/Card.vue';
 import CardHeader from '@/Components/ui/CardHeader.vue';
 import CardTitle from '@/Components/ui/CardTitle.vue';
@@ -64,7 +67,19 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
+    metrics: {
+        type: Object,
+        default: () => ({ lobby_waiting: 0, today_appointments: 0, total_patients: 0 }),
+    },
 });
+
+const appointmentTypeOptions = [
+    { value: 'Consultation', label: 'OPD Consult' },
+    { value: 'Follow-up', label: 'Follow-Up' },
+    { value: 'Specialist Review', label: 'Specialist' },
+    { value: 'ANC Visit', label: 'ANC' },
+    { value: 'Procedure', label: 'Procedure' },
+];
 
 const selectedAppointment = ref(props.appointments?.[0] || null);
 const showContext = ref(true);
@@ -146,7 +161,7 @@ const confirmCheckIn = () => {
             <!-- 1. LEFT SIDEBAR: Scheduling Navigation -->
             <template #sidebar="{ state, width, cycle, setState }">
                 <AfyaSidebar
-                    title="Scheduling"
+                    title="Appointments Hub"
                     :icon="CalendarIcon"
                     :state="state"
                     :width="width"
@@ -154,20 +169,37 @@ const confirmCheckIn = () => {
                     @set-state="setState"
                 >
                     <div v-if="state !== 'collapsed'" class="px-2 py-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                        Patient Queue
+                        Reception Operations
                     </div>
+                    <AfyaSidebarItem
+                        label="Front Desk"
+                        :icon="ConciergeBell"
+                        :collapsed="state === 'collapsed'"
+                        :href="route('dashboard')"
+                    />
+                    <AfyaSidebarItem
+                        v-if="can.patients"
+                        label="Patient Registry"
+                        :icon="Users"
+                        :badge="metrics?.total_patients || null"
+                        :collapsed="state === 'collapsed'"
+                        :href="route('patients.index')"
+                    />
+                    <AfyaSidebarItem
+                        v-if="can.queue"
+                        label="Live Queue & Triage"
+                        :icon="Clock"
+                        :badge="metrics?.lobby_waiting || null"
+                        :collapsed="state === 'collapsed'"
+                        :href="route('queue.index')"
+                    />
                     <AfyaSidebarItem
                         label="Appointments Calendar"
                         :icon="CalendarIcon"
-                        :badge="appointments.length"
+                        :badge="metrics?.today_appointments || appointments.length"
                         :active="true"
                         :collapsed="state === 'collapsed'"
-                    />
-                    <AfyaSidebarItem
-                        label="Live Queue & Triage"
-                        :icon="Clock"
-                        :collapsed="state === 'collapsed'"
-                        :href="route('queue.index')"
+                        :href="route('appointments.index')"
                     />
                 </AfyaSidebar>
             </template>
@@ -176,7 +208,7 @@ const confirmCheckIn = () => {
             <template #default>
                 <AfyaWorkspaceMain
                     :breadcrumbs="[
-                        { label: 'Scheduling', href: route('appointments.index') },
+                        { label: 'Front Desk', href: route('dashboard') },
                         { label: 'Appointments Calendar', active: true }
                     ]"
                 >
@@ -239,6 +271,17 @@ const confirmCheckIn = () => {
                                                 <UserCheck class="w-3 h-3" />
                                                 <span>Check In</span>
                                             </Button>
+                                            <Link 
+                                                v-else-if="app.status === 'Checked-In'" 
+                                                :href="route('queue.index')" 
+                                                class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
+                                            >
+                                                <CheckCircle2 class="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                                                <span>In Queue</span>
+                                            </Link>
+                                            <span v-else class="text-[11px] text-muted-foreground font-medium">
+                                                {{ app.status }}
+                                            </span>
                                         </TableCell>
                                     </TableRow>
 
@@ -334,8 +377,9 @@ const confirmCheckIn = () => {
                 <form @submit.prevent="submitBookAppointment" class="space-y-3">
                     <div>
                         <label class="block font-bold text-[10px] uppercase text-muted-foreground mb-1">Select Patient *</label>
-                        <select v-model="bookForm.patient_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
-                            <option v-for="p in patients" :key="p.id" :value="p.id">{{ p.first_name }} {{ p.last_name }} ({{ p.primary_mrn }})</option>
+                        <select v-model="bookForm.patient_id" class="w-full h-8 text-xs rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-2 font-medium">
+                            <option value="" disabled class="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">-- Choose Patient --</option>
+                            <option v-for="p in patients" :key="p.id" :value="p.id" class="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">{{ p.first_name }} {{ p.last_name }} ({{ p.primary_mrn }})</option>
                         </select>
                         <InputError :message="bookForm.errors.patient_id" class="mt-1" />
                     </div>
@@ -343,16 +387,16 @@ const confirmCheckIn = () => {
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="block font-bold text-[10px] uppercase text-muted-foreground mb-1">Facility *</label>
-                            <select v-model="bookForm.facility_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
-                                <option v-for="f in facilities" :key="f.id" :value="f.id">{{ f.name }}</option>
+                            <select v-model="bookForm.facility_id" class="w-full h-8 text-xs rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-2 font-medium">
+                                <option v-for="f in facilities" :key="f.id" :value="f.id" class="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">{{ f.name }}</option>
                             </select>
                             <InputError :message="bookForm.errors.facility_id" class="mt-1" />
                         </div>
                         <div>
                             <label class="block font-bold text-[10px] uppercase text-muted-foreground mb-1">Department</label>
-                            <select v-model="bookForm.department_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
-                                <option value="">General OPD</option>
-                                <option v-for="d in departments" :key="d.id" :value="d.id">{{ d.name }}</option>
+                            <select v-model="bookForm.department_id" class="w-full h-8 text-xs rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-2 font-medium">
+                                <option value="" class="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">General OPD</option>
+                                <option v-for="d in departments" :key="d.id" :value="d.id" class="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">{{ d.name }}</option>
                             </select>
                             <InputError :message="bookForm.errors.department_id" class="mt-1" />
                         </div>
@@ -361,30 +405,34 @@ const confirmCheckIn = () => {
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="block font-bold text-[10px] uppercase text-muted-foreground mb-1">Provider / Doctor</label>
-                            <select v-model="bookForm.provider_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
-                                <option value="">Any Available Clinician</option>
-                                <option v-for="u in providers" :key="u.id" :value="u.id">Dr. {{ u.first_name }} {{ u.last_name }}</option>
+                            <select v-model="bookForm.provider_id" class="w-full h-8 text-xs rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-2 font-medium">
+                                <option value="" class="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Any Available Clinician</option>
+                                <option v-for="u in providers" :key="u.id" :value="u.id" class="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Dr. {{ u.first_name }} {{ u.last_name }}</option>
                             </select>
                             <InputError :message="bookForm.errors.provider_id" class="mt-1" />
                         </div>
-                        <div>
-                            <label class="block font-bold text-[10px] uppercase text-muted-foreground mb-1">Appointment Type *</label>
-                            <select v-model="bookForm.appointment_type" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
-                                <option value="Consultation">General Consultation</option>
-                                <option value="Follow-up">Follow-Up Review</option>
-                                <option value="Specialist Review">Specialist Clinic</option>
-                                <option value="ANC Visit">Antenatal Care (ANC)</option>
-                                <option value="Procedure">Minor Procedure</option>
-                            </select>
+                        <div class="col-span-2 space-y-1">
+                            <label class="block font-bold text-[10px] uppercase text-muted-foreground">Appointment Type *</label>
+                            <SegmentedControl
+                                v-model="bookForm.appointment_type"
+                                :options="appointmentTypeOptions"
+                                size="sm"
+                                :full-width="true"
+                            />
                             <InputError :message="bookForm.errors.appointment_type" class="mt-1" />
                         </div>
                     </div>
 
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label class="block font-bold text-[10px] uppercase text-muted-foreground mb-1">Scheduled Date & Time *</label>
-                            <Input v-model="bookForm.scheduled_time" type="datetime-local" class="h-8 text-xs font-mono" />
-                            <InputError :message="bookForm.errors.scheduled_time" class="mt-1" />
+                            <AfyaDatePicker
+                                v-model="bookForm.scheduled_time"
+                                label="Scheduled Date & Time"
+                                required
+                                :with-time="true"
+                                :error="bookForm.errors.scheduled_time"
+                                :min="new Date()"
+                            />
                         </div>
                         <div>
                             <label class="block font-bold text-[10px] uppercase text-muted-foreground mb-1">Duration (Minutes) *</label>

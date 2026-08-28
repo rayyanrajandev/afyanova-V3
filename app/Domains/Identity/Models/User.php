@@ -125,4 +125,26 @@ class User extends Authenticatable
     {
         return $this->hasMany(RoleAssignment::class);
     }
+
+    public function getLandingRouteName(): string
+    {
+        $roles = $this->roles->pluck('slug')->toArray();
+        if (in_array('doctor', $roles)) {
+            return 'workspace.clinical';
+        }
+        if (in_array('nurse', $roles)) {
+            return 'procedures.workspace';
+        }
+        if (in_array('pharmacist', $roles)) {
+            return 'pharmacy.queue';
+        }
+        if (in_array('lab-technologist', $roles)) {
+            return 'laboratory.workspace';
+        }
+        if (in_array('cashier', $roles)) {
+            return 'billing.desk';
+        }
+
+        return 'dashboard';
+    }
 }

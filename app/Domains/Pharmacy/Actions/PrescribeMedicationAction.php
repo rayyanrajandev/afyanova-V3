@@ -39,7 +39,11 @@ class PrescribeMedicationAction
         // 1. Structured Codified Allergy & Cross-Reactivity Check
         $allergyResult = $this->allergyChecker->check($data['patient_id'], $medication);
         if ($allergyResult['has_contraindication']) {
-            throw PharmacyException::allergyContraindication($allergyResult['allergen'].' ('.$allergyResult['reason'].')');
+            $overrideReason = $data['allergy_override_reason'] ?? $data['override_reason'] ?? null;
+            if (! $overrideReason) {
+                throw PharmacyException::allergyContraindication($allergyResult['allergen'].' ('.$allergyResult['reason'].')');
+            }
+            $data['instructions'] = trim(($data['instructions'] ?? '') . " [Clinical Override Justification: {$overrideReason}]");
         }
 
         // 2. Severe Drug-Drug Interaction (DDI) Check against active prescriptions

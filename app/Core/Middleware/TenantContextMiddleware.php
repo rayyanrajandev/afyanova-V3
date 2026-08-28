@@ -23,12 +23,19 @@ class TenantContextMiddleware
         //    actually belongs to.
         $tenantId = $request->user()?->tenant_id;
 
-        // 2. Unauthenticated flows (e.g. a signed API token, or a subdomain
-        //    resolving before login) may still declare a tenant explicitly.
-        if (! $tenantId) {
-            $tenantId = $request->header('X-Tenant-ID');
-        }
-
+        // 2. Unauthenticated flows may still resolve a tenant via subdomain
+        //    (e.g. clinic-a.afyanova.app before login) — derived from the
+        //    actual HTTP Host, not arbitrary client-supplied request data.
+        //    An X-Tenant-ID header fallback used to sit here for "a signed
+        //    API token" — removed: nothing in this codebase has ever set or
+        //    read that header (grep-confirmed), there is no routes/api.php
+        //    for a token flow to exist on, and the login flow was
+        //    deliberately built (see EstablishTenantContextOnLogin) to not
+        //    depend on it, since a plain browser form post never sends one.
+        //    Trusting an unauthenticated, client-controlled header to pick
+        //    which tenant's RLS context a request runs under had no
+        //    offsetting legitimate use — pure liability, closed rather than
+        //    left "for future use."
         if (! $tenantId && $request->getHost()) {
             $parts = explode('.', $request->getHost());
             if (count($parts) >= 3) {

@@ -3,7 +3,9 @@
 namespace App\Domains\Scheduling\Actions;
 
 use App\Domains\Billing\Actions\GenerateInvoiceAction;
+use App\Domains\Billing\Services\ChargePriceResolver;
 use App\Domains\Clinical\Actions\StartEncounterAction;
+use App\Domains\Scheduling\Enums\QueueTicketStatus;
 use App\Domains\Scheduling\Models\Appointment;
 use App\Domains\Scheduling\Models\QueueTicket;
 use Illuminate\Support\Facades\DB;
@@ -12,7 +14,8 @@ class CheckInPatientAction
 {
     public function __construct(
         protected StartEncounterAction $startEncounterAction,
-        protected GenerateInvoiceAction $generateInvoiceAction
+        protected GenerateInvoiceAction $generateInvoiceAction,
+        protected ChargePriceResolver $chargePriceResolver
     ) {}
 
     public function execute(Appointment $appointment): QueueTicket
@@ -32,11 +35,27 @@ class CheckInPatientAction
                 'reason_for_visit' => $appointment->notes,
             ]);
 
+            // Resolve Consultation Price from ChargeMasterItem single source of truth
+            $chargeCode = match ($appointment->appointment_type) {
+                'Specialist', 'Specialist Consultation' => 'CONSULT-SPEC',
+                default => 'CONSULT-OPD',
+            };
+
+            try {
+                $consultationPrice = $this->chargePriceResolver->priceFor($chargeCode);
+            } catch (\Exception) {
+                try {
+                    $consultationPrice = $this->chargePriceResolver->priceFor('CONSULT-OPD');
+                } catch (\Exception) {
+                    $consultationPrice = 20000.00;
+                }
+            }
+
             // Upfront Prepaid Invoice for Consultation
             $this->generateInvoiceAction->execute(
                 $encounter,
                 'OPD Consultation - '.($appointment->appointment_type ?? 'General'),
-                15000.00,
+                $consultationPrice,
                 'Consultation',
                 1
             );
@@ -52,7 +71,7 @@ class CheckInPatientAction
                 'ticket_number' => $ticketNumber,
                 'priority' => 'Routine',
                 'current_service_point' => 'Triage',
-                'status' => 'Waiting',
+                'status' => QueueTicketStatus::Waiting,
                 'joined_queue_at' => now(),
             ]);
         });

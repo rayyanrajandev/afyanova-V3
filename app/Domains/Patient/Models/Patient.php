@@ -318,4 +318,20 @@ class Patient extends Model
     {
         return $this->hasMany(RadiologyOrder::class);
     }
+
+    /**
+     * @return HasMany<\App\Domains\Billing\Models\PatientDeposit, $this>
+     */
+    public function deposits(): HasMany
+    {
+        return $this->hasMany(\App\Domains\Billing\Models\PatientDeposit::class);
+    }
+
+    /**
+     * @return HasMany<\App\Domains\Communication\Models\SmsNotificationLog, $this>
+     */
+    public function smsNotificationLogs(): HasMany
+    {
+        return $this->hasMany(\App\Domains\Communication\Models\SmsNotificationLog::class);
+    }
 }

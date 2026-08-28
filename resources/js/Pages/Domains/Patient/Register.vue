@@ -33,6 +33,7 @@ import Button from '@/Components/ui/Button.vue';
 import Input from '@/Components/ui/Input.vue';
 import Select from '@/Components/ui/Select.vue';
 import InputError from '@/Components/InputError.vue';
+import AfyaDatePicker from '@/Components/Afya/AfyaDatePicker.vue';
 
 const DRAFT_STORAGE_KEY = 'afyanova_patient_reg_draft_v3';
 const restoredDraftNotice = ref(false);
@@ -581,12 +582,12 @@ const submit = () => {
                                     <!-- Exact DOB Input Mode -->
                                     <div v-if="ageEntryMode === 'exact_dob'" class="flex items-center gap-2">
                                         <div class="w-1/2">
-                                            <Input
+                                            <AfyaDatePicker
                                                 v-model="form.dob"
-                                                type="date"
                                                 :max="new Date().toISOString().split('T')[0]"
-                                                :error="!!form.errors.dob"
-                                                class="h-7 text-xs"
+                                                :error="form.errors.dob"
+                                                size="sm"
+                                                placeholder="DD MMM YYYY"
                                             />
                                         </div>
                                         <div class="w-1/2 min-w-0">

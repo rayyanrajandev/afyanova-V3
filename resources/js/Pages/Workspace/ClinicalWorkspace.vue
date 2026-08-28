@@ -24,6 +24,8 @@ import {
     FileCheck,
     Search,
     ShieldAlert,
+    ShieldCheck,
+    CreditCard,
     Loader2,
     HeartPulse,
     Scissors,
@@ -110,11 +112,31 @@ import { useWorkspacePreferences } from '@/Composables/useWorkspacePreferences';
 
 const { preferences, openContext } = useWorkspacePreferences();
 
+// Clinical Role Boundaries & Tab Visibility Resolution
+// A Physician/Doctor is uniquely authorized to prescribe, sign notes, or order CPOE labs/imaging
+const isPhysician = computed(() => !!(props.can?.prescribe || props.can?.signNote || props.can?.orderLabs || props.can?.orderImaging));
+const isNursing = computed(() => !isPhysician.value && !!(props.can?.recordVitals || props.can?.administerImmunization || props.can?.recordAncVisit || props.can?.recordPartograph));
+
 // View State: 'overview' | 'queue' | 'encounters' | 'labs' | 'charting'
 const activeSection = ref('overview');
 const activePatientId = ref(null);
 const activeEncounterId = ref(null);
-const chartingTab = ref('soap'); // 'soap' | 'vitals' | 'rx' | 'labs'
+
+const getInitialTab = () => {
+    if (typeof window !== 'undefined') {
+        const urlParams = new URLSearchParams(window.location.search);
+        const requestedTab = urlParams.get('tab');
+        if (requestedTab) return requestedTab;
+    }
+    if (isPhysician.value) return 'soap';
+    if (props.can?.recordVitals || isNursing.value) return 'vitals';
+    if (props.can?.recordAncVisit) return 'anc';
+    if (props.can?.administerImmunization) return 'immunizations';
+    if (props.can?.recordPartograph) return 'partograph';
+    return 'vitals';
+};
+
+const chartingTab = ref(getInitialTab());
 const isStartingEncounter = ref(false);
 const isCompletingEncounter = ref(false);
 
@@ -402,6 +424,108 @@ const formatDate = (dateStr) => {
 
 // Derived patient clinical data for Right Inspector
 const patientAllergies = computed(() => activePatient.value?.allergies || []);
+
+// Payment & Insurance Financial Status for Active Encounter
+const patientBillingStatus = computed(() => {
+    if (!activeEncounter.value) return null;
+
+    // 1. Check if patient has active insurance policy
+    const policies = activePatient.value?.policies || [];
+    const activePolicy = policies.find(p => p.status === 'Active' || p.status === 'Verified');
+    if (activePolicy) {
+        return {
+            type: 'insured',
+            label: `${activePolicy.insurance_company?.name || 'NHIF'} Covered`,
+            isPaid: true,
+            amount: 0,
+        };
+    }
+
+    // 2. Check invoices on this encounter
+    const invoices = activeEncounter.value.invoices || [];
+    if (invoices.length === 0) {
+        return {
+            type: 'unbilled',
+            label: 'No Fee Billed',
+            title: 'No Fee Billed',
+            description: 'No charges recorded for this encounter.',
+            isPaid: true,
+            amount: 0,
+        };
+    }
+
+    const unpaidInvoices = invoices.filter(inv => inv.status !== 'Paid');
+    const unpaidTotal = unpaidInvoices.reduce((acc, inv) => acc + (Number(inv.total_amount) - Number(inv.paid_amount || 0)), 0);
+
+    if (unpaidTotal <= 0 && unpaidInvoices.length === 0) {
+        const totalPaid = invoices.reduce((acc, inv) => acc + Number(inv.paid_amount || inv.total_amount), 0);
+        return {
+            type: 'paid',
+            label: `Paid TZS ${totalPaid.toLocaleString()}`,
+            title: 'All Charges Paid',
+            description: `All invoiced fees (TZS ${totalPaid.toLocaleString()}) have been fully settled.`,
+            isPaid: true,
+            amount: totalPaid,
+        };
+    }
+
+    // Determine what service categories are unpaid
+    const unpaidCategories = new Set();
+    unpaidInvoices.forEach(inv => {
+        const items = inv.line_items || inv.lineItems || [];
+        if (items.length === 0) {
+            unpaidCategories.add('General');
+        } else {
+            items.forEach(it => {
+                if (it.category) unpaidCategories.add(it.category);
+            });
+        }
+    });
+
+    const categoryList = Array.from(unpaidCategories);
+    let title = 'Outstanding Clinical Charges';
+    let description = `Patient has an outstanding balance of TZS ${unpaidTotal.toLocaleString()}. Please ensure payment is collected at the Cashier Desk.`;
+
+    if (categoryList.length === 1) {
+        const cat = categoryList[0];
+        if (cat === 'Consultation') {
+            title = 'Consultation Fee Unpaid';
+            description = `Patient has an outstanding consultation balance of TZS ${unpaidTotal.toLocaleString()}. Please ensure payment is collected at the Cashier Desk.`;
+        } else if (cat === 'Lab') {
+            title = 'Unpaid Lab Investigation Fee';
+            description = `Patient has an outstanding balance of TZS ${unpaidTotal.toLocaleString()} for ordered laboratory tests. Please ensure payment is collected at the Cashier Desk before specimen processing.`;
+        } else if (cat === 'Pharmacy') {
+            title = 'Unpaid Pharmacy Dispense Fee';
+            description = `Patient has an outstanding balance of TZS ${unpaidTotal.toLocaleString()} for prescribed medications. Please ensure payment is collected at the Cashier Desk.`;
+        } else if (cat === 'Procedure') {
+            title = 'Unpaid Clinical Procedure Fee';
+            description = `Patient has an outstanding balance of TZS ${unpaidTotal.toLocaleString()} for scheduled procedures. Please ensure payment is collected at the Cashier Desk.`;
+        } else if (cat === 'Radiology') {
+            title = 'Unpaid Radiology / Imaging Fee';
+            description = `Patient has an outstanding balance of TZS ${unpaidTotal.toLocaleString()} for ordered imaging studies. Please ensure payment is collected at the Cashier Desk.`;
+        }
+    } else if (categoryList.length > 1) {
+        const readableCats = categoryList.map(c => {
+            if (c === 'Lab') return 'Lab Tests';
+            if (c === 'Pharmacy') return 'Pharmacy';
+            if (c === 'Procedure') return 'Procedures';
+            if (c === 'Consultation') return 'Consultation';
+            if (c === 'Radiology') return 'Imaging';
+            return c;
+        }).join(' & ');
+        title = `Unpaid Clinical Orders (${readableCats})`;
+        description = `Patient has an outstanding balance of TZS ${unpaidTotal.toLocaleString()} for ${readableCats}. Please ensure payment is collected at the Cashier Desk.`;
+    }
+
+    return {
+        type: 'unpaid',
+        label: `Unpaid TZS ${unpaidTotal.toLocaleString()}`,
+        title,
+        description,
+        isPaid: false,
+        amount: unpaidTotal,
+    };
+});
 </script>
 
 <template>
@@ -1167,8 +1291,26 @@ const patientAllergies = computed(() => activePatient.value?.allergies || []);
                                 </div>
                             </div>
 
-                            <!-- Right: Inline Allergy Alert Pill + Fast Vitals Summary Pill -->
+                            <!-- Right: Financial Status Pill + Allergy Alert + Fast Vitals -->
                             <div class="flex items-center gap-2 flex-shrink-0">
+
+                                <!-- Financial Payment Status Pill -->
+                                <div 
+                                    v-if="patientBillingStatus"
+                                    :class="[
+                                        patientBillingStatus.type === 'paid' ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200' :
+                                        patientBillingStatus.type === 'insured' ? 'bg-sky-50 dark:bg-sky-950/60 border-sky-300 dark:border-sky-800 text-sky-800 dark:text-sky-200' :
+                                        patientBillingStatus.type === 'unpaid' ? 'bg-amber-50 dark:bg-amber-950/60 border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-200 animate-pulse' :
+                                        'bg-muted/40 border-border/40 text-muted-foreground'
+                                    ]"
+                                    class="flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-[10px] font-bold"
+                                    :title="`Financial Status: ${patientBillingStatus.label}`"
+                                >
+                                    <CheckCircle2 v-if="patientBillingStatus.type === 'paid'" class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                                    <ShieldCheck v-else-if="patientBillingStatus.type === 'insured'" class="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 flex-shrink-0" />
+                                    <CreditCard v-else-if="patientBillingStatus.type === 'unpaid'" class="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                                    <span>{{ patientBillingStatus.label }}</span>
+                                </div>
                                 
                                 <!-- Documented Allergies Warning (Inline Chip) -->
                                 <div 
@@ -1196,82 +1338,103 @@ const patientAllergies = computed(() => activePatient.value?.allergies || []);
                             </div>
                         </div>
 
+                        <!-- Payment Alert Banner for Unpaid Clinical Orders / Invoices -->
+                        <div v-if="patientBillingStatus?.type === 'unpaid'" class="flex items-center justify-between px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs">
+                            <div class="flex items-center gap-2">
+                                <AlertTriangle class="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                                <span><strong>{{ patientBillingStatus.title }}:</strong> {{ patientBillingStatus.description }}</span>
+                            </div>
+                            <Link v-if="can.billing" :href="route('billing.desk')" class="flex-shrink-0">
+                                <button type="button" class="h-6 px-2.5 rounded text-[10px] bg-amber-600 hover:bg-amber-700 text-white font-semibold flex items-center gap-1 transition-colors">
+                                    <CreditCard class="w-3 h-3" />
+                                    <span>Cashier Desk</span>
+                                </button>
+                            </Link>
+                        </div>
+
                         <!-- Clinical Tabs Strip (Segmented Bar) -->
                         <div class="border-b border-border/60">
-                            <nav class="-mb-px flex space-x-4 overflow-x-auto scrollbar-none">
+                            <nav class="-mb-px flex space-x-3 overflow-x-auto scrollbar-none">
                                 <button
+                                    v-if="isPhysician || can.signNote || (activeEncounter?.notes || []).length > 0"
                                     @click="chartingTab = 'soap'"
                                     :class="chartingTab === 'soap' ? 'border-primary text-primary font-bold' : 'border-transparent text-muted-foreground hover:text-foreground'"
-                                    class="py-2 px-1 border-b-2 text-xs uppercase tracking-wider flex items-center space-x-1.5 transition-all whitespace-nowrap"
+                                    class="py-2 px-1.5 border-b-2 text-xs uppercase tracking-wider flex items-center space-x-1.5 transition-all whitespace-nowrap"
                                 >
                                     <FileText class="w-3.5 h-3.5" />
-                                    <span>SOAP Clinical Notes</span>
+                                    <span>SOAP Notes</span>
                                 </button>
 
                                 <button
+                                    v-if="can.recordVitals || isPhysician || isNursing || (activeEncounter?.vitals || []).length > 0"
                                     @click="chartingTab = 'vitals'"
                                     :class="chartingTab === 'vitals' ? 'border-primary text-primary font-bold' : 'border-transparent text-muted-foreground hover:text-foreground'"
-                                    class="py-2 px-1 border-b-2 text-xs uppercase tracking-wider flex items-center space-x-1.5 transition-all whitespace-nowrap"
+                                    class="py-2 px-1.5 border-b-2 text-xs uppercase tracking-wider flex items-center space-x-1.5 transition-all whitespace-nowrap"
                                 >
                                     <Activity class="w-3.5 h-3.5" />
-                                    <span>Vitals & Triage</span>
+                                    <span>Vitals</span>
                                     <span v-if="(activeEncounter?.vitals || []).length" class="px-1.5 py-0.2 rounded-full text-[9px] font-mono bg-muted text-muted-foreground">
                                         {{ activeEncounter.vitals.length }}
                                     </span>
                                 </button>
 
                                 <button
+                                    v-if="can.prescribe || (activeEncounter?.prescriptions || []).length > 0"
                                     @click="chartingTab = 'rx'"
                                     :class="chartingTab === 'rx' ? 'border-primary text-primary font-bold' : 'border-transparent text-muted-foreground hover:text-foreground'"
-                                    class="py-2 px-1 border-b-2 text-xs uppercase tracking-wider flex items-center space-x-1.5 transition-all whitespace-nowrap"
+                                    class="py-2 px-1.5 border-b-2 text-xs uppercase tracking-wider flex items-center space-x-1.5 transition-all whitespace-nowrap"
                                 >
                                     <Pill class="w-3.5 h-3.5" />
-                                    <span>E-Prescription Pad</span>
+                                    <span>Prescriptions</span>
                                     <span v-if="(activeEncounter?.prescriptions || []).length" class="px-1.5 py-0.2 rounded-full text-[9px] font-mono bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300">
                                         {{ activeEncounter.prescriptions.length }}
                                     </span>
                                 </button>
 
                                 <button
+                                    v-if="can.orderLabs || (activeEncounter?.lab_orders || []).length > 0"
                                     @click="chartingTab = 'labs'"
                                     :class="chartingTab === 'labs' ? 'border-primary text-primary font-bold' : 'border-transparent text-muted-foreground hover:text-foreground'"
-                                    class="py-2 px-1 border-b-2 text-xs uppercase tracking-wider flex items-center space-x-1.5 transition-all whitespace-nowrap"
+                                    class="py-2 px-1.5 border-b-2 text-xs uppercase tracking-wider flex items-center space-x-1.5 transition-all whitespace-nowrap"
                                 >
                                     <FlaskConical class="w-3.5 h-3.5" />
-                                    <span>Lab Investigations</span>
+                                    <span>Labs</span>
                                     <span v-if="(activeEncounter?.lab_orders || []).length" class="px-1.5 py-0.2 rounded-full text-[9px] font-mono bg-primary/10 text-primary">
                                         {{ (activeEncounter.lab_orders || []).reduce((acc, o) => acc + (o.items?.length || 0), 0) }}
                                     </span>
                                 </button>
 
                                 <button
+                                    v-if="can.orderProcedure || (activeEncounter?.procedure_orders || []).length > 0"
                                     @click="chartingTab = 'procedures'"
                                     :class="chartingTab === 'procedures' ? 'border-primary text-primary font-bold' : 'border-transparent text-muted-foreground hover:text-foreground'"
-                                    class="py-2 px-1 border-b-2 text-xs uppercase tracking-wider flex items-center space-x-1.5 transition-all whitespace-nowrap"
+                                    class="py-2 px-1.5 border-b-2 text-xs uppercase tracking-wider flex items-center space-x-1.5 transition-all whitespace-nowrap"
                                 >
                                     <Scissors class="w-3.5 h-3.5" />
-                                    <span>Procedures & Surgery</span>
+                                    <span>Procedures</span>
                                     <span v-if="(activeEncounter?.procedure_orders || []).length" class="px-1.5 py-0.2 rounded-full text-[9px] font-mono bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300">
                                         {{ activeEncounter.procedure_orders.length }}
                                     </span>
                                 </button>
 
                                 <button
+                                    v-if="can.orderImaging || (activeEncounter?.radiology_orders || []).length > 0"
                                     @click="chartingTab = 'imaging'"
                                     :class="chartingTab === 'imaging' ? 'border-primary text-primary font-bold' : 'border-transparent text-muted-foreground hover:text-foreground'"
-                                    class="py-2 px-1 border-b-2 text-xs uppercase tracking-wider flex items-center space-x-1.5 transition-all whitespace-nowrap"
+                                    class="py-2 px-1.5 border-b-2 text-xs uppercase tracking-wider flex items-center space-x-1.5 transition-all whitespace-nowrap"
                                 >
                                     <Film class="w-3.5 h-3.5" />
-                                    <span>Radiology & Imaging</span>
+                                    <span>Radiology</span>
                                     <span v-if="(activeEncounter?.radiology_orders || []).length" class="px-1.5 py-0.2 rounded-full text-[9px] font-mono bg-violet-100 text-violet-800 dark:bg-violet-950 dark:text-violet-300">
                                         {{ activeEncounter.radiology_orders.length }}
                                     </span>
                                 </button>
 
                                 <button
+                                    v-if="can.recordConsent || (activeEncounter?.consents || []).length > 0"
                                     @click="chartingTab = 'consents'"
                                     :class="chartingTab === 'consents' ? 'border-primary text-primary font-bold' : 'border-transparent text-muted-foreground hover:text-foreground'"
-                                    class="py-2 px-1 border-b-2 text-xs uppercase tracking-wider flex items-center space-x-1.5 transition-all whitespace-nowrap"
+                                    class="py-2 px-1.5 border-b-2 text-xs uppercase tracking-wider flex items-center space-x-1.5 transition-all whitespace-nowrap"
                                 >
                                     <FileSignature class="w-3.5 h-3.5" />
                                     <span>Consent</span>
@@ -1281,9 +1444,10 @@ const patientAllergies = computed(() => activePatient.value?.allergies || []);
                                 </button>
 
                                 <button
+                                    v-if="can.createReferral || (activeEncounter?.referrals || []).length > 0"
                                     @click="chartingTab = 'referrals'"
                                     :class="chartingTab === 'referrals' ? 'border-primary text-primary font-bold' : 'border-transparent text-muted-foreground hover:text-foreground'"
-                                    class="py-2 px-1 border-b-2 text-xs uppercase tracking-wider flex items-center space-x-1.5 transition-all whitespace-nowrap"
+                                    class="py-2 px-1.5 border-b-2 text-xs uppercase tracking-wider flex items-center space-x-1.5 transition-all whitespace-nowrap"
                                 >
                                     <ArrowUpRight class="w-3.5 h-3.5" />
                                     <span>Referrals</span>
@@ -1293,21 +1457,23 @@ const patientAllergies = computed(() => activePatient.value?.allergies || []);
                                 </button>
 
                                 <button
+                                    v-if="isNursing || (activeEncounter?.anc_encounters || []).length > 0 || (activeEncounter?.encounter_type || '').toLowerCase().includes('anc') || (activeEncounter?.encounter_type || '').toLowerCase().includes('matern')"
                                     @click="chartingTab = 'anc'"
                                     :class="chartingTab === 'anc' ? 'border-primary text-primary font-bold' : 'border-transparent text-muted-foreground hover:text-foreground'"
-                                    class="py-2 px-1 border-b-2 text-xs uppercase tracking-wider flex items-center space-x-1.5 transition-all whitespace-nowrap"
+                                    class="py-2 px-1.5 border-b-2 text-xs uppercase tracking-wider flex items-center space-x-1.5 transition-all whitespace-nowrap"
                                 >
                                     <Heart class="w-3.5 h-3.5 text-rose-500" />
-                                    <span>ANC / RCH</span>
+                                    <span>RCH / ANC</span>
                                     <span v-if="(activeEncounter?.anc_encounters || []).length" class="px-1.5 py-0.2 rounded-full text-[9px] font-mono bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300">
                                         {{ activeEncounter.anc_encounters.length }}
                                     </span>
                                 </button>
 
                                 <button
+                                    v-if="isNursing || (activeEncounter?.partograph_entries || []).length > 0 || (activeEncounter?.encounter_type || '').toLowerCase().includes('labor') || (activeEncounter?.encounter_type || '').toLowerCase().includes('deliver')"
                                     @click="chartingTab = 'partograph'"
                                     :class="chartingTab === 'partograph' ? 'border-primary text-primary font-bold' : 'border-transparent text-muted-foreground hover:text-foreground'"
-                                    class="py-2 px-1 border-b-2 text-xs uppercase tracking-wider flex items-center space-x-1.5 transition-all whitespace-nowrap"
+                                    class="py-2 px-1.5 border-b-2 text-xs uppercase tracking-wider flex items-center space-x-1.5 transition-all whitespace-nowrap"
                                 >
                                     <Activity class="w-3.5 h-3.5 text-amber-500" />
                                     <span>Partograph</span>
@@ -1317,12 +1483,13 @@ const patientAllergies = computed(() => activePatient.value?.allergies || []);
                                 </button>
 
                                 <button
+                                    v-if="isNursing || (activeEncounter?.immunizations || []).length > 0 || (activeEncounter?.encounter_type || '').toLowerCase().includes('immun') || (activeEncounter?.encounter_type || '').toLowerCase().includes('vaccin')"
                                     @click="chartingTab = 'immunizations'"
                                     :class="chartingTab === 'immunizations' ? 'border-primary text-primary font-bold' : 'border-transparent text-muted-foreground hover:text-foreground'"
-                                    class="py-2 px-1 border-b-2 text-xs uppercase tracking-wider flex items-center space-x-1.5 transition-all whitespace-nowrap"
+                                    class="py-2 px-1.5 border-b-2 text-xs uppercase tracking-wider flex items-center space-x-1.5 transition-all whitespace-nowrap"
                                 >
                                     <Syringe class="w-3.5 h-3.5 text-emerald-500" />
-                                    <span>EPI Vaccines</span>
+                                    <span>Vaccines</span>
                                     <span v-if="(activeEncounter?.immunizations || []).length" class="px-1.5 py-0.2 rounded-full text-[9px] font-mono bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
                                         {{ activeEncounter.immunizations.length }}
                                     </span>
@@ -1335,6 +1502,7 @@ const patientAllergies = computed(() => activePatient.value?.allergies || []);
                             <SOAPNote
                                 :encounter-id="activeEncounter?.id || 'demo'"
                                 :existing-notes="activeEncounter?.notes || []"
+                                :existing-diagnoses="activeEncounter?.diagnoses || []"
                                 :can="can"
                             />
                         </div>
@@ -1417,8 +1585,11 @@ const patientAllergies = computed(() => activePatient.value?.allergies || []);
                                         </div>
                                     </div>
                                     <div class="flex items-center gap-3">
+                                        <span class="font-mono text-[11px] font-bold text-foreground">
+                                            TZS {{ Number(pOrder.catalog?.standard_price || 0).toLocaleString() }}
+                                        </span>
                                         <AfyaStatusBadge :status="pOrder.status" dot />
-                                        <Link :href="route('procedures.workspace')" class="text-[10px] font-semibold text-primary hover:underline flex items-center gap-0.5">
+                                        <Link v-if="can.orderProcedure || $page.props.auth.permissions?.includes('procedure.order.view')" :href="route('procedures.workspace')" class="text-[10px] font-semibold text-primary hover:underline flex items-center gap-0.5">
                                             <span>Treatment Desk</span>
                                             <ArrowUpRight class="w-3 h-3" />
                                         </Link>
@@ -1811,7 +1982,7 @@ const patientAllergies = computed(() => activePatient.value?.allergies || []);
         />
 
         <!-- Doctor Consultation Procedure Order Modal -->
-        <Modal :show="showClinicalProcModal" max-width="md" @close="showClinicalProcModal = false">
+        <Modal :show="showClinicalProcModal" max-width="lg" @close="showClinicalProcModal = false">
             <div class="p-5 space-y-3.5">
                 <div class="flex items-center justify-between border-b border-border pb-3">
                     <div class="flex items-center gap-2">

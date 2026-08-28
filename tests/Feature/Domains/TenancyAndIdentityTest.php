@@ -1,6 +1,5 @@
 <?php
 
-use App\Core\Context\TenantContext;
 use App\Domains\Audit\Models\AuditLog;
 use App\Domains\Identity\Models\Permission;
 use App\Domains\Identity\Models\Role;
@@ -24,10 +23,8 @@ test('multi-tenant global scope isolates tenant records', function () {
         'status' => 'active',
     ]);
 
-    $context = app(TenantContext::class);
-
     // Act as Tenant A
-    $context->setTenantId($tenantA->id);
+    setTestTenantContext($tenantA->id);
     $facilityA = Facility::create([
         'name' => 'Alpha Emergency',
         'code' => 'ALPHA-ER',
@@ -35,7 +32,7 @@ test('multi-tenant global scope isolates tenant records', function () {
     ]);
 
     // Act as Tenant B
-    $context->setTenantId($tenantB->id);
+    setTestTenantContext($tenantB->id);
     $facilityB = Facility::create([
         'name' => 'Beta Surgery',
         'code' => 'BETA-SURG',
@@ -48,7 +45,7 @@ test('multi-tenant global scope isolates tenant records', function () {
         ->and($facilities->first()->id)->toBe($facilityB->id);
 
     // Switching back to Tenant A should ONLY return Alpha
-    $context->setTenantId($tenantA->id);
+    setTestTenantContext($tenantA->id);
     $facilitiesA = Facility::all();
     expect($facilitiesA)->toHaveCount(1)
         ->and($facilitiesA->first()->id)->toBe($facilityA->id);

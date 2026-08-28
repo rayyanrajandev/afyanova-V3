@@ -20,6 +20,12 @@ import {
     Pill,
     HeartPulse,
     ShieldAlert,
+    ShieldCheck,
+    Ticket,
+    CheckCircle2,
+    Sparkles,
+    ConciergeBell,
+    GitMerge,
 } from '@lucide/vue';
 import AfyaShell from '@/Layouts/AfyaShell.vue';
 import AfyaWorkspace from '@/Components/Workspace/AfyaWorkspace.vue';
@@ -45,23 +51,70 @@ import AfyaStatusBadge from '@/Components/Afya/AfyaStatusBadge.vue';
 import AfyaPatientIdentity from '@/Components/Afya/AfyaPatientIdentity.vue';
 import AfyaFilterBar from '@/Components/Afya/AfyaFilterBar.vue';
 import AfyaClinicalAlert from '@/Components/Afya/AfyaClinicalAlert.vue';
+import AfyaCheckInModal from '@/Components/Afya/AfyaCheckInModal.vue';
 import BreakGlassModal from '@/Components/Clinical/BreakGlassModal.vue';
+import PatientMergeModal from '@/Components/Patient/PatientMergeModal.vue';
 
 const props = defineProps({
+    can: {
+        type: Object,
+        default: () => ({}),
+    },
     patients: {
         type: Array,
         default: () => [],
     },
+    metrics: {
+        type: Object,
+        default: () => ({ lobby_waiting: 0, today_appointments: 0, total_patients: 0 }),
+    },
     filters: {
         type: Object,
         default: () => ({ search: '' }),
+    },
+    selectedId: {
+        type: String,
+        default: null,
+    },
+    labTests: {
+        type: Array,
+        default: () => [],
+    },
+    procedureCatalogs: {
+        type: Array,
+        default: () => [],
+    },
+    activeTickets: {
+        type: Array,
+        default: () => [],
     },
 });
 
 const search = ref(props.filters.search || '');
 const selectedPatient = ref(props.patients?.[0] || null);
 const showBreakGlassModal = ref(false);
+const showCheckInModal = ref(false);
+const showMergeModal = ref(false);
+
 const { openContext } = useWorkspacePreferences();
+
+const openCheckInModal = (patient) => {
+    selectedPatient.value = patient;
+    showCheckInModal.value = true;
+};
+
+onMounted(() => {
+    if (props.selectedId) {
+        const found = props.patients.find(p => p.id === props.selectedId);
+        if (found) {
+            selectPatient(found);
+            return;
+        }
+    }
+    if (props.patients?.length > 0) {
+        selectPatient(props.patients[0]);
+    }
+});
 
 // Derived records for the selected patient inspector
 const encounters = computed(() => selectedPatient.value?.encounters || []);
@@ -141,12 +194,12 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
 </script>
 
 <template>
-    <Head title="Master Patient Index — AfyaNova Workstation" />
+    <Head title="Patient Registry — AfyaNova Workstation" />
 
     <AfyaShell active-module="patients">
         <AfyaWorkspace :show-sidebar="true" :show-context="true">
 
-            <!-- 1. LEFT SIDEBAR: Standard Hospital Inflow Navigation -->
+            <!-- 1. LEFT SIDEBAR: Standard Hospital Registry Navigation -->
             <template #sidebar="{ state, width, cycle, setState }">
                 <AfyaSidebar
                     title="Patient Registry"
@@ -157,57 +210,61 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                     @set-state="setState"
                 >
                     <div v-if="state !== 'collapsed'" class="px-2 py-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                        Patient Inflow
+                        Patient Directory
                     </div>
+
                     <AfyaSidebarItem
-                        label="Master Patient Index"
-                        :icon="SearchIcon"
-                        :badge="patients.length"
-                        :active="true"
+                        label="Front Desk"
+                        :icon="ConciergeBell"
                         :collapsed="state === 'collapsed'"
+                        :href="route('dashboard')"
                     />
                     <AfyaSidebarItem
+                        label="Patient Registry"
+                        :icon="Users"
+                        :badge="metrics?.total_patients || patients.length"
+                        :active="true"
+                        :collapsed="state === 'collapsed'"
+                        :href="route('patients.index')"
+                    />
+                    <AfyaSidebarItem
+                        v-if="can.registerPatient"
                         label="Register New Patient"
                         :icon="UserPlus"
                         :collapsed="state === 'collapsed'"
                         :href="route('patients.create')"
                     />
                     <AfyaSidebarItem
+                        v-if="can.queue"
                         label="Live Queue & Triage"
                         :icon="Clock"
+                        :badge="metrics?.lobby_waiting || null"
                         :collapsed="state === 'collapsed'"
                         :href="route('queue.index')"
                     />
-
-                    <div v-if="state !== 'collapsed'" class="pt-3 px-2 py-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider border-t border-border mt-2">
-                        Clinical & Visits
-                    </div>
                     <AfyaSidebarItem
-                        label="Clinical Workstation"
-                        :icon="Stethoscope"
+                        v-if="can.appointments"
+                        label="Appointments Calendar"
+                        :icon="Calendar"
+                        :badge="metrics?.today_appointments || null"
                         :collapsed="state === 'collapsed'"
-                        :href="route('workspace.clinical')"
-                    />
-                    <AfyaSidebarItem
-                        label="Cashier & Billing POS"
-                        :icon="Receipt"
-                        :collapsed="state === 'collapsed'"
-                        :href="route('billing.desk')"
+                        :href="route('appointments.index')"
                     />
                 </AfyaSidebar>
             </template>
 
-            <!-- 2. CENTER MAIN: Master Patient Search Directory Table -->
+            <!-- 2. CENTER MAIN: Patient Registry Directory Table -->
             <template #default>
                 <AfyaWorkspaceMain
                     :breadcrumbs="[
-                        { label: 'Patient Registry', href: route('patients.index') },
-                        { label: 'Master Index', active: true }
+                        { label: 'Front Desk', href: route('dashboard') },
+                        { label: 'Patient Registry', active: true }
                     ]"
                 >
                     <template #actions>
                         <div class="flex items-center gap-2">
                             <Button
+                                v-if="can.breakGlass"
                                 variant="outline"
                                 size="sm"
                                 class="gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/10"
@@ -216,7 +273,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                                 <ShieldAlert class="w-3.5 h-3.5 text-destructive" />
                                 <span>Emergency Override</span>
                             </Button>
-                            <Link :href="route('patients.create')">
+                            <Link v-if="can.registerPatient" :href="route('patients.create')">
                                 <Button variant="default" size="sm" class="gap-1.5">
                                     <Plus class="w-3.5 h-3.5" />
                                     <span>Register Patient</span>
@@ -230,7 +287,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                         <div class="w-full">
                             <AfyaFilterBar
                                 v-model="search"
-                                placeholder="Search by MRN, Full Name, Phone (+255...), or National ID (NIDA)..."
+                                placeholder="Filter or search records (Name, MRN, Phone, NIN)..."
                                 autofocus
                             />
                         </div>
@@ -279,14 +336,25 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                                             <AfyaStatusBadge :status="patient.status || 'Active'" dot />
                                         </TableCell>
                                         <TableCell class="text-right">
-                                            <Link
-                                                :href="route('patients.show', patient.id)"
-                                                class="inline-flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline"
-                                                @click.stop
-                                            >
-                                                <span>360</span>
-                                                <ArrowRight class="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
-                                            </Link>
+                                            <div class="flex items-center justify-end gap-1.5" @click.stop>
+                                                <Button
+                                                    v-if="can.queue"
+                                                    variant="default"
+                                                    size="sm"
+                                                    class="h-6 px-2 text-[10.5px] font-semibold gap-1 bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs"
+                                                    @click="openCheckInModal(patient)"
+                                                >
+                                                    <Ticket class="w-3 h-3" />
+                                                    <span>Check-In</span>
+                                                </Button>
+                                                <Link
+                                                    :href="route('patients.show', patient.id)"
+                                                    class="inline-flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline px-1.5 py-0.5 rounded hover:bg-muted/40"
+                                                >
+                                                    <span>360</span>
+                                                    <ArrowRight class="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+                                                </Link>
+                                            </div>
                                         </TableCell>
                                     </TableRow>
 
@@ -298,7 +366,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                                             </div>
                                             <div v-else class="space-y-1.5">
                                                 <p class="font-semibold text-foreground">No patient records found.</p>
-                                                <p class="text-xs">
+                                                <p v-if="can.registerPatient" class="text-xs">
                                                     <Link :href="route('patients.create')" class="text-primary underline underline-offset-2">Register a new patient</Link>
                                                     to begin.
                                                 </p>
@@ -364,7 +432,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                                     TZS {{ formatCurrency(totalOutstanding) }}
                                 </div>
                             </div>
-                            <Link :href="route('billing.desk')">
+                            <Link v-if="can.billing" :href="route('billing.desk')">
                                 <Button variant="outline" size="sm" class="h-5 px-1.5 text-[9px] gap-1">
                                     <Receipt class="w-2.5 h-2.5" />
                                     <span>Cashier</span>
@@ -384,20 +452,78 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                             </div>
                         </div>
 
-                        <!-- Action Launchpad -->
-                        <div class="space-y-1 pt-1 border-t border-border">
+                        <!-- Reception Fast-Track Launchpad (What's Next?) -->
+                        <div class="space-y-2 pt-2 border-t border-border">
+                            <div class="text-[10px] font-bold text-foreground uppercase tracking-wider flex items-center justify-between">
+                                <span class="flex items-center gap-1 text-primary">
+                                    <Sparkles class="w-3 h-3 text-amber-500" />
+                                    Reception Action Launchpad
+                                </span>
+                                <span class="text-[9px] font-mono text-muted-foreground">Next Step</span>
+                            </div>
+
+                            <!-- 1. Check-In / Route to Queue -->
+                            <Button
+                                v-if="can.queue"
+                                variant="default"
+                                size="sm"
+                                class="w-full justify-between gap-1 text-xs h-8 bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs"
+                                @click="openCheckInModal(selectedPatient)"
+                            >
+                                <div class="flex items-center gap-1.5">
+                                    <Ticket class="w-3.5 h-3.5" />
+                                    <span class="font-bold">Check-In & Route to Queue</span>
+                                </div>
+                                <span class="text-[9.5px] font-normal opacity-90">1-Click</span>
+                            </Button>
+
+                            <!-- 2. Attach Insurance Policy -->
                             <Link :href="route('patients.show', selectedPatient.id)" class="block">
-                                <Button variant="default" size="sm" class="w-full justify-center gap-1 text-xs h-7">
-                                    <span>Open Patient 360</span>
+                                <Button variant="outline" size="sm" class="w-full justify-between gap-1 text-xs h-7.5 border-border/80 hover:bg-muted/40">
+                                    <div class="flex items-center gap-1.5">
+                                        <ShieldCheck class="w-3.5 h-3.5 text-sky-600" />
+                                        <span>Add Insurance / NHIF Policy</span>
+                                    </div>
+                                    <ArrowRight class="w-3 h-3 text-muted-foreground" />
+                                </Button>
+                            </Link>
+
+                            <!-- 3. Open Comprehensive Patient 360 -->
+                            <Link :href="route('patients.show', selectedPatient.id)" class="block">
+                                <Button variant="ghost" size="sm" class="w-full justify-between gap-1 text-xs h-7.5 border border-dashed border-border/70 hover:bg-muted/30">
+                                    <div class="flex items-center gap-1.5">
+                                        <Users class="w-3.5 h-3.5 text-primary" />
+                                        <span class="font-semibold text-foreground">Open Full Patient 360 Record</span>
+                                    </div>
+                                    <ArrowRight class="w-3 h-3 text-muted-foreground" />
+                                </Button>
+                            </Link>
+
+                            <!-- 4. Resume Consultation if active encounter exists -->
+                            <Link v-if="can.clinical && encounters[0]" :href="route('encounters.workspace', encounters[0].id)" class="block">
+                                <Button variant="outline" size="sm" class="w-full justify-between gap-1 text-xs h-7.5 text-primary border-primary/30">
+                                    <div class="flex items-center gap-1.5">
+                                        <Stethoscope class="w-3.5 h-3.5" />
+                                        <span>Resume Open Consultation</span>
+                                    </div>
                                     <ArrowRight class="w-3 h-3" />
                                 </Button>
                             </Link>
-                            <Link :href="route('encounters.workspace', encounters[0]?.id || 'demo')" class="block">
-                                <Button variant="outline" size="sm" class="w-full justify-center gap-1 text-xs h-7">
-                                    <Stethoscope class="w-3 h-3" />
-                                    <span>Start Consultation</span>
-                                </Button>
-                            </Link>
+
+                            <!-- 5. Merge Duplicate Record -->
+                            <Button
+                                v-if="can.mergePatient"
+                                variant="outline"
+                                size="sm"
+                                class="w-full justify-between gap-1 text-xs h-7.5 text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-700/60 hover:bg-amber-50 dark:hover:bg-amber-950/30"
+                                @click="showMergeModal = true"
+                            >
+                                <div class="flex items-center gap-1.5">
+                                    <GitMerge class="w-3.5 h-3.5" />
+                                    <span>Merge Duplicate Record</span>
+                                </div>
+                                <ArrowRight class="w-3 h-3 text-muted-foreground" />
+                            </Button>
                         </div>
                     </div>
 
@@ -423,6 +549,22 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
             :patient-id="selectedPatient?.id || ''"
             :patient-name="selectedPatient ? `${selectedPatient.first_name} ${selectedPatient.last_name}` : ''"
             @close="showBreakGlassModal = false"
+        />
+
+        <AfyaCheckInModal
+            :show="showCheckInModal"
+            :patient="selectedPatient"
+            :lab-tests="labTests"
+            :procedure-catalogs="procedureCatalogs"
+            :active-tickets="activeTickets"
+            @close="showCheckInModal = false"
+        />
+
+        <PatientMergeModal
+            :show="showMergeModal"
+            :primary-patient="selectedPatient"
+            :available-patients="patients?.data || patients || []"
+            @close="showMergeModal = false"
         />
     </AfyaShell>
 </template>

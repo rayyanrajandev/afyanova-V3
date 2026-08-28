@@ -1,6 +1,5 @@
 <?php
 
-use App\Core\Context\TenantContext;
 use App\Domains\Identity\Models\User;
 use App\Domains\Inventory\Actions\ConfirmStockTransferAction;
 use App\Domains\Inventory\Actions\CreatePurchaseOrderAction;
@@ -27,7 +26,7 @@ beforeEach(function () {
         'domain' => 'afya.local',
         'status' => 'Active',
     ]);
-    app(TenantContext::class)->setTenantId($this->tenant->id);
+    setTestTenantContext($this->tenant->id);
 
     $this->facility = Facility::create([
         'tenant_id' => $this->tenant->id,

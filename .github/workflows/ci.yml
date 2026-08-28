@@ -54,12 +54,32 @@ jobs:
       - name: Build
         run: npm run build
 
+      # POSTGRES_USER (root) is created as a Postgres SUPERUSER by the
+      # official postgres image — a superuser (like a BYPASSRLS role,
+      # tests/Feature/DatabasePostureTest.php's other check) bypasses row-
+      # level security entirely, on every table, regardless of FORCE ROW
+      # LEVEL SECURITY. Running the suite as root would make every RLS
+      # policy in every migration a no-op for the whole test run, so tests
+      # here would never actually exercise the isolation the app depends
+      # on in production. This provisions a role shaped like the real
+      # application's own (NOSUPERUSER NOBYPASSRLS), owning the test
+      # database so migrations can still create/alter everything they
+      # need, and the Execute Tests step below connects as it instead.
+      - name: Provision non-privileged application role
+        env:
+          PGPASSWORD: password
+        run: |
+          psql -h 127.0.0.1 -U root -d afyanova_test -c "CREATE ROLE afyanova_ci LOGIN PASSWORD 'password' NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE;"
+          psql -h 127.0.0.1 -U root -d afyanova_test -c "ALTER DATABASE afyanova_test OWNER TO afyanova_ci;"
+          psql -h 127.0.0.1 -U root -d afyanova_test -c "ALTER SCHEMA public OWNER TO afyanova_ci;"
+          psql -h 127.0.0.1 -U root -d afyanova_test -c "GRANT ALL ON SCHEMA public TO afyanova_ci;"
+
       - name: Execute Tests (Pest PHP)
         env:
           DB_CONNECTION: pgsql
           DB_HOST: 127.0.0.1
           DB_PORT: 5432
           DB_DATABASE: afyanova_test
-          DB_USERNAME: root
+          DB_USERNAME: afyanova_ci
           DB_PASSWORD: password
         run: ./vendor/bin/pest --coverage --min=85

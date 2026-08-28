@@ -81,12 +81,25 @@ class ReportsWorkspaceController extends Controller
             'total_stock_value_tzs' => $can['pharmaco'] ? $pharmaco['valuation']['total_cost_value_tzs'] : null,
         ];
 
+        $can['mtuha'] = $can['morbidity'] || $authService->hasPermission($request->user(), 'reports.clinical.view');
+
+        $tenantId = $request->user()->tenant_id;
+        $mtuhaService = app(\App\Domains\Reports\Services\MtuhaReportingService::class);
+        $mtuhaBook1 = $can['mtuha'] ? $mtuhaService->generateBook1OpdReport($tenantId, $startDate, $endDate) : null;
+        $mtuhaBook2 = $can['mtuha'] ? $mtuhaService->generateBook2IpdReport($tenantId, $startDate, $endDate) : null;
+        $mtuhaBook5 = $can['mtuha'] ? $mtuhaService->generateBook5LabPharmacyReport($tenantId, $startDate, $endDate) : null;
+
         return Inertia::render('Workspace/ReportsWorkspace', [
             'can' => $can,
             'morbidity' => $morbidity,
             'financial' => $financial,
             'pharmaco' => $pharmaco,
             'operational' => $operational,
+            'mtuha' => [
+                'book1' => $mtuhaBook1,
+                'book2' => $mtuhaBook2,
+                'book5' => $mtuhaBook5,
+            ],
             'metrics' => $metrics,
             'filters' => [
                 'preset' => $preset,
@@ -94,5 +107,71 @@ class ReportsWorkspaceController extends Controller
                 'end_date' => $endDate,
             ],
         ]);
+    }
+
+    public function exportMtuha(Request $request, \App\Domains\Reports\Services\MtuhaReportingService $mtuhaService)
+    {
+        $tenantId = $request->user()->tenant_id;
+        $startDate = $request->query('start_date');
+        $endDate = $request->query('end_date');
+        $format = $request->query('format', 'dhis2'); // 'dhis2', 'json', or 'csv'
+
+        $book1 = $mtuhaService->generateBook1OpdReport($tenantId, $startDate, $endDate);
+        $book2 = $mtuhaService->generateBook2IpdReport($tenantId, $startDate, $endDate);
+        $book5 = $mtuhaService->generateBook5LabPharmacyReport($tenantId, $startDate, $endDate);
+
+        $periodMonth = Carbon::parse($startDate ?: now())->format('Ym');
+        $orgUnit = $request->user()->facility_id ?? 'TZ_MOH_FACILITY_001';
+
+        if ($format === 'dhis2') {
+            $dhis2Payload = $mtuhaService->formatForDhis2($book1, $book2, $book5, $orgUnit, $periodMonth);
+            return response()->json($dhis2Payload)
+                ->header('Content-Disposition', "attachment; filename=\"mtuha_dhis2_payload_{$periodMonth}.json\"");
+        }
+
+        if ($format === 'json') {
+            return response()->json([
+                'facility' => $orgUnit,
+                'period' => $periodMonth,
+                'book1_opd' => $book1,
+                'book2_ipd' => $book2,
+                'book5_lab_pharm' => $book5,
+            ]);
+        }
+
+        // CSV Tabular format
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => "attachment; filename=\"mtuha_summary_report_{$periodMonth}.csv\"",
+        ];
+
+        $callback = function () use ($book1, $book2, $book5) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, ['MoH Tanzania - MTUHA National Health Statistics Summary Export']);
+            fputcsv($file, ['Indicator', 'Sub-Indicator', 'Value']);
+            
+            // OPD
+            fputcsv($file, ['Book 1 OPD', 'Total Outpatient Attendances', $book1['summary']['total_opd_attendances']]);
+            fputcsv($file, ['Book 1 OPD', 'Under 5 Male', $book1['summary']['under_five_male']]);
+            fputcsv($file, ['Book 1 OPD', 'Under 5 Female', $book1['summary']['under_five_female']]);
+            fputcsv($file, ['Book 1 OPD', 'Over 5 Male', $book1['summary']['over_five_male']]);
+            fputcsv($file, ['Book 1 OPD', 'Over 5 Female', $book1['summary']['over_five_female']]);
+            
+            // IPD
+            fputcsv($file, ['Book 2 IPD', 'Total Inpatient Admissions', $book2['summary']['total_admissions']]);
+            fputcsv($file, ['Book 2 IPD', 'Total Discharges', $book2['summary']['total_discharges']]);
+            fputcsv($file, ['Book 2 IPD', 'Total Deaths', $book2['summary']['total_deaths']]);
+            fputcsv($file, ['Book 2 IPD', 'Bed Occupancy Rate (%)', $book2['summary']['bed_occupancy_rate_pct']]);
+            fputcsv($file, ['Book 2 IPD', 'Average Length of Stay (Days)', $book2['summary']['average_length_of_stay_days']]);
+
+            // Lab / Pharmacy
+            fputcsv($file, ['Book 5 Lab/Logistics', 'Malaria Tests Done', $book5['laboratory']['malaria_tests_performed']]);
+            fputcsv($file, ['Book 5 Lab/Logistics', 'Malaria Positive Cases', $book5['laboratory']['malaria_positive_cases']]);
+            fputcsv($file, ['Book 5 Lab/Logistics', 'Stockout Rate (%)', $book5['pharmacy_tracer_medicines']['stockout_rate_pct']]);
+            
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 }

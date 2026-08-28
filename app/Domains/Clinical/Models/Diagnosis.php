@@ -65,6 +65,8 @@ class Diagnosis extends Model
 
     const AUDIT_CATEGORY = 'CLINICAL';
 
+    const AUDIT_REDACT = ['description', 'icd_10_code', 'notes', 'amendment_reason'];
+
     protected $guarded = ['id'];
 
     protected $casts = [

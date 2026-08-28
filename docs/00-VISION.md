@@ -2,7 +2,17 @@
 
 ## 1. Executive Summary
 
-**AfyaNova V3** is a next-generation Hospital Information System (HIS / EHR / ERP) engineered specifically for private and faith-based healthcare facilities in Tanzania, with an architectural foundation designed for seamless pan-African expansion. 
+**AfyaNova V3** is a next-generation Hospital Information System (HIS / EHR / ERP) engineered specifically for **private, faith-based, and commercial healthcare facilities** in Tanzania and across East Africa (ranging from high-volume private polyclinics and diagnostic centers to premier multi-specialty tertiary private hospitals).
+
+Unlike understaffed public outposts, **AfyaNova's target private facilities operate with fully staffed, specialized departmental teams**:
+- Dedicated Front Desk Receptionists & Cashiers
+- Triage Nurses & Inpatient Ward Nursing Staff
+- Medical Laboratory Scientists, Technicians & Phlebotomists
+- Licensed Pharmacists & Pharmacy Dispensing Technicians
+- Resident Medical Officers & Visiting Specialist / Super-Specialist Consultants
+- Insurance Claims Officers, Credit Controllers & Billing Managers
+- Perioperative Theatre Teams, Surgeons & Anaesthetists
+- Hospital Administrators & Directors
 
 Built as a **Modular Monolith** using **Laravel (PHP 8.5+), PostgreSQL 18+, Redis, Vue 3, Inertia.js, and Tailwind CSS / shadcn-vue**, AfyaNova V3 delivers modern clinical, financial, administrative, and inventory capabilities without the operational overhead of microservices.
 

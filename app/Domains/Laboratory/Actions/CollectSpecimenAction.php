@@ -5,6 +5,7 @@ namespace App\Domains\Laboratory\Actions;
 use App\Core\Context\FacilityContext;
 use App\Core\Context\TenantContext;
 use App\Domains\Clinical\Models\LabOrderItem;
+use App\Domains\Inventory\Models\InventoryStockBalance;
 use App\Domains\Laboratory\Models\LabSpecimen;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -64,7 +65,21 @@ class CollectSpecimenAction
                 ]);
             }
 
-            return $item->fresh(['labTest', 'labOrder.patient', 'performedBy']);
+            // Real-time Inventory Consumable Depletion: Deduct 1 unit from bench stock balance
+            $inventoryItemId = $item->labTest?->inventory_item_id;
+            if ($inventoryItemId) {
+                $stockBalance = InventoryStockBalance::where('facility_id', $facilityId)
+                    ->where('medication_id', $inventoryItemId)
+                    ->where('quantity_on_hand', '>', 0)
+                    ->orderBy('quantity_on_hand', 'desc')
+                    ->first();
+
+                if ($stockBalance) {
+                    $stockBalance->decrement('quantity_on_hand', 1);
+                }
+            }
+
+            return $item->fresh(['labTest.inventoryItem', 'labOrder.patient', 'performedBy']);
         });
     }
 }

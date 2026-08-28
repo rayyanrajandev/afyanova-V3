@@ -63,6 +63,8 @@ class ClinicalNote extends Model
 
     const AUDIT_CATEGORY = 'CLINICAL';
 
+    const AUDIT_REDACT = ['content', 'amendment_reason'];
+
     protected $guarded = ['id'];
 
     protected $casts = [

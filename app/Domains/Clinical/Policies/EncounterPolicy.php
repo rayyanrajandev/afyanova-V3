@@ -81,4 +81,9 @@ class EncounterPolicy
     {
         return $this->auth->hasPermission($user, 'clinical.notes.create', $encounter->facility_id);
     }
+
+    public function recordDiagnosis(User $user, Encounter $encounter): bool
+    {
+        return $this->auth->hasPermission($user, 'clinical.diagnosis.manage', $encounter->facility_id);
+    }
 }

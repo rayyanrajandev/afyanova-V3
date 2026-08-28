@@ -1,60 +1,46 @@
 <script setup>
-import { ref, computed } from 'vue';
-import { Head, Link, usePage } from '@inertiajs/vue3';
-import { 
-    LayoutDashboard, 
-    Stethoscope, 
-    Clock, 
-    Receipt, 
-    Pill, 
-    Users, 
-    Activity, 
-    ArrowRight, 
-    ArrowUpRight, 
-    Plus, 
-    Calendar, 
-    Wallet,
-    X,
-    PhoneCall,
-    CheckCircle2,
-    CalendarCheck
-} from '@lucide/vue';
+import { ref } from 'vue';
+import { Head, Link, router } from '@inertiajs/vue3';
 import AfyaShell from '@/Layouts/AfyaShell.vue';
 import AfyaWorkspace from '@/Components/Workspace/AfyaWorkspace.vue';
 import AfyaSidebar from '@/Components/Workspace/AfyaSidebar.vue';
 import AfyaSidebarItem from '@/Components/Workspace/AfyaSidebarItem.vue';
 import AfyaWorkspaceMain from '@/Components/Workspace/AfyaWorkspaceMain.vue';
 import AfyaContextPanel from '@/Components/Workspace/AfyaContextPanel.vue';
-
-// Design Foundation Primitives
+import AfyaStatusBadge from '@/Components/Afya/AfyaStatusBadge.vue';
+import AfyaPatientIdentity from '@/Components/Afya/AfyaPatientIdentity.vue';
+import AfyaCheckInModal from '@/Components/Afya/AfyaCheckInModal.vue';
+import { useWorkspacePreferences } from '@/Composables/useWorkspacePreferences';
 import Button from '@/Components/ui/Button.vue';
 import Table from '@/Components/ui/Table.vue';
 import TableHeader from '@/Components/ui/TableHeader.vue';
+import TableRow from '@/Components/ui/TableRow.vue';
 import TableHead from '@/Components/ui/TableHead.vue';
 import TableBody from '@/Components/ui/TableBody.vue';
-import TableRow from '@/Components/ui/TableRow.vue';
 import TableCell from '@/Components/ui/TableCell.vue';
-import AfyaStatusBadge from '@/Components/Afya/AfyaStatusBadge.vue';
-import AfyaPatientIdentity from '@/Components/Afya/AfyaPatientIdentity.vue';
+import {
+    Users,
+    Calendar,
+    CalendarCheck,
+    Clock,
+    UserPlus,
+    Ticket,
+    CheckCircle2,
+    ArrowRight,
+    Stethoscope,
+    FlaskConical,
+    Pill,
+    Receipt,
+    Syringe,
+    Sparkles,
+    ShieldCheck,
+    LayoutDashboard,
+    ConciergeBell,
+    Layers,
+} from '@lucide/vue';
 
 const props = defineProps({
-    can: {
-        type: Object,
-        default: () => ({}),
-    },
-    metrics: {
-        type: Object,
-        default: () => ({
-            total_patients: 0,
-            active_encounters: 0,
-            today_appointments: 0,
-            queue_waiting: 0,
-            pending_pharmacy: 0,
-            unpaid_invoices: 0,
-            today_revenue: 0,
-        }),
-    },
-    recentEncounters: {
+    todayAppointments: {
         type: Array,
         default: () => [],
     },
@@ -62,7 +48,7 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
-    recentInvoices: {
+    recentEncounters: {
         type: Array,
         default: () => [],
     },
@@ -70,202 +56,205 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
-    todayAppointments: {
+    labTests: {
         type: Array,
         default: () => [],
     },
-    pendingPrescriptions: {
+    procedureCatalogs: {
         type: Array,
         default: () => [],
+    },
+    activeQueueTickets: {
+        type: Array,
+        default: () => [],
+    },
+    metrics: {
+        type: Object,
+        default: () => ({
+            today_registered: 0,
+            total_patients: 0,
+            today_appointments: 0,
+            checked_in_appointments: 0,
+            lobby_waiting: 0,
+            today_revenue: 0,
+            unpaid_invoices: 0,
+            point_counts: {},
+        }),
+    },
+    can: {
+        type: Object,
+        default: () => ({}),
     },
 });
 
-import { useWorkspacePreferences } from '@/Composables/useWorkspacePreferences';
+const { openContext } = useWorkspacePreferences();
 
-const { preferences, openContext } = useWorkspacePreferences();
-
-const page = usePage();
-const user = computed(() => page.props.auth.user);
-const activeTab = ref('all'); // 'all' | 'clinical' | 'queue' | 'appointments' | 'pharmacy' | 'billing' | 'patients'
+// Selected record for Right Context Panel
 const selectedRecord = ref(null);
 
 const selectRecord = (type, data) => {
-    selectedRecord.value = { type, data };
-    openContext();
-};
-
-const clearSelectedRecord = () => {
-    selectedRecord.value = null;
-};
-
-const breadcrumbTitle = computed(() => {
-    switch (activeTab.value) {
-        case 'clinical': return 'Active Clinical Encounters';
-        case 'queue': return 'Live Triage & Service Queue';
-        case 'appointments': return 'Scheduled Appointments';
-        case 'pharmacy': return 'Pharmacy Dispensing Queue';
-        case 'billing': return 'Cashier & Invoicing Desk';
-        case 'patients': return 'Master Patient Index (MPI)';
-        default: return 'Hospital Operations Overview';
+    if (selectedRecord.value?.type === type && selectedRecord.value?.data?.id === data.id) {
+        selectedRecord.value = null;
+    } else {
+        selectedRecord.value = { type, data };
+        openContext();
     }
-});
-
-const formatCurrency = (amount) => {
-    return Number(amount || 0).toLocaleString('en-US');
 };
 
+// Telemetry Cards Navigation (Consistent Queue Board for All Roles)
+const getDeskRoute = (point) => {
+    if (props.can.queue) {
+        return route('queue.index', { point });
+    }
+    return null;
+};
+
+// Fast-Track Direct Check-in Modal
+const showCheckInModal = ref(false);
+const checkInPatient = ref(null);
+
+const openQuickCheckInModal = (patient = null) => {
+    checkInPatient.value = patient || null;
+    showCheckInModal.value = true;
+};
+
+const checkInAppointment = (appt) => {
+    router.post(route('appointments.checkin', appt.id), {}, {
+        preserveScroll: true,
+    });
+};
+
+// Formatting utilities
 const formatDate = (dateStr) => {
     if (!dateStr) return '—';
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return dateStr;
-    return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    try {
+        return new Date(dateStr).toLocaleDateString('en-GB', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+        });
+    } catch {
+        return dateStr;
+    }
 };
 
-const formatTime = (dateStr) => {
-    if (!dateStr) return '—';
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return dateStr;
-    return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+const formatTime = (timeStr) => {
+    if (!timeStr) return '—';
+    try {
+        const d = new Date(timeStr);
+        if (isNaN(d.getTime())) return timeStr.substring(0, 5);
+        return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch {
+        return timeStr;
+    }
+};
+
+const formatCurrency = (amount) => {
+    if (!amount && amount !== 0) return '0.00';
+    return Number(amount).toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    });
 };
 </script>
 
 <template>
-    <Head title="Hospital Command Center — AfyaNova Workstation" />
+    <Head title="Front Desk Command Center | AfyaNova V3" />
 
     <AfyaShell active-module="dashboard">
         <AfyaWorkspace :show-sidebar="true" :show-context="true">
-            
-            <!-- 1. LEFT SIDEBAR: Hospital Command Navigation -->
+            <!-- 1. LEFT SIDEBAR: Front Desk & Navigation Hub -->
             <template #sidebar="{ state, width, cycle, setState }">
                 <AfyaSidebar
-                    title="Hospital Command"
-                    :icon="LayoutDashboard"
+                    title="Reception Hub"
+                    :icon="ConciergeBell"
                     :state="state"
                     :width="width"
                     @cycle-state="cycle"
                     @set-state="setState"
                 >
                     <div v-if="state !== 'collapsed'" class="px-2 py-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                        Operational Views
+                        Reception Operations
                     </div>
-                    
+
                     <AfyaSidebarItem
-                        label="Overview Dashboard"
+                        label="Command Center"
                         :icon="LayoutDashboard"
-                        :active="activeTab === 'all'"
+                        :active="true"
                         :collapsed="state === 'collapsed'"
-                        @click="activeTab = 'all'"
+                        :href="route('dashboard')"
                     />
-                    
                     <AfyaSidebarItem
-                        v-if="can.clinical"
-                        label="Clinical Encounters"
-                        :icon="Stethoscope"
-                        :badge="metrics.active_encounters"
-                        :active="activeTab === 'clinical'"
+                        v-if="can.create_patient"
+                        label="Register Patient"
+                        :icon="UserPlus"
                         :collapsed="state === 'collapsed'"
-                        @click="activeTab = 'clinical'"
+                        :href="route('patients.create')"
                     />
-
                     <AfyaSidebarItem
-                        v-if="can.queue"
-                        label="Live Queue & Triage"
-                        :icon="Clock"
-                        :badge="metrics.queue_waiting"
-                        :active="activeTab === 'queue'"
+                        v-if="can.checkin"
+                        label="Quick Walk-In Check-In"
+                        :icon="Ticket"
                         :collapsed="state === 'collapsed'"
-                        @click="activeTab = 'queue'"
+                        @click="openQuickCheckInModal()"
                     />
-
-                    <AfyaSidebarItem
-                        v-if="can.appointments"
-                        label="Scheduled Appointments"
-                        :icon="Calendar"
-                        :badge="metrics.today_appointments"
-                        :active="activeTab === 'appointments'"
-                        :collapsed="state === 'collapsed'"
-                        @click="activeTab = 'appointments'"
-                    />
-
-                    <AfyaSidebarItem
-                        v-if="can.pharmacy"
-                        label="Pharmacy Dispensary"
-                        :icon="Pill"
-                        :badge="metrics.pending_pharmacy"
-                        :active="activeTab === 'pharmacy'"
-                        :collapsed="state === 'collapsed'"
-                        @click="activeTab = 'pharmacy'"
-                    />
-
-                    <AfyaSidebarItem
-                        v-if="can.billing"
-                        label="Cashier & Billing Desk"
-                        :icon="Receipt"
-                        :badge="metrics.unpaid_invoices"
-                        badge-color="bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300"
-                        :active="activeTab === 'billing'"
-                        :collapsed="state === 'collapsed'"
-                        @click="activeTab = 'billing'"
-                    />
-
                     <AfyaSidebarItem
                         v-if="can.patients"
                         label="Patient Registry"
                         :icon="Users"
-                        :badge="metrics.total_patients"
-                        :active="activeTab === 'patients'"
+                        :badge="metrics.total_patients || null"
                         :collapsed="state === 'collapsed'"
-                        @click="activeTab = 'patients'"
+                        :href="route('patients.index')"
                     />
-
-                    <!-- Direct Workstation Jump Links -->
-                    <template v-if="state !== 'collapsed'">
-                        <div class="px-2 pt-3 pb-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider border-t border-border/60 mt-2">
-                            Workstations
-                        </div>
-                        <AfyaSidebarItem
-                            label="Clinical Workspace"
-                            :icon="Stethoscope"
-                            :collapsed="false"
-                            :href="route('workspace.clinical')"
-                        />
-                        <AfyaSidebarItem
-                            label="Cashier POS Desk"
-                            :icon="Receipt"
-                            :collapsed="false"
-                            :href="route('billing.desk')"
-                        />
-                        <AfyaSidebarItem
-                            label="Pharmacy Queue"
-                            :icon="Pill"
-                            :collapsed="false"
-                            :href="route('pharmacy.queue')"
-                        />
-                    </template>
+                    <AfyaSidebarItem
+                        v-if="can.queue"
+                        label="Live Queue & Triage"
+                        :icon="Clock"
+                        :badge="metrics.lobby_waiting || null"
+                        :collapsed="state === 'collapsed'"
+                        :href="route('queue.index')"
+                    />
+                    <AfyaSidebarItem
+                        v-if="can.appointments"
+                        label="Appointments Calendar"
+                        :icon="Calendar"
+                        :badge="metrics.today_appointments || null"
+                        :collapsed="state === 'collapsed'"
+                        :href="route('appointments.index')"
+                    />
                 </AfyaSidebar>
             </template>
 
-            <!-- 2. CENTER MAIN: High-Density Hospital Operations Hub -->
+            <!-- 2. CENTER MAIN: Meta-Style Full-Width Operational Command Center -->
             <template #default>
                 <AfyaWorkspaceMain
-                    :breadcrumbs="[
-                        { label: 'Hospital Operations', href: route('dashboard') },
-                        { label: breadcrumbTitle, active: true }
-                    ]"
+                    title="Front Desk & Reception Command Center"
+                    subtitle="Today's patient inflow, appointment schedules, and live service queues"
                 >
                     <template #actions>
                         <div class="flex items-center gap-2">
-                            <button
-                                v-if="activeTab !== 'all'"
-                                @click="activeTab = 'all'"
-                                class="text-xs font-semibold text-primary hover:underline flex items-center gap-1 mr-1"
+                            <Button 
+                                v-if="can.checkin"
+                                variant="default" 
+                                size="sm" 
+                                class="h-7 text-xs font-semibold gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs"
+                                @click="openQuickCheckInModal()"
                             >
-                                <span>Show Overview</span>
-                            </button>
-                            <Link :href="route('patients.create')">
-                                <Button variant="default" size="sm" class="h-7 text-xs font-semibold gap-1.5 shadow-2xs">
-                                    <Plus class="w-3.5 h-3.5" />
+                                <Ticket class="w-3.5 h-3.5" />
+                                <span>Fast-Track Check-In</span>
+                            </Button>
+
+                            <Link v-if="can.create_patient" :href="route('patients.create')">
+                                <Button variant="outline" size="sm" class="h-7 text-xs font-semibold gap-1.5 border-border/80">
+                                    <UserPlus class="w-3.5 h-3.5 text-primary" />
                                     <span>Register Patient</span>
+                                </Button>
+                            </Link>
+
+                            <Link v-if="can.patients" :href="route('patients.index')">
+                                <Button variant="ghost" size="sm" class="h-7 text-xs font-semibold gap-1.5">
+                                    <Users class="w-3.5 h-3.5" />
+                                    <span>Patient Registry</span>
                                 </Button>
                             </Link>
                         </div>
@@ -273,907 +262,554 @@ const formatTime = (dateStr) => {
 
                     <div class="w-full space-y-4">
                         
-                        <!-- Top Enterprise Metric Strip (Interactive View Switchers) -->
-                        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 w-full">
+                        <!-- ========================================================================= -->
+                        <!-- TIER 1: TOP FRONT-DESK KPI STRIP (4 High-Impact Telemetry Cards)          -->
+                        <!-- ========================================================================= -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 w-full">
                             
-                            <!-- Metric 1: Active Consultations -->
-                            <div 
-                                @click="activeTab = activeTab === 'clinical' ? 'all' : 'clinical'"
-                                class="p-3 rounded-lg bg-card hover:bg-muted/40 transition-all cursor-pointer space-y-1 select-none shadow-2xs group"
-                                :class="activeTab === 'clinical' ? 'ring-2 ring-primary bg-primary/5' : ''"
-                            >
+                            <!-- KPI 1: Patient Inflow Today -->
+                            <div class="p-3 rounded-lg bg-card border border-border/80 space-y-1 shadow-2xs">
                                 <div class="flex items-center justify-between text-muted-foreground">
-                                    <span class="text-[10px] font-bold uppercase tracking-wider group-hover:text-foreground transition-colors">Active Consults</span>
-                                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                                    <span class="text-[10px] font-bold uppercase tracking-wider">Patient Inflow</span>
+                                    <Users class="w-3.5 h-3.5 text-primary flex-shrink-0" />
                                 </div>
-                                <div class="text-xl font-mono font-extrabold text-primary">
-                                    {{ metrics.active_encounters }}
+                                <div class="text-xl font-mono font-extrabold text-foreground">
+                                    {{ metrics.today_inflow || metrics.today_registered || 0 }}
                                 </div>
-                                <div class="text-[10px] text-muted-foreground truncate">In examination</div>
+                                <div class="text-[10px] text-muted-foreground truncate">
+                                    <span class="text-primary font-semibold">{{ metrics.today_registered || 0 }} new today</span> · {{ metrics.total_patients || 0 }} in registry
+                                </div>
                             </div>
 
-                            <!-- Metric 2: Live Queue Waiting -->
-                            <div 
-                                @click="activeTab = activeTab === 'queue' ? 'all' : 'queue'"
-                                class="p-3 rounded-lg bg-card hover:bg-muted/40 transition-all cursor-pointer space-y-1 select-none shadow-2xs group"
-                                :class="activeTab === 'queue' ? 'ring-2 ring-amber-500 bg-amber-50/20' : ''"
-                            >
+                            <!-- KPI 2: Today's Appointments -->
+                            <div class="p-3 rounded-lg bg-card border border-border/80 space-y-1 shadow-2xs">
                                 <div class="flex items-center justify-between text-muted-foreground">
-                                    <span class="text-[10px] font-bold uppercase tracking-wider group-hover:text-foreground transition-colors">Queue Waiting</span>
+                                    <span class="text-[10px] font-bold uppercase tracking-wider">Today's Appointments</span>
+                                    <CalendarCheck class="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 flex-shrink-0" />
+                                </div>
+                                <div class="text-xl font-mono font-extrabold text-sky-700 dark:text-sky-400">
+                                    {{ metrics.today_total_appointments ?? metrics.today_appointments ?? 0 }}
+                                </div>
+                                <div class="text-[10px] text-muted-foreground truncate">
+                                    <span class="font-bold text-emerald-600">{{ metrics.checked_in_appointments || 0 }} checked in</span>
+                                    <span v-if="metrics.today_appointments > 0" class="text-amber-600"> · {{ metrics.today_appointments }} pending</span>
+                                    <span v-else class="text-muted-foreground"> · 0 pending</span>
+                                </div>
+                            </div>
+
+                            <!-- KPI 3: Lobby Waiting Queue -->
+                            <div class="p-3 rounded-lg bg-card border border-border/80 space-y-1 shadow-2xs">
+                                <div class="flex items-center justify-between text-muted-foreground">
+                                    <span class="text-[10px] font-bold uppercase tracking-wider">Lobby Waiting Queue</span>
                                     <Clock class="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
                                 </div>
                                 <div class="text-xl font-mono font-extrabold text-amber-700 dark:text-amber-400">
-                                    {{ metrics.queue_waiting }}
+                                    {{ metrics.lobby_waiting || 0 }}
                                 </div>
-                                <div class="text-[10px] text-muted-foreground truncate">Triage pending</div>
+                                <div class="text-[10px] text-muted-foreground truncate font-medium">
+                                    <template v-if="metrics.lobby_waiting">
+                                        <span v-if="metrics.point_counts?.Triage" class="text-blue-600 dark:text-blue-400">{{ metrics.point_counts.Triage }} Triage </span>
+                                        <span v-if="metrics.point_counts?.Procedure" class="text-rose-600 dark:text-rose-400"><span v-if="metrics.point_counts?.Triage">· </span>{{ metrics.point_counts.Procedure }} Injections </span>
+                                        <span v-if="metrics.point_counts?.Lab" class="text-purple-600 dark:text-purple-400"><span v-if="metrics.point_counts?.Triage || metrics.point_counts?.Procedure">· </span>{{ metrics.point_counts.Lab }} Lab </span>
+                                        <span v-if="metrics.point_counts?.Doctor" class="text-amber-600 dark:text-amber-400"><span v-if="metrics.point_counts?.Triage || metrics.point_counts?.Procedure || metrics.point_counts?.Lab">· </span>{{ metrics.point_counts.Doctor }} Doctor </span>
+                                        <span v-if="metrics.point_counts?.Pharmacy" class="text-emerald-600 dark:text-emerald-400"><span v-if="metrics.point_counts?.Triage || metrics.point_counts?.Procedure || metrics.point_counts?.Lab || metrics.point_counts?.Doctor">· </span>{{ metrics.point_counts.Pharmacy }} Pharmacy</span>
+                                    </template>
+                                    <template v-else>
+                                        <span>All queues clear</span>
+                                    </template>
+                                </div>
                             </div>
 
-                            <!-- Metric 3: Today's Appointments -->
-                            <div 
-                                @click="activeTab = activeTab === 'appointments' ? 'all' : 'appointments'"
-                                class="p-3 rounded-lg bg-card hover:bg-muted/40 transition-all cursor-pointer space-y-1 select-none shadow-2xs group"
-                                :class="activeTab === 'appointments' ? 'ring-2 ring-primary bg-primary/5' : ''"
-                            >
+                            <!-- KPI 4: POS Daily Collections -->
+                            <div class="p-3 rounded-lg bg-card border border-border/80 space-y-1 shadow-2xs">
                                 <div class="flex items-center justify-between text-muted-foreground">
-                                    <span class="text-[10px] font-bold uppercase tracking-wider group-hover:text-foreground transition-colors">Scheduled</span>
-                                    <Calendar class="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                                    <span class="text-[10px] font-bold uppercase tracking-wider">Daily POS Collections</span>
+                                    <Receipt class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
                                 </div>
-                                <div class="text-xl font-mono font-extrabold text-foreground">
-                                    {{ metrics.today_appointments }}
-                                </div>
-                                <div class="text-[10px] text-muted-foreground truncate">Today's booked slots</div>
-                            </div>
-
-                            <!-- Metric 4: Pharmacy Dispensing Orders -->
-                            <div 
-                                @click="activeTab = activeTab === 'pharmacy' ? 'all' : 'pharmacy'"
-                                class="p-3 rounded-lg bg-card hover:bg-muted/40 transition-all cursor-pointer space-y-1 select-none shadow-2xs group"
-                                :class="activeTab === 'pharmacy' ? 'ring-2 ring-sky-500 bg-sky-50/20' : ''"
-                            >
-                                <div class="flex items-center justify-between text-muted-foreground">
-                                    <span class="text-[10px] font-bold uppercase tracking-wider group-hover:text-foreground transition-colors">Pharmacy Rx</span>
-                                    <Pill class="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 flex-shrink-0" />
-                                </div>
-                                <div class="text-xl font-mono font-extrabold text-sky-800 dark:text-sky-400">
-                                    {{ metrics.pending_pharmacy }}
-                                </div>
-                                <div class="text-[10px] text-muted-foreground truncate">Orders dispensing</div>
-                            </div>
-
-                            <!-- Metric 5: Prepaid Revenue Today -->
-                            <div 
-                                @click="activeTab = activeTab === 'billing' ? 'all' : 'billing'"
-                                class="p-3 rounded-lg bg-card hover:bg-muted/40 transition-all cursor-pointer space-y-1 select-none shadow-2xs group"
-                                :class="activeTab === 'billing' ? 'ring-2 ring-emerald-500 bg-emerald-50/20' : ''"
-                            >
-                                <div class="flex items-center justify-between text-muted-foreground">
-                                    <span class="text-[10px] font-bold uppercase tracking-wider group-hover:text-foreground transition-colors">Daily Revenue</span>
-                                    <Wallet class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
-                                </div>
-                                <div class="text-base font-mono font-extrabold text-emerald-700 dark:text-emerald-400 truncate">
+                                <div class="text-xl font-mono font-extrabold text-emerald-700 dark:text-emerald-400">
                                     TZS {{ formatCurrency(metrics.today_revenue) }}
                                 </div>
-                                <div class="text-[10px] text-muted-foreground truncate">Prepaid collected</div>
-                            </div>
-
-                            <!-- Metric 6: Total Patients in Master Registry -->
-                            <div 
-                                @click="activeTab = activeTab === 'patients' ? 'all' : 'patients'"
-                                class="p-3 rounded-lg bg-card hover:bg-muted/40 transition-all cursor-pointer space-y-1 select-none shadow-2xs group"
-                                :class="activeTab === 'patients' ? 'ring-2 ring-primary bg-primary/5' : ''"
-                            >
-                                <div class="flex items-center justify-between text-muted-foreground">
-                                    <span class="text-[10px] font-bold uppercase tracking-wider group-hover:text-foreground transition-colors">Total Patients</span>
-                                    <Users class="w-3.5 h-3.5 text-foreground flex-shrink-0" />
+                                <div class="text-[10px] text-muted-foreground truncate">
+                                    <span class="font-semibold text-rose-600">{{ metrics.unpaid_invoices }}</span> open invoices
                                 </div>
-                                <div class="text-xl font-mono font-extrabold text-foreground">
-                                    {{ metrics.total_patients }}
-                                </div>
-                                <div class="text-[10px] text-muted-foreground truncate">MPI registered</div>
                             </div>
                         </div>
 
-                        <!-- =============================================================== -->
-                        <!-- VIEW 1: DEFAULT COMPREHENSIVE OVERVIEW (activeTab === 'all')    -->
-                        <!-- =============================================================== -->
-                        <div v-if="activeTab === 'all'" class="space-y-4 w-full">
-                            
-                            <!-- Row 1: 2-Column Grid (Encounters on Left, Billing on Right) -->
-                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 w-full">
-                                
-                                <!-- Col 1: Active Encounters -->
-                                <div class="w-full bg-card rounded-lg overflow-hidden shadow-2xs flex flex-col">
-                                    <div class="px-4 py-2.5 border-b border-border/60 bg-muted/20 flex items-center justify-between">
-                                        <div class="flex items-center gap-2 text-xs font-bold text-foreground uppercase tracking-wider">
-                                            <Stethoscope class="w-3.5 h-3.5 text-primary" />
-                                            <span>Active Clinical Encounters</span>
-                                        </div>
-                                        <Link :href="route('workspace.clinical')" class="text-[11px] font-semibold text-primary hover:underline flex items-center gap-1">
-                                            <span>Clinical Desk</span>
-                                            <ArrowUpRight class="w-3 h-3" />
-                                        </Link>
-                                    </div>
-                                    <div class="w-full overflow-x-auto">
-                                        <Table class="w-full text-xs">
-                                            <TableHeader>
-                                                <TableRow class="h-8 text-[10px] uppercase font-bold text-muted-foreground bg-muted/10 border-b border-border/40">
-                                                    <TableHead class="py-1.5 px-4">Patient</TableHead>
-                                                    <TableHead class="py-1.5 px-3">Provider</TableHead>
-                                                    <TableHead class="py-1.5 px-3">Type</TableHead>
-                                                    <TableHead class="py-1.5 px-3">Status</TableHead>
-                                                    <TableHead class="py-1.5 px-4 text-right">Action</TableHead>
-                                                </TableRow>
-                                            </TableHeader>
-                                            <TableBody>
-                                                <TableRow 
-                                                    v-for="enc in recentEncounters" 
-                                                    :key="enc.id"
-                                                    class="h-10 cursor-pointer hover:bg-muted/30 border-b border-border/30 transition-colors"
-                                                    :class="{ 'bg-primary/5': selectedRecord?.type === 'encounter' && selectedRecord?.data?.id === enc.id }"
-                                                    @click="selectRecord('encounter', enc)"
-                                                >
-                                                    <TableCell class="py-1.5 px-4">
-                                                        <div class="font-bold text-foreground truncate max-w-[130px]">{{ enc.patient?.first_name }} {{ enc.patient?.last_name }}</div>
-                                                        <div class="text-[9px] font-mono text-muted-foreground">{{ enc.patient?.primary_mrn }}</div>
-                                                    </TableCell>
-                                                    <TableCell class="py-1.5 px-3 text-muted-foreground text-[11px] truncate max-w-[100px]">
-                                                        {{ enc.provider ? `Dr. ${enc.provider.name || enc.provider.first_name || ''}` : 'On-Duty Officer' }}
-                                                    </TableCell>
-                                                    <TableCell class="py-1.5 px-3 font-mono text-[10px] text-muted-foreground">{{ enc.encounter_type || 'OPD' }}</TableCell>
-                                                    <TableCell class="py-1.5 px-3">
-                                                        <AfyaStatusBadge :status="enc.status" dot />
-                                                    </TableCell>
-                                                    <TableCell class="py-1.5 px-4 text-right">
-                                                        <Link :href="route('encounters.workspace', enc.id)" @click.stop>
-                                                            <Button variant="subtle" size="sm" class="h-6 px-2.5 text-[10px] font-semibold">
-                                                                Chart
-                                                            </Button>
-                                                        </Link>
-                                                    </TableCell>
-                                                </TableRow>
-
-                                                <TableRow v-if="recentEncounters.length === 0">
-                                                    <TableCell colspan="5" class="text-center py-8 text-muted-foreground text-xs">
-                                                        No active encounters currently in progress.
-                                                    </TableCell>
-                                                </TableRow>
-                                            </TableBody>
-                                        </Table>
-                                    </div>
+                        <!-- ========================================================================= -->
+                        <!-- TIER 2: LIVE DEPARTMENT QUEUES (RBAC-Safe Telemetry Cards)                -->
+                        <!-- ========================================================================= -->
+                        <div class="space-y-1.5">
+                            <div class="flex items-center justify-between px-0.5">
+                                <div class="flex items-center gap-1.5 text-xs font-bold text-foreground">
+                                    <Layers class="w-3.5 h-3.5 text-primary" />
+                                    <span>Live Service Points & Workstation Loads</span>
                                 </div>
-
-                                <!-- Col 2: Recent Invoices & POS Collections -->
-                                <div class="w-full bg-card rounded-lg overflow-hidden shadow-2xs flex flex-col">
-                                    <div class="px-4 py-2.5 border-b border-border/60 bg-muted/20 flex items-center justify-between">
-                                        <div class="flex items-center gap-2 text-xs font-bold text-foreground uppercase tracking-wider">
-                                            <Receipt class="w-3.5 h-3.5 text-primary" />
-                                            <span>Recent Invoices & POS Collections</span>
-                                        </div>
-                                        <Link :href="route('billing.desk')" class="text-[11px] font-semibold text-primary hover:underline flex items-center gap-1">
-                                            <span>Cashier Desk</span>
-                                            <ArrowUpRight class="w-3 h-3" />
-                                        </Link>
-                                    </div>
-                                    <div class="w-full overflow-x-auto">
-                                        <Table class="w-full text-xs">
-                                            <TableHeader>
-                                                <TableRow class="h-8 text-[10px] uppercase font-bold text-muted-foreground bg-muted/10 border-b border-border/40">
-                                                    <TableHead class="py-1.5 px-4">Invoice #</TableHead>
-                                                    <TableHead class="py-1.5 px-3">Patient</TableHead>
-                                                    <TableHead class="py-1.5 px-3">Total (TZS)</TableHead>
-                                                    <TableHead class="py-1.5 px-3">Status</TableHead>
-                                                    <TableHead class="py-1.5 px-4 text-right">Action</TableHead>
-                                                </TableRow>
-                                            </TableHeader>
-                                            <TableBody>
-                                                <TableRow 
-                                                    v-for="inv in recentInvoices" 
-                                                    :key="inv.id"
-                                                    class="h-10 cursor-pointer hover:bg-muted/30 border-b border-border/30 transition-colors"
-                                                    :class="{ 'bg-primary/5': selectedRecord?.type === 'invoice' && selectedRecord?.data?.id === inv.id }"
-                                                    @click="selectRecord('invoice', inv)"
-                                                >
-                                                    <TableCell class="py-1.5 px-4 font-mono font-bold text-foreground text-[11px]">{{ inv.invoice_number }}</TableCell>
-                                                    <TableCell class="py-1.5 px-3">
-                                                        <div class="font-bold text-foreground truncate max-w-[120px]">{{ inv.patient?.first_name }} {{ inv.patient?.last_name }}</div>
-                                                        <div class="text-[9px] font-mono text-muted-foreground">{{ inv.patient?.primary_mrn }}</div>
-                                                    </TableCell>
-                                                    <TableCell class="py-1.5 px-3 font-mono font-semibold text-[11px]">{{ formatCurrency(inv.total_amount) }}</TableCell>
-                                                    <TableCell class="py-1.5 px-3">
-                                                        <AfyaStatusBadge :status="inv.status" dot />
-                                                    </TableCell>
-                                                    <TableCell class="py-1.5 px-4 text-right">
-                                                        <Link :href="route('billing.desk')" @click.stop>
-                                                            <Button variant="subtle" size="sm" class="h-6 px-2.5 text-[10px] font-semibold">
-                                                                Inspect
-                                                            </Button>
-                                                        </Link>
-                                                    </TableCell>
-                                                </TableRow>
-
-                                                <TableRow v-if="recentInvoices.length === 0">
-                                                    <TableCell colspan="5" class="text-center py-8 text-muted-foreground text-xs">
-                                                        No billing transactions recorded today.
-                                                    </TableCell>
-                                                </TableRow>
-                                            </TableBody>
-                                        </Table>
-                                    </div>
-                                </div>
-
+                                <Link v-if="can.queue" :href="route('queue.index')" class="text-[11px] font-semibold text-primary hover:underline flex items-center gap-0.5">
+                                    <span>Full Queue Board</span>
+                                    <ArrowRight class="w-3 h-3" />
+                                </Link>
                             </div>
 
-                            <!-- Row 2: Full-Width Patient Inflow Directory Across Bottom -->
-                            <div class="w-full bg-card rounded-lg overflow-hidden shadow-2xs flex flex-col">
-                                <div class="px-4 py-2.5 border-b border-border/60 bg-muted/20 flex items-center justify-between">
-                                    <div class="flex items-center gap-2 text-xs font-bold text-foreground uppercase tracking-wider">
-                                        <Users class="w-3.5 h-3.5 text-primary" />
-                                        <span>Master Patient Index — Recent Registrations</span>
-                                    </div>
-                                    <Link :href="route('patients.index')" class="text-[11px] font-semibold text-primary hover:underline flex items-center gap-1">
-                                        <span>All Patients Directory</span>
-                                        <ArrowUpRight class="w-3 h-3" />
-                                    </Link>
-                                </div>
+                            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5">
                                 
-                                <div class="w-full overflow-x-auto">
-                                    <Table class="w-full text-xs">
-                                        <TableHeader>
-                                            <TableRow class="h-8 text-[10px] uppercase font-bold text-muted-foreground bg-muted/10 border-b border-border/40">
-                                                <TableHead class="py-1.5 px-4">Primary MRN</TableHead>
-                                                <TableHead class="py-1.5 px-3">Patient Name</TableHead>
-                                                <TableHead class="py-1.5 px-3">Demographics</TableHead>
-                                                <TableHead class="py-1.5 px-3">Blood Group</TableHead>
-                                                <TableHead class="py-1.5 px-3">Registered</TableHead>
-                                                <TableHead class="py-1.5 px-3">Status</TableHead>
-                                                <TableHead class="py-1.5 px-4 text-right">Action</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            <TableRow 
-                                                v-for="pat in recentPatients" 
-                                                :key="pat.id"
-                                                class="h-10 cursor-pointer hover:bg-muted/30 border-b border-border/30 transition-colors"
-                                                :class="{ 'bg-primary/5': selectedRecord?.type === 'patient' && selectedRecord?.data?.id === pat.id }"
-                                                @click="selectRecord('patient', pat)"
-                                            >
-                                                <TableCell class="py-1.5 px-4 font-mono font-bold text-foreground text-[11px]">
-                                                    {{ pat.primary_mrn }}
-                                                </TableCell>
-                                                <TableCell class="py-1.5 px-3 font-bold text-foreground">
-                                                    {{ pat.first_name }} {{ pat.last_name }}
-                                                </TableCell>
-                                                <TableCell class="py-1.5 px-3 text-muted-foreground text-[11px]">
-                                                    {{ pat.gender }} · {{ pat.age ? `${pat.age}y` : (pat.formatted_dob || formatDate(pat.dob)) }}
-                                                </TableCell>
-                                                <TableCell class="py-1.5 px-3 font-mono font-semibold text-[11px] text-rose-600 dark:text-rose-400">
-                                                    {{ pat.blood_group || 'O+' }}
-                                                </TableCell>
-                                                <TableCell class="py-1.5 px-3 font-mono text-muted-foreground text-[10px]">
-                                                    {{ formatDate(pat.created_at) }}
-                                                </TableCell>
-                                                <TableCell class="py-1.5 px-3">
-                                                    <AfyaStatusBadge :status="pat.status || 'Active'" />
-                                                </TableCell>
-                                                <TableCell class="py-1.5 px-4 text-right">
-                                                    <Link :href="route('patients.show', pat.id)" @click.stop>
-                                                        <Button variant="subtle" size="sm" class="h-6 px-2.5 text-[10px] font-semibold">
-                                                            Profile
-                                                        </Button>
+                                <!-- Desk 1: Triage & Doctor -->
+                                <component
+                                    :is="getDeskRoute('Triage') ? Link : 'div'"
+                                    :href="getDeskRoute('Triage')"
+                                    class="block"
+                                >
+                                    <div class="p-2.5 rounded-lg border border-border/80 bg-card hover:bg-muted/40 transition-all flex items-center justify-between shadow-2xs group cursor-pointer">
+                                        <div class="flex items-center gap-2 min-w-0">
+                                            <div class="w-7.5 h-7.5 rounded-md bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
+                                                <Stethoscope class="w-4 h-4" />
+                                            </div>
+                                            <div class="truncate min-w-0">
+                                                <div class="font-bold text-[11px] text-foreground group-hover:text-primary transition-colors truncate">Triage & Doctor</div>
+                                                <div class="text-[9px] text-muted-foreground truncate">OPD Consult Queue</div>
+                                            </div>
+                                        </div>
+                                        <div class="text-right pl-1.5 flex-shrink-0">
+                                            <div class="font-mono font-extrabold text-sm text-foreground">
+                                                {{ (metrics.point_counts?.Triage || 0) + (metrics.point_counts?.Doctor || 0) }}
+                                            </div>
+                                            <div class="text-[8.5px] text-muted-foreground uppercase">waiting</div>
+                                        </div>
+                                    </div>
+                                </component>
+
+                                <!-- Desk 2: Procedure & Injections -->
+                                <component
+                                    :is="getDeskRoute('Procedure') ? Link : 'div'"
+                                    :href="getDeskRoute('Procedure')"
+                                    class="block"
+                                >
+                                    <div class="p-2.5 rounded-lg border border-rose-200 dark:border-rose-900/60 bg-card hover:bg-rose-50/20 transition-all flex items-center justify-between shadow-2xs group cursor-pointer">
+                                        <div class="flex items-center gap-2 min-w-0">
+                                            <div class="w-7.5 h-7.5 rounded-md bg-rose-100 dark:bg-rose-950/40 flex items-center justify-center text-rose-600 flex-shrink-0">
+                                                <Syringe class="w-4 h-4" />
+                                            </div>
+                                            <div class="truncate min-w-0">
+                                                <div class="font-bold text-[11px] text-foreground group-hover:text-rose-600 transition-colors truncate">Injection & Dressing</div>
+                                                <div class="text-[9px] text-muted-foreground truncate">Minor Procedure Queue</div>
+                                            </div>
+                                        </div>
+                                        <div class="text-right pl-1.5 flex-shrink-0">
+                                            <div class="font-mono font-extrabold text-sm text-rose-700 dark:text-rose-400">
+                                                {{ metrics.point_counts?.Procedure || 0 }}
+                                            </div>
+                                            <div class="text-[8.5px] text-muted-foreground uppercase">waiting</div>
+                                        </div>
+                                    </div>
+                                </component>
+
+                                <!-- Desk 3: Laboratory -->
+                                <component
+                                    :is="getDeskRoute('Lab') ? Link : 'div'"
+                                    :href="getDeskRoute('Lab')"
+                                    class="block"
+                                >
+                                    <div class="p-2.5 rounded-lg border border-sky-200 dark:border-sky-900/60 bg-card hover:bg-sky-50/20 transition-all flex items-center justify-between shadow-2xs group cursor-pointer">
+                                        <div class="flex items-center gap-2 min-w-0">
+                                            <div class="w-7.5 h-7.5 rounded-md bg-sky-100 dark:bg-sky-950/40 flex items-center justify-center text-sky-600 flex-shrink-0">
+                                                <FlaskConical class="w-4 h-4" />
+                                            </div>
+                                            <div class="truncate min-w-0">
+                                                <div class="font-bold text-[11px] text-foreground group-hover:text-sky-600 transition-colors truncate">Laboratory</div>
+                                                <div class="text-[9px] text-muted-foreground truncate">Diagnostic Lab Queue</div>
+                                            </div>
+                                        </div>
+                                        <div class="text-right pl-1.5 flex-shrink-0">
+                                            <div class="font-mono font-extrabold text-sm text-sky-700 dark:text-sky-400">
+                                                {{ metrics.point_counts?.Lab || 0 }}
+                                            </div>
+                                            <div class="text-[8.5px] text-muted-foreground uppercase">waiting</div>
+                                        </div>
+                                    </div>
+                                </component>
+
+                                <!-- Desk 4: Pharmacy -->
+                                <component
+                                    :is="getDeskRoute('Pharmacy') ? Link : 'div'"
+                                    :href="getDeskRoute('Pharmacy')"
+                                    class="block"
+                                >
+                                    <div class="p-2.5 rounded-lg border border-amber-200 dark:border-amber-900/60 bg-card hover:bg-amber-50/20 transition-all flex items-center justify-between shadow-2xs group cursor-pointer">
+                                        <div class="flex items-center gap-2 min-w-0">
+                                            <div class="w-7.5 h-7.5 rounded-md bg-amber-100 dark:bg-amber-950/40 flex items-center justify-center text-amber-600 flex-shrink-0">
+                                                <Pill class="w-4 h-4" />
+                                            </div>
+                                            <div class="truncate min-w-0">
+                                                <div class="font-bold text-[11px] text-foreground group-hover:text-amber-600 transition-colors truncate">Dispensary</div>
+                                                <div class="text-[9px] text-muted-foreground truncate">Pharmacy Queue</div>
+                                            </div>
+                                        </div>
+                                        <div class="text-right pl-1.5 flex-shrink-0">
+                                            <div class="font-mono font-extrabold text-sm text-amber-700 dark:text-amber-400">
+                                                {{ metrics.point_counts?.Pharmacy || 0 }}
+                                            </div>
+                                            <div class="text-[8.5px] text-muted-foreground uppercase">waiting</div>
+                                        </div>
+                                    </div>
+                                </component>
+
+                                <!-- Desk 5: Cashier Desk -->
+                                <component
+                                    :is="getDeskRoute('Cashier') ? Link : 'div'"
+                                    :href="getDeskRoute('Cashier')"
+                                    class="block"
+                                >
+                                    <div class="p-2.5 rounded-lg border border-emerald-200 dark:border-emerald-900/60 bg-card hover:bg-emerald-50/20 transition-all flex items-center justify-between shadow-2xs group cursor-pointer">
+                                        <div class="flex items-center gap-2 min-w-0">
+                                            <div class="w-7.5 h-7.5 rounded-md bg-emerald-100 dark:bg-emerald-950/40 flex items-center justify-center text-emerald-600 flex-shrink-0">
+                                                <Receipt class="w-4 h-4" />
+                                            </div>
+                                            <div class="truncate min-w-0">
+                                                <div class="font-bold text-[11px] text-foreground group-hover:text-emerald-600 transition-colors truncate">Cashier Desk</div>
+                                                <div class="text-[9px] text-muted-foreground truncate">Billing / POS Queue</div>
+                                            </div>
+                                        </div>
+                                        <div class="text-right pl-1.5 flex-shrink-0">
+                                            <div class="font-mono font-extrabold text-sm text-emerald-700 dark:text-emerald-400">
+                                                {{ metrics.point_counts?.Cashier || 0 }}
+                                            </div>
+                                            <div class="text-[8.5px] text-muted-foreground uppercase">waiting</div>
+                                        </div>
+                                    </div>
+                                </component>
+                            </div>
+                        </div>
+
+                        <!-- ========================================================================= -->
+                        <!-- TIER 3: TODAY'S SCHEDULED APPOINTMENTS (Full-Width High-Efficiency Grid)  -->
+                        <!-- ========================================================================= -->
+                        <div class="space-y-2 pt-1">
+                            <div class="flex items-center justify-between px-0.5">
+                                <div class="flex items-center gap-1.5">
+                                    <Calendar class="w-4 h-4 text-primary" />
+                                    <h2 class="text-sm font-bold text-foreground">Today's Scheduled Appointments</h2>
+                                    <span class="text-xs text-muted-foreground">({{ todayAppointments.length }} scheduled)</span>
+                                </div>
+                                <Link v-if="can.appointments" :href="route('appointments.index')" class="text-xs font-semibold text-primary hover:underline flex items-center gap-0.5">
+                                    <span>Full Booking Calendar</span>
+                                    <ArrowRight class="w-3 h-3" />
+                                </Link>
+                            </div>
+
+                            <div class="rounded-lg border border-border bg-card overflow-hidden shadow-2xs">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead class="w-[90px]">Time</TableHead>
+                                            <TableHead class="min-w-[200px]">Patient Details</TableHead>
+                                            <TableHead class="min-w-[180px]">Clinic & Practitioner</TableHead>
+                                            <TableHead class="min-w-[140px]">Visit Reason</TableHead>
+                                            <TableHead class="w-[130px]">Status</TableHead>
+                                            <TableHead class="text-right whitespace-nowrap min-w-[160px]">Reception Action</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        <TableRow
+                                            v-for="appt in todayAppointments"
+                                            :key="appt.id"
+                                            class="cursor-pointer group hover:bg-muted/30"
+                                            :selected="selectedRecord?.type === 'appointment' && selectedRecord?.data?.id === appt.id"
+                                            @click="selectRecord('appointment', appt)"
+                                        >
+                                            <TableCell class="font-mono font-bold text-xs text-primary">
+                                                {{ formatTime(appt.scheduled_time) }}
+                                            </TableCell>
+                                            <TableCell>
+                                                <div class="font-bold text-foreground text-xs leading-tight">
+                                                    {{ appt.patient ? `${appt.patient.first_name} ${appt.patient.last_name}` : 'Unknown Patient' }}
+                                                </div>
+                                                <div class="text-[10px] text-muted-foreground font-mono">
+                                                    {{ appt.patient?.primary_mrn }}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell class="text-xs">
+                                                <div class="font-medium text-foreground">
+                                                    {{ appt.practitioner?.name || appt.provider?.first_name || 'General OPD Doctor' }}
+                                                </div>
+                                                <div class="text-[10px] text-muted-foreground">
+                                                    {{ appt.department?.name || 'OPD Clinic' }}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell class="text-xs text-muted-foreground">
+                                                {{ appt.reason || appt.appointment_type || 'Consultation' }}
+                                            </TableCell>
+                                            <TableCell>
+                                                <span 
+                                                    v-if="appt.status === 'Completed'" 
+                                                    class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800"
+                                                >
+                                                    <CheckCircle2 class="w-3 h-3 text-emerald-600" />
+                                                    <span>✓ Completed</span>
+                                                </span>
+                                                <span 
+                                                    v-else-if="appt.status === 'In Progress'" 
+                                                    class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-sky-100 text-sky-800 dark:bg-sky-950/60 dark:text-sky-300 border border-sky-300 dark:border-sky-800"
+                                                >
+                                                    <span class="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse"></span>
+                                                    <span>In Consultation</span>
+                                                </span>
+                                                <span 
+                                                    v-else-if="appt.status === 'Checked-In'" 
+                                                    class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300 dark:border-amber-800"
+                                                >
+                                                    <span>In Queue</span>
+                                                </span>
+                                                <AfyaStatusBadge v-else :status="appt.status" dot />
+                                            </TableCell>
+                                            <TableCell class="text-right whitespace-nowrap min-w-[160px]">
+                                                <div class="flex items-center justify-end gap-1.5" @click.stop>
+                                                    <Button
+                                                        v-if="appt.status === 'Scheduled' && can.checkin"
+                                                        variant="default"
+                                                        size="sm"
+                                                        class="h-6 px-2 text-[10.5px] font-semibold gap-1 bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs"
+                                                        @click="checkInAppointment(appt)"
+                                                    >
+                                                        <Ticket class="w-3 h-3" />
+                                                        <span>Check-In</span>
+                                                    </Button>
+                                                    <Link
+                                                        v-if="appt.patient && can.patients"
+                                                        :href="route('patients.show', appt.patient.id)"
+                                                        class="inline-flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline px-1.5 py-0.5 rounded hover:bg-muted/40"
+                                                    >
+                                                        <span>360</span>
+                                                        <ArrowRight class="w-3 h-3" />
                                                     </Link>
-                                                </TableCell>
-                                            </TableRow>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
 
-                                            <TableRow v-if="recentPatients.length === 0">
-                                                <TableCell colspan="7" class="text-center py-10 text-muted-foreground text-xs">
-                                                    No patient records registered yet.
-                                                </TableCell>
-                                            </TableRow>
-                                        </TableBody>
-                                    </Table>
-                                </div>
+                                        <TableRow v-if="todayAppointments.length === 0">
+                                            <TableCell colspan="6" class="text-center py-12 text-muted-foreground text-xs">
+                                                No scheduled appointments booked for today.
+                                            </TableCell>
+                                        </TableRow>
+                                    </TableBody>
+                                </Table>
                             </div>
-
                         </div>
 
-                        <!-- =============================================================== -->
-                        <!-- VIEW 2: CLINICAL ENCOUNTERS (activeTab === 'clinical')          -->
-                        <!-- =============================================================== -->
-                        <div v-else-if="activeTab === 'clinical'" class="w-full bg-card rounded-lg overflow-hidden shadow-2xs flex flex-col space-y-0">
-                            <div class="px-4 py-3 border-b border-border/60 bg-muted/20 flex items-center justify-between">
-                                <div class="flex items-center gap-2 text-xs font-bold text-foreground">
-                                    <Stethoscope class="w-4 h-4 text-primary" />
-                                    <span>Active Clinical Encounters & Consultations</span>
-                                </div>
-                                <Link :href="route('workspace.clinical')">
-                                    <Button variant="default" size="sm" class="h-7 text-xs font-semibold gap-1.5 shadow-2xs">
-                                        <span>Open Clinical Workstation</span>
-                                        <ArrowUpRight class="w-3.5 h-3.5" />
-                                    </Button>
-                                </Link>
-                            </div>
-                            <Table class="w-full text-xs">
-                                <TableHeader>
-                                    <TableRow class="bg-muted/30 text-[10px] uppercase font-bold text-muted-foreground">
-                                        <TableHead class="py-2 px-4">Patient</TableHead>
-                                        <TableHead class="py-2 px-3">Attending Physician</TableHead>
-                                        <TableHead class="py-2 px-3">Encounter Type</TableHead>
-                                        <TableHead class="py-2 px-3">Reason for Visit</TableHead>
-                                        <TableHead class="py-2 px-3">Status</TableHead>
-                                        <TableHead class="py-2 px-4 text-right">Action</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    <TableRow 
-                                        v-for="enc in recentEncounters" 
-                                        :key="enc.id"
-                                        class="cursor-pointer hover:bg-muted/30 border-b border-border/30"
-                                        :class="{ 'bg-primary/5': selectedRecord?.type === 'encounter' && selectedRecord?.data?.id === enc.id }"
-                                        @click="selectRecord('encounter', enc)"
-                                    >
-                                        <TableCell class="py-2.5 px-4 font-bold text-foreground">
-                                            {{ enc.patient?.first_name }} {{ enc.patient?.last_name }}
-                                            <div class="text-[10px] font-mono text-muted-foreground">{{ enc.patient?.primary_mrn }}</div>
-                                        </TableCell>
-                                        <TableCell class="py-2.5 px-3 text-muted-foreground">
-                                            {{ enc.provider ? `Dr. ${enc.provider.name || enc.provider.first_name || ''}` : 'On-Duty Officer' }}
-                                        </TableCell>
-                                        <TableCell class="py-2.5 px-3 font-mono">{{ enc.encounter_type || 'OPD' }}</TableCell>
-                                        <TableCell class="py-2.5 px-3 text-muted-foreground">{{ enc.reason_for_visit || 'General Consultation' }}</TableCell>
-                                        <TableCell class="py-2.5 px-3">
-                                            <AfyaStatusBadge :status="enc.status" dot />
-                                        </TableCell>
-                                        <TableCell class="py-2.5 px-4 text-right">
-                                            <Link :href="route('encounters.workspace', enc.id)" @click.stop>
-                                                <Button variant="default" size="sm" class="h-7 px-3 text-xs font-semibold">
-                                                    Launch Chart
-                                                </Button>
-                                            </Link>
-                                        </TableCell>
-                                    </TableRow>
-                                    <TableRow v-if="recentEncounters.length === 0">
-                                        <TableCell colspan="6" class="text-center py-10 text-muted-foreground text-xs">
-                                            No active clinical encounters found.
-                                        </TableCell>
-                                    </TableRow>
-                                </TableBody>
-                            </Table>
-                        </div>
-
-                        <!-- =============================================================== -->
-                        <!-- VIEW 3: LIVE QUEUE & TRIAGE (activeTab === 'queue')             -->
-                        <!-- =============================================================== -->
-                        <div v-else-if="activeTab === 'queue'" class="w-full bg-card rounded-lg overflow-hidden shadow-2xs flex flex-col space-y-0">
-                            <div class="px-4 py-3 border-b border-border/60 bg-muted/20 flex items-center justify-between">
-                                <div class="flex items-center gap-2 text-xs font-bold text-foreground">
-                                    <Clock class="w-4 h-4 text-amber-600" />
-                                    <span>Live Triage & Service Point Queue</span>
-                                </div>
-                                <Link :href="route('queue.index')">
-                                    <Button variant="default" size="sm" class="h-7 text-xs font-semibold gap-1.5 shadow-2xs">
-                                        <span>Open Full Queue Desk</span>
-                                        <ArrowUpRight class="w-3.5 h-3.5" />
-                                    </Button>
-                                </Link>
-                            </div>
-                            <Table class="w-full text-xs">
-                                <TableHeader>
-                                    <TableRow class="bg-muted/30 text-[10px] uppercase font-bold text-muted-foreground">
-                                        <TableHead class="py-2 px-4">Ticket #</TableHead>
-                                        <TableHead class="py-2 px-3">Patient</TableHead>
-                                        <TableHead class="py-2 px-3">Service Point</TableHead>
-                                        <TableHead class="py-2 px-3">Priority</TableHead>
-                                        <TableHead class="py-2 px-3">Status</TableHead>
-                                        <TableHead class="py-2 px-4 text-right">Action</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    <TableRow 
-                                        v-for="t in queueTickets" 
-                                        :key="t.id"
-                                        class="cursor-pointer hover:bg-muted/30 border-b border-border/30"
-                                        :class="{ 'bg-primary/5': selectedRecord?.type === 'ticket' && selectedRecord?.data?.id === t.id }"
-                                        @click="selectRecord('ticket', t)"
-                                    >
-                                        <TableCell class="py-2.5 px-4 font-mono font-bold text-foreground text-sm">
-                                            {{ t.ticket_number }}
-                                        </TableCell>
-                                        <TableCell class="py-2.5 px-3 font-bold">
-                                            {{ t.patient?.first_name }} {{ t.patient?.last_name }}
-                                            <div class="text-[10px] font-mono text-muted-foreground">{{ t.patient?.primary_mrn }}</div>
-                                        </TableCell>
-                                        <TableCell class="py-2.5 px-3 font-medium text-foreground">{{ t.service_point || 'Triage' }}</TableCell>
-                                        <TableCell class="py-2.5 px-3">
-                                            <span 
-                                                class="px-2 py-0.5 rounded text-[10px] font-bold"
-                                                :class="t.priority === 'Emergency' ? 'bg-rose-600 text-white animate-pulse' : 'bg-muted text-muted-foreground'"
-                                            >
-                                                {{ t.priority || 'Normal' }}
-                                            </span>
-                                        </TableCell>
-                                        <TableCell class="py-2.5 px-3">
-                                            <AfyaStatusBadge :status="t.status" dot />
-                                        </TableCell>
-                                        <TableCell class="py-2.5 px-4 text-right">
-                                            <Link :href="route('queue.index')" @click.stop>
-                                                <Button variant="default" size="sm" class="h-7 px-3 text-xs font-semibold">
-                                                    Call Patient
-                                                </Button>
-                                            </Link>
-                                        </TableCell>
-                                    </TableRow>
-                                    <TableRow v-if="queueTickets.length === 0">
-                                        <TableCell colspan="6" class="text-center py-10 text-muted-foreground text-xs">
-                                            No patients currently waiting in triage queue.
-                                        </TableCell>
-                                    </TableRow>
-                                </TableBody>
-                            </Table>
-                        </div>
-
-                        <!-- =============================================================== -->
-                        <!-- VIEW 4: APPOINTMENTS (activeTab === 'appointments')             -->
-                        <!-- =============================================================== -->
-                        <div v-else-if="activeTab === 'appointments'" class="w-full bg-card rounded-lg overflow-hidden shadow-2xs flex flex-col space-y-0">
-                            <div class="px-4 py-3 border-b border-border/60 bg-muted/20 flex items-center justify-between">
-                                <div class="flex items-center gap-2 text-xs font-bold text-foreground">
-                                    <CalendarCheck class="w-4 h-4 text-primary" />
-                                    <span>Today's Scheduled Appointments</span>
-                                </div>
-                                <Link :href="route('appointments.index')">
-                                    <Button variant="default" size="sm" class="h-7 text-xs font-semibold gap-1.5 shadow-2xs">
-                                        <span>Open Booking Calendar</span>
-                                        <ArrowUpRight class="w-3.5 h-3.5" />
-                                    </Button>
-                                </Link>
-                            </div>
-                            <Table class="w-full text-xs">
-                                <TableHeader>
-                                    <TableRow class="bg-muted/30 text-[10px] uppercase font-bold text-muted-foreground">
-                                        <TableHead class="py-2 px-4">Time Slot</TableHead>
-                                        <TableHead class="py-2 px-3">Patient</TableHead>
-                                        <TableHead class="py-2 px-3">Doctor / Practitioner</TableHead>
-                                        <TableHead class="py-2 px-3">Department</TableHead>
-                                        <TableHead class="py-2 px-3">Status</TableHead>
-                                        <TableHead class="py-2 px-4 text-right">Action</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    <TableRow 
-                                        v-for="appt in todayAppointments" 
-                                        :key="appt.id"
-                                        class="cursor-pointer hover:bg-muted/30 border-b border-border/30"
-                                        :class="{ 'bg-primary/5': selectedRecord?.type === 'appointment' && selectedRecord?.data?.id === appt.id }"
-                                        @click="selectRecord('appointment', appt)"
-                                    >
-                                        <TableCell class="py-2.5 px-4 font-mono font-bold text-primary">
-                                            {{ formatTime(appt.scheduled_time) }}
-                                        </TableCell>
-                                        <TableCell class="py-2.5 px-3 font-bold">
-                                            {{ appt.patient?.first_name }} {{ appt.patient?.last_name }}
-                                            <div class="text-[10px] font-mono text-muted-foreground">{{ appt.patient?.primary_mrn }}</div>
-                                        </TableCell>
-                                        <TableCell class="py-2.5 px-3 text-muted-foreground">
-                                            {{ appt.practitioner?.name || 'Assigned Doctor' }}
-                                        </TableCell>
-                                        <TableCell class="py-2.5 px-3">{{ appt.department?.name || 'OPD General' }}</TableCell>
-                                        <TableCell class="py-2.5 px-3">
-                                            <AfyaStatusBadge :status="appt.status || 'Booked'" dot />
-                                        </TableCell>
-                                        <TableCell class="py-2.5 px-4 text-right">
-                                            <Link :href="route('appointments.index')" @click.stop>
-                                                <Button variant="default" size="sm" class="h-7 px-3 text-xs font-semibold">
-                                                    Check-In
-                                                </Button>
-                                            </Link>
-                                        </TableCell>
-                                    </TableRow>
-                                    <TableRow v-if="todayAppointments.length === 0">
-                                        <TableCell colspan="6" class="text-center py-10 text-muted-foreground text-xs">
-                                            No appointments scheduled for today.
-                                        </TableCell>
-                                    </TableRow>
-                                </TableBody>
-                            </Table>
-                        </div>
-
-                        <!-- =============================================================== -->
-                        <!-- VIEW 5: PHARMACY RX (activeTab === 'pharmacy')                  -->
-                        <!-- =============================================================== -->
-                        <div v-else-if="activeTab === 'pharmacy'" class="w-full bg-card rounded-lg overflow-hidden shadow-2xs flex flex-col space-y-0">
-                            <div class="px-4 py-3 border-b border-border/60 bg-muted/20 flex items-center justify-between">
-                                <div class="flex items-center gap-2 text-xs font-bold text-foreground">
-                                    <Pill class="w-4 h-4 text-sky-600" />
-                                    <span>Prescriptions Awaiting Dispensing</span>
-                                </div>
-                                <Link :href="route('pharmacy.queue')">
-                                    <Button variant="default" size="sm" class="h-7 text-xs font-semibold gap-1.5 shadow-2xs">
-                                        <span>Open Pharmacy Queue</span>
-                                        <ArrowUpRight class="w-3.5 h-3.5" />
-                                    </Button>
-                                </Link>
-                            </div>
-                            <Table class="w-full text-xs">
-                                <TableHeader>
-                                    <TableRow class="bg-muted/30 text-[10px] uppercase font-bold text-muted-foreground">
-                                        <TableHead class="py-2 px-4">Prescription</TableHead>
-                                        <TableHead class="py-2 px-3">Patient</TableHead>
-                                        <TableHead class="py-2 px-3">Dosage & Frequency</TableHead>
-                                        <TableHead class="py-2 px-3">Status</TableHead>
-                                        <TableHead class="py-2 px-4 text-right">Action</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    <TableRow 
-                                        v-for="rx in pendingPrescriptions" 
-                                        :key="rx.id"
-                                        class="cursor-pointer hover:bg-muted/30 border-b border-border/30"
-                                        :class="{ 'bg-primary/5': selectedRecord?.type === 'rx' && selectedRecord?.data?.id === rx.id }"
-                                        @click="selectRecord('rx', rx)"
-                                    >
-                                        <TableCell class="py-2.5 px-4 font-bold text-foreground">
-                                            {{ rx.medication?.name || 'Medication' }}
-                                            <div class="text-[10px] font-mono text-muted-foreground">{{ rx.medication?.code }}</div>
-                                        </TableCell>
-                                        <TableCell class="py-2.5 px-3 font-bold">
-                                            {{ rx.encounter?.patient?.first_name }} {{ rx.encounter?.patient?.last_name }}
-                                        </TableCell>
-                                        <TableCell class="py-2.5 px-3 text-muted-foreground">
-                                            {{ rx.dosage }} · {{ rx.frequency }} ({{ rx.duration_days }} days)
-                                        </TableCell>
-                                        <TableCell class="py-2.5 px-3">
-                                            <AfyaStatusBadge :status="rx.status" dot />
-                                        </TableCell>
-                                        <TableCell class="py-2.5 px-4 text-right">
-                                            <Link :href="route('pharmacy.queue')" @click.stop>
-                                                <Button variant="default" size="sm" class="h-7 px-3 text-xs font-semibold">
-                                                    Dispense
-                                                </Button>
-                                            </Link>
-                                        </TableCell>
-                                    </TableRow>
-                                    <TableRow v-if="pendingPrescriptions.length === 0">
-                                        <TableCell colspan="5" class="text-center py-10 text-muted-foreground text-xs">
-                                            No active pharmacy prescription orders pending.
-                                        </TableCell>
-                                    </TableRow>
-                                </TableBody>
-                            </Table>
-                        </div>
-
-                        <!-- =============================================================== -->
-                        <!-- VIEW 6: CASHIER & BILLING (activeTab === 'billing')             -->
-                        <!-- =============================================================== -->
-                        <div v-else-if="activeTab === 'billing'" class="w-full bg-card rounded-lg overflow-hidden shadow-2xs flex flex-col space-y-0">
-                            <div class="px-4 py-3 border-b border-border/60 bg-muted/20 flex items-center justify-between">
-                                <div class="flex items-center gap-2 text-xs font-bold text-foreground">
-                                    <Receipt class="w-4 h-4 text-emerald-600" />
-                                    <span>Hospital Invoicing & POS Payment Desk</span>
-                                </div>
-                                <Link :href="route('billing.desk')">
-                                    <Button variant="default" size="sm" class="h-7 text-xs font-semibold gap-1.5 shadow-2xs">
-                                        <span>Launch Cashier Desk</span>
-                                        <ArrowUpRight class="w-3.5 h-3.5" />
-                                    </Button>
-                                </Link>
-                            </div>
-                            <Table class="w-full text-xs">
-                                <TableHeader>
-                                    <TableRow class="bg-muted/30 text-[10px] uppercase font-bold text-muted-foreground">
-                                        <TableHead class="py-2 px-4">Invoice #</TableHead>
-                                        <TableHead class="py-2 px-3">Patient</TableHead>
-                                        <TableHead class="py-2 px-3">Total Amount</TableHead>
-                                        <TableHead class="py-2 px-3">Paid</TableHead>
-                                        <TableHead class="py-2 px-3">Status</TableHead>
-                                        <TableHead class="py-2 px-4 text-right">Action</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    <TableRow 
-                                        v-for="inv in recentInvoices" 
-                                        :key="inv.id"
-                                        class="cursor-pointer hover:bg-muted/30 border-b border-border/30"
-                                        :class="{ 'bg-primary/5': selectedRecord?.type === 'invoice' && selectedRecord?.data?.id === inv.id }"
-                                        @click="selectRecord('invoice', inv)"
-                                    >
-                                        <TableCell class="py-2.5 px-4 font-mono font-bold text-foreground">{{ inv.invoice_number }}</TableCell>
-                                        <TableCell class="py-2.5 px-3 font-bold">
-                                            {{ inv.patient?.first_name }} {{ inv.patient?.last_name }}
-                                            <div class="text-[10px] font-mono text-muted-foreground">{{ inv.patient?.primary_mrn }}</div>
-                                        </TableCell>
-                                        <TableCell class="py-2.5 px-3 font-mono font-bold text-foreground">TZS {{ formatCurrency(inv.total_amount) }}</TableCell>
-                                        <TableCell class="py-2.5 px-3 font-mono font-semibold text-emerald-700 dark:text-emerald-400">TZS {{ formatCurrency(inv.paid_amount) }}</TableCell>
-                                        <TableCell class="py-2.5 px-3">
-                                            <AfyaStatusBadge :status="inv.status" dot />
-                                        </TableCell>
-                                        <TableCell class="py-2.5 px-4 text-right">
-                                            <Link :href="route('billing.desk')" @click.stop>
-                                                <Button variant="default" size="sm" class="h-7 px-3 text-xs font-semibold">
-                                                    Collect Payment
-                                                </Button>
-                                            </Link>
-                                        </TableCell>
-                                    </TableRow>
-                                    <TableRow v-if="recentInvoices.length === 0">
-                                        <TableCell colspan="6" class="text-center py-10 text-muted-foreground text-xs">
-                                            No invoice records registered.
-                                        </TableCell>
-                                    </TableRow>
-                                </TableBody>
-                            </Table>
-                        </div>
-
-                        <!-- =============================================================== -->
-                        <!-- VIEW 7: MASTER PATIENT INDEX (activeTab === 'patients')         -->
-                        <!-- =============================================================== -->
-                        <div v-else-if="activeTab === 'patients'" class="w-full bg-card rounded-lg overflow-hidden shadow-2xs flex flex-col space-y-0">
-                            <div class="px-4 py-3 border-b border-border/60 bg-muted/20 flex items-center justify-between">
-                                <div class="flex items-center gap-2 text-xs font-bold text-foreground">
+                        <!-- ========================================================================= -->
+                        <!-- TIER 4: RECENT REGISTERED PATIENTS INFLOW (Full-Width Registry Grid)       -->
+                        <!-- ========================================================================= -->
+                        <div class="space-y-2 pt-2">
+                            <div class="flex items-center justify-between px-0.5">
+                                <div class="flex items-center gap-1.5">
                                     <Users class="w-4 h-4 text-primary" />
-                                    <span>Master Patient Index (MPI) Registry</span>
+                                    <h2 class="text-sm font-bold text-foreground">Recent Registered Patients (Inflow Directory)</h2>
+                                    <span class="text-xs text-muted-foreground">({{ recentPatients.length }} active)</span>
                                 </div>
-                                <Link :href="route('patients.index')">
-                                    <Button variant="default" size="sm" class="h-7 text-xs font-semibold gap-1.5 shadow-2xs">
-                                        <span>Full Patient Directory</span>
-                                        <ArrowUpRight class="w-3.5 h-3.5" />
-                                    </Button>
+                                <Link v-if="can.patients" :href="route('patients.index')" class="text-xs font-semibold text-primary hover:underline flex items-center gap-0.5">
+                                    <span>Patient Registry</span>
+                                    <ArrowRight class="w-3 h-3" />
                                 </Link>
                             </div>
-                            <Table class="w-full text-xs">
-                                <TableHeader>
-                                    <TableRow class="bg-muted/30 text-[10px] uppercase font-bold text-muted-foreground">
-                                        <TableHead class="py-2 px-4">Primary MRN</TableHead>
-                                        <TableHead class="py-2 px-3">Full Name</TableHead>
-                                        <TableHead class="py-2 px-3">Demographics</TableHead>
-                                        <TableHead class="py-2 px-3">Blood Group</TableHead>
-                                        <TableHead class="py-2 px-3">Created</TableHead>
-                                        <TableHead class="py-2 px-3">Status</TableHead>
-                                        <TableHead class="py-2 px-4 text-right">Action</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    <TableRow 
-                                        v-for="pat in recentPatients" 
-                                        :key="pat.id"
-                                        class="cursor-pointer hover:bg-muted/30 border-b border-border/30"
-                                        :class="{ 'bg-primary/5': selectedRecord?.type === 'patient' && selectedRecord?.data?.id === pat.id }"
-                                        @click="selectRecord('patient', pat)"
-                                    >
-                                        <TableCell class="py-2.5 px-4 font-mono font-bold text-foreground">{{ pat.primary_mrn }}</TableCell>
-                                        <TableCell class="py-2.5 px-3 font-bold">{{ pat.first_name }} {{ pat.last_name }}</TableCell>
-                                        <TableCell class="py-2.5 px-3 text-muted-foreground">{{ pat.gender }} · {{ pat.age ? `${pat.age}y` : (pat.formatted_dob || formatDate(pat.dob)) }}</TableCell>
-                                        <TableCell class="py-2.5 px-3 font-mono font-semibold text-rose-600">{{ pat.blood_group || 'O+' }}</TableCell>
-                                        <TableCell class="py-2.5 px-3 font-mono text-[10px]">{{ formatDate(pat.created_at) }}</TableCell>
-                                        <TableCell class="py-2.5 px-3">
-                                            <AfyaStatusBadge :status="pat.status || 'Active'" />
-                                        </TableCell>
-                                        <TableCell class="py-2.5 px-4 text-right">
-                                            <Link :href="route('patients.show', pat.id)" @click.stop>
-                                                <Button variant="default" size="sm" class="h-7 px-3 text-xs font-semibold">
-                                                    Patient 360
-                                                </Button>
-                                            </Link>
-                                        </TableCell>
-                                    </TableRow>
-                                </TableBody>
-                            </Table>
+
+                            <div class="rounded-lg border border-border bg-card overflow-hidden shadow-2xs">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead class="min-w-[140px] whitespace-nowrap">Primary MRN</TableHead>
+                                            <TableHead class="min-w-[200px]">Full Patient Name</TableHead>
+                                            <TableHead class="min-w-[140px]">Demographics</TableHead>
+                                            <TableHead class="min-w-[140px]">Registration Date</TableHead>
+                                            <TableHead class="w-[120px]">Status</TableHead>
+                                            <TableHead class="text-right whitespace-nowrap min-w-[180px]">Reception Actions</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        <TableRow
+                                            v-for="pt in recentPatients"
+                                            :key="pt.id"
+                                            class="cursor-pointer group hover:bg-muted/30"
+                                            :selected="selectedRecord?.type === 'patient' && selectedRecord?.data?.id === pt.id"
+                                            @click="selectRecord('patient', pt)"
+                                        >
+                                            <TableCell class="font-mono font-bold text-foreground text-xs whitespace-nowrap">
+                                                {{ pt.primary_mrn }}
+                                            </TableCell>
+                                            <TableCell class="font-bold text-foreground text-xs">
+                                                {{ pt.first_name }} {{ pt.last_name }}
+                                            </TableCell>
+                                            <TableCell class="text-xs text-muted-foreground">
+                                                <span>{{ pt.gender || 'Unknown' }}</span>
+                                                <span class="mx-1 text-border">·</span>
+                                                <span>{{ pt.age ? `${pt.age}y` : formatDate(pt.dob) }}</span>
+                                            </TableCell>
+                                            <TableCell class="text-xs text-muted-foreground font-mono">
+                                                {{ formatDate(pt.created_at) }}
+                                            </TableCell>
+                                            <TableCell>
+                                                <AfyaStatusBadge :status="pt.status || 'Active'" dot />
+                                            </TableCell>
+                                            <TableCell class="text-right whitespace-nowrap min-w-[180px]">
+                                                <div class="flex items-center justify-end gap-1.5" @click.stop>
+                                                    <Button
+                                                        v-if="can.checkin"
+                                                        variant="default"
+                                                        size="sm"
+                                                        class="h-6 px-2 text-[10.5px] font-semibold gap-1 bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs"
+                                                        @click="openQuickCheckInModal(pt)"
+                                                    >
+                                                        <Ticket class="w-3 h-3" />
+                                                        <span>Check-In</span>
+                                                    </Button>
+                                                    <Link
+                                                        v-if="can.patients"
+                                                        :href="route('patients.show', pt.id)"
+                                                        class="inline-flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline px-1.5 py-0.5 rounded hover:bg-muted/40"
+                                                    >
+                                                        <span>360</span>
+                                                        <ArrowRight class="w-3 h-3" />
+                                                    </Link>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+
+                                        <TableRow v-if="recentPatients.length === 0">
+                                            <TableCell colspan="6" class="text-center py-10 text-muted-foreground text-xs">
+                                                No patient records registered today.
+                                            </TableCell>
+                                        </TableRow>
+                                    </TableBody>
+                                </Table>
+                            </div>
                         </div>
 
                     </div>
                 </AfyaWorkspaceMain>
             </template>
 
-            <!-- 3. RIGHT PANEL: Live Hospital Telemetry & Selected Record Context -->
+            <!-- 3. RIGHT CONTEXT INSPECTOR: 1-Click Launchpad & Identity Details -->
             <template #context="{ width, close }">
                 <AfyaContextPanel
-                    title="Command Inspector"
-                    :icon="Activity"
+                    :title="selectedRecord?.type === 'patient' ? 'Patient Snapshot' : (selectedRecord?.type === 'appointment' ? 'Appointment Detail' : 'Context Details')"
+                    :icon="selectedRecord?.type === 'appointment' ? Calendar : Users"
                     :width="width"
                     @close="close"
                 >
-                    <!-- RECORD INSPECTOR: Active when user clicks an encounter, invoice, patient, ticket, or rx -->
-                    <div v-if="selectedRecord" class="space-y-3 text-xs">
-                        
-                        <div class="flex items-center justify-between px-1">
-                            <span class="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
-                                Selected {{ selectedRecord.type }}
-                            </span>
-                            <button 
-                                @click="clearSelectedRecord"
-                                class="text-[10px] font-semibold text-rose-600 dark:text-rose-400 hover:underline flex items-center gap-0.5"
+                    <!-- Patient Context Inspector -->
+                    <div v-if="selectedRecord?.type === 'patient'" class="space-y-3 text-xs">
+                        <AfyaPatientIdentity :patient="selectedRecord.data">
+                            <AfyaStatusBadge :status="selectedRecord.data.status || 'Active'" dot />
+                        </AfyaPatientIdentity>
+
+                        <div class="space-y-2 pt-2 border-t border-border">
+                            <div class="text-[10px] font-bold text-foreground uppercase tracking-wider flex items-center justify-between">
+                                <span class="flex items-center gap-1 text-primary">
+                                    <Sparkles class="w-3 h-3 text-amber-500" />
+                                    Reception Fast-Track Launchpad
+                                </span>
+                            </div>
+
+                            <Button
+                                v-if="can.checkin"
+                                variant="default"
+                                size="sm"
+                                class="w-full justify-between gap-1 text-xs h-8 bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs"
+                                @click="openQuickCheckInModal(selectedRecord.data)"
                             >
-                                <X class="w-3 h-3" />
-                                <span>Close</span>
-                            </button>
-                        </div>
-
-                        <!-- 1. Encounter Record Inspector -->
-                        <div v-if="selectedRecord.type === 'encounter'" class="space-y-3">
-                            <AfyaPatientIdentity v-if="selectedRecord.data.patient" :patient="selectedRecord.data.patient">
-                                <AfyaStatusBadge :status="selectedRecord.data.status" dot />
-                            </AfyaPatientIdentity>
-
-                            <div class="p-3 rounded-lg bg-card space-y-1.5 shadow-2xs">
-                                <div class="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Encounter Details</div>
-                                <div class="space-y-1 text-[11px]">
-                                    <div class="flex justify-between">
-                                        <span class="text-muted-foreground">Type:</span>
-                                        <span class="font-bold text-foreground font-mono">{{ selectedRecord.data.encounter_type || 'OPD' }}</span>
-                                    </div>
-                                    <div class="flex justify-between">
-                                        <span class="text-muted-foreground">Reason:</span>
-                                        <span class="font-medium text-foreground truncate max-w-[140px]">{{ selectedRecord.data.reason_for_visit || 'Consultation' }}</span>
-                                    </div>
-                                    <div class="flex justify-between">
-                                        <span class="text-muted-foreground">Start Time:</span>
-                                        <span class="font-mono text-muted-foreground text-[10px]">{{ selectedRecord.data.start_time || 'In Progress' }}</span>
-                                    </div>
+                                <div class="flex items-center gap-1.5">
+                                    <Ticket class="w-3.5 h-3.5" />
+                                    <span class="font-bold">Check-In & Route to Queue</span>
                                 </div>
-                            </div>
+                                <span class="text-[9.5px] font-normal opacity-90">1-Click</span>
+                            </Button>
 
-                            <Link :href="route('encounters.workspace', selectedRecord.data.id)" class="block pt-1">
-                                <Button variant="default" size="sm" class="w-full justify-center gap-1.5 text-xs h-8 shadow-2xs font-semibold">
-                                    <Stethoscope class="w-3.5 h-3.5" />
-                                    <span>Launch Clinical Charting</span>
+                            <Link v-if="can.patients" :href="route('patients.show', selectedRecord.data.id)" class="block">
+                                <Button variant="outline" size="sm" class="w-full justify-between gap-1 text-xs h-7.5 border-border/80 hover:bg-muted/40">
+                                    <div class="flex items-center gap-1.5">
+                                        <ShieldCheck class="w-3.5 h-3.5 text-sky-600" />
+                                        <span>Add Insurance / NHIF Policy</span>
+                                    </div>
+                                    <ArrowRight class="w-3 h-3 text-muted-foreground" />
                                 </Button>
                             </Link>
-                        </div>
 
-                        <!-- 2. Invoice Record Inspector -->
-                        <div v-else-if="selectedRecord.type === 'invoice'" class="space-y-3">
-                            <div class="p-3 rounded-lg bg-card space-y-1.5 shadow-2xs">
-                                <div class="flex items-center justify-between text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                                    <span>Invoice Breakdown</span>
-                                    <span class="font-mono text-foreground">{{ selectedRecord.data.invoice_number }}</span>
-                                </div>
-                                <div class="space-y-1 text-[11px]">
-                                    <div class="flex justify-between">
-                                        <span class="text-muted-foreground">Total:</span>
-                                        <span class="font-mono font-bold text-foreground">TZS {{ formatCurrency(selectedRecord.data.total_amount) }}</span>
+                            <Link v-if="can.patients" :href="route('patients.show', selectedRecord.data.id)" class="block">
+                                <Button variant="ghost" size="sm" class="w-full justify-between gap-1 text-xs h-7.5 border border-dashed border-border/70 hover:bg-muted/30">
+                                    <div class="flex items-center gap-1.5">
+                                        <Users class="w-3.5 h-3.5 text-primary" />
+                                        <span class="font-semibold text-foreground">Open Full Patient 360 Record</span>
                                     </div>
-                                    <div class="flex justify-between">
-                                        <span class="text-muted-foreground">Paid:</span>
-                                        <span class="font-mono font-bold text-emerald-700 dark:text-emerald-400">TZS {{ formatCurrency(selectedRecord.data.paid_amount) }}</span>
-                                    </div>
-                                    <div class="flex justify-between">
-                                        <span class="text-muted-foreground">Status:</span>
-                                        <AfyaStatusBadge :status="selectedRecord.data.status" dot />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <Link :href="route('billing.desk')" class="block pt-1">
-                                <Button variant="default" size="sm" class="w-full justify-center gap-1.5 text-xs h-8 shadow-2xs font-semibold">
-                                    <Receipt class="w-3.5 h-3.5" />
-                                    <span>Open in Cashier POS Desk</span>
+                                    <ArrowRight class="w-3 h-3 text-muted-foreground" />
                                 </Button>
                             </Link>
-                        </div>
-
-                        <!-- 3. Patient Record Inspector -->
-                        <div v-else-if="selectedRecord.type === 'patient'" class="space-y-3">
-                            <AfyaPatientIdentity :patient="selectedRecord.data">
-                                <AfyaStatusBadge :status="selectedRecord.data.status || 'Active'" />
-                            </AfyaPatientIdentity>
-
-                            <Link :href="route('patients.show', selectedRecord.data.id)" class="block pt-1">
-                                <Button variant="default" size="sm" class="w-full justify-center gap-1.5 text-xs h-8 shadow-2xs font-semibold">
-                                    <ArrowRight class="w-3.5 h-3.5" />
-                                    <span>Open Full Patient 360</span>
-                                </Button>
-                            </Link>
-                        </div>
-
-                        <!-- 4. Queue Ticket Inspector -->
-                        <div v-else-if="selectedRecord.type === 'ticket'" class="space-y-3">
-                            <div class="p-3 rounded-lg bg-card space-y-1.5 shadow-2xs">
-                                <div class="flex items-center justify-between text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                                    <span>Triage Ticket</span>
-                                    <span class="font-mono font-bold text-primary">{{ selectedRecord.data.ticket_number }}</span>
-                                </div>
-                                <div class="space-y-1 text-[11px]">
-                                    <div class="flex justify-between">
-                                        <span class="text-muted-foreground">Service Point:</span>
-                                        <span class="font-bold text-foreground">{{ selectedRecord.data.service_point }}</span>
-                                    </div>
-                                    <div class="flex justify-between">
-                                        <span class="text-muted-foreground">Priority:</span>
-                                        <span class="font-bold text-foreground">{{ selectedRecord.data.priority }}</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <Link :href="route('queue.index')" class="block pt-1">
-                                <Button variant="default" size="sm" class="w-full justify-center gap-1.5 text-xs h-8 shadow-2xs font-semibold">
-                                    <PhoneCall class="w-3.5 h-3.5" />
-                                    <span>Call Patient Now</span>
-                                </Button>
-                            </Link>
-                        </div>
-
-                        <!-- 5. Appointment / Rx Inspector -->
-                        <div v-else class="space-y-3">
-                            <div class="p-3 rounded-lg bg-card space-y-1.5 shadow-2xs">
-                                <div class="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Record Details</div>
-                                <div class="text-xs text-foreground font-medium">Selected Item Loaded</div>
-                            </div>
                         </div>
                     </div>
 
-                    <!-- DEFAULT STATE: Live Hospital Operations Pulse (When nothing is selected) -->
-                    <div v-else class="space-y-3 text-xs">
-                        
-                        <!-- Live Operations Pulse Card -->
-                        <div class="p-3 rounded-lg bg-card space-y-2 shadow-2xs">
-                            <div class="flex items-center justify-between text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                                <span>Hospital Pulse</span>
-                                <span class="flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-bold">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                                    Operational
-                                </span>
+                    <!-- Appointment Context Inspector -->
+                    <div v-else-if="selectedRecord?.type === 'appointment'" class="space-y-3 text-xs">
+                        <div class="p-2.5 rounded-lg bg-card border border-border/80 space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="text-[10px] font-bold text-muted-foreground uppercase">Scheduled Slot</span>
+                                <AfyaStatusBadge :status="selectedRecord.data.status" dot />
                             </div>
-                            
-                            <div class="space-y-1.5 text-[11px]">
-                                <div class="flex items-center justify-between border-b border-border/40 pb-1">
-                                    <span class="text-muted-foreground">Triage Queue:</span>
-                                    <span class="font-mono font-bold" :class="metrics.queue_waiting > 0 ? 'text-amber-700 dark:text-amber-400' : 'text-emerald-700 dark:text-emerald-400'">
-                                        {{ metrics.queue_waiting }} Waiting
-                                    </span>
-                                </div>
-                                <div class="flex items-center justify-between border-b border-border/40 pb-1">
-                                    <span class="text-muted-foreground">Pharmacy Load:</span>
-                                    <span class="font-mono font-bold text-sky-800 dark:text-sky-400">
-                                        {{ metrics.pending_pharmacy }} Pending
-                                    </span>
-                                </div>
-                                <div class="flex items-center justify-between border-b border-border/40 pb-1">
-                                    <span class="text-muted-foreground">Unpaid Invoices:</span>
-                                    <span class="font-mono font-bold" :class="metrics.unpaid_invoices > 0 ? 'text-rose-700 dark:text-rose-400' : 'text-emerald-700 dark:text-emerald-400'">
-                                        {{ metrics.unpaid_invoices }} Invoices
-                                    </span>
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <span class="text-muted-foreground">Ledger State:</span>
-                                    <span class="font-bold text-emerald-700 dark:text-emerald-400 text-[10px]">Balanced</span>
-                                </div>
+                            <div class="font-mono font-bold text-sm text-foreground">
+                                {{ formatTime(selectedRecord.data.scheduled_time) }} · {{ formatDate(selectedRecord.data.scheduled_time) }}
+                            </div>
+                            <div class="text-xs text-muted-foreground">
+                                Type: <span class="font-semibold text-foreground">{{ selectedRecord.data.appointment_type || 'Consultation' }}</span>
                             </div>
                         </div>
 
-                        <!-- Fast Hospital Navigation Shortcuts -->
-                        <div class="p-3 rounded-lg bg-card space-y-2 shadow-2xs">
-                            <div class="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                                Workstation Hub
-                            </div>
-                            <div class="space-y-1.5">
-                                <Link :href="route('workspace.clinical')" class="block">
-                                    <Button variant="outline" size="sm" class="w-full justify-start gap-2 text-xs h-8 bg-card shadow-2xs font-semibold">
-                                        <Stethoscope class="w-3.5 h-3.5 text-primary" />
-                                        <span>Clinical Workstation</span>
-                                    </Button>
-                                </Link>
-                                <Link :href="route('billing.desk')" class="block">
-                                    <Button variant="outline" size="sm" class="w-full justify-start gap-2 text-xs h-8 bg-card shadow-2xs font-semibold">
-                                        <Receipt class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                                        <span>Cashier POS Desk</span>
-                                    </Button>
-                                </Link>
-                                <Link :href="route('pharmacy.queue')" class="block">
-                                    <Button variant="outline" size="sm" class="w-full justify-start gap-2 text-xs h-8 bg-card shadow-2xs font-semibold">
-                                        <Pill class="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
-                                        <span>Dispensary & Queue</span>
-                                    </Button>
-                                </Link>
-                                <Link :href="route('queue.index')" class="block">
-                                    <Button variant="outline" size="sm" class="w-full justify-start gap-2 text-xs h-8 bg-card shadow-2xs font-semibold">
-                                        <Clock class="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-                                        <span>Triage Desk</span>
-                                    </Button>
-                                </Link>
-                            </div>
+                        <div v-if="selectedRecord.data.patient" class="p-2.5 rounded-lg bg-muted/30 border border-border/60 space-y-1">
+                            <div class="text-[10px] font-bold text-muted-foreground uppercase">Patient</div>
+                            <div class="font-bold text-xs text-foreground">{{ selectedRecord.data.patient.first_name }} {{ selectedRecord.data.patient.last_name }}</div>
+                            <div class="font-mono text-[10px] text-muted-foreground">MRN: {{ selectedRecord.data.patient.primary_mrn }}</div>
+                        </div>
+
+                        <div class="pt-2 border-t border-border space-y-1.5">
+                            <Button
+                                v-if="selectedRecord.data.status === 'Scheduled' && can.checkin"
+                                variant="default"
+                                size="sm"
+                                class="w-full justify-center gap-1.5 text-xs h-8 bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs"
+                                @click="checkInAppointment(selectedRecord.data)"
+                            >
+                                <Ticket class="w-3.5 h-3.5" />
+                                <span>Check-In to Queue Now</span>
+                            </Button>
+
+                            <Link v-if="selectedRecord.data.patient && can.patients" :href="route('patients.show', selectedRecord.data.patient.id)" class="block">
+                                <Button variant="outline" size="sm" class="w-full justify-between gap-1 text-xs h-7.5">
+                                    <span>Open Patient 360</span>
+                                    <ArrowRight class="w-3 h-3" />
+                                </Button>
+                            </Link>
+                        </div>
+                    </div>
+
+                    <!-- Clean Empty State -->
+                    <div v-else class="text-center py-8 px-2 space-y-2 text-xs">
+                        <div class="w-9 h-9 rounded-full bg-muted flex items-center justify-center mx-auto text-muted-foreground">
+                            <LayoutDashboard class="w-4 h-4" />
+                        </div>
+                        <div class="space-y-0.5">
+                            <div class="font-bold text-foreground text-xs">Reception Command Center</div>
+                            <p class="text-[11px] text-muted-foreground leading-tight">
+                                Click any appointment or registered patient row to view identity, quick triage routing, and appointment details.
+                            </p>
                         </div>
                     </div>
                 </AfyaContextPanel>
             </template>
+
         </AfyaWorkspace>
+
+        <AfyaCheckInModal
+            :show="showCheckInModal"
+            :patient="checkInPatient"
+            :recent-patients="recentPatients"
+            :lab-tests="labTests"
+            :procedure-catalogs="procedureCatalogs"
+            :active-tickets="activeQueueTickets"
+            @close="showCheckInModal = false"
+        />
     </AfyaShell>
 </template>

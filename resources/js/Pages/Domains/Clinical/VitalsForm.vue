@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue';
 import { useForm } from '@inertiajs/vue3';
-import { Activity, Plus, Save, Loader2, CheckCircle2, AlertTriangle, X, HeartPulse, Scale } from '@lucide/vue';
+import { Activity, Plus, Save, Loader2, CheckCircle2, AlertTriangle, X, HeartPulse, Scale, ShieldAlert, ShieldCheck, Zap } from '@lucide/vue';
 import Button from '@/Components/ui/Button.vue';
 import Input from '@/Components/ui/Input.vue';
 import Table from '@/Components/ui/Table.vue';
@@ -42,7 +42,23 @@ const form = useForm({
     oxygen_saturation: '',
     weight_kg: '',
     height_cm: '',
+    avpu: 'A',
 });
+
+const applyNormalPreset = () => {
+    form.temperature_c = '36.8';
+    form.heart_rate = '72';
+    form.systolic_bp = '120';
+    form.diastolic_bp = '80';
+    form.respiratory_rate = '16';
+    form.oxygen_saturation = '98';
+    form.avpu = 'A';
+};
+
+const setBp = (sys, dia) => {
+    form.systolic_bp = sys;
+    form.diastolic_bp = dia;
+};
 
 // Live BMI Calculation Preview
 const computedBmi = computed(() => {
@@ -52,6 +68,94 @@ const computedBmi = computed(() => {
         return (w / (h * h)).toFixed(1);
     }
     return null;
+});
+
+// Live MEWS (Modified Early Warning Score) Calculation
+const mewsScore = computed(() => {
+    const sbp = parseFloat(form.systolic_bp);
+    const hr = parseFloat(form.heart_rate);
+    const rr = parseFloat(form.respiratory_rate);
+    const temp = parseFloat(form.temperature_c);
+    const spo2 = parseFloat(form.oxygen_saturation);
+    const avpu = form.avpu || 'A';
+
+    if (!sbp && !hr && !rr && !temp && !spo2) return null;
+
+    let score = 0;
+    // SBP
+    if (sbp > 0) {
+        if (sbp <= 70) score += 3;
+        else if (sbp <= 80) score += 2;
+        else if (sbp <= 100) score += 1;
+        else if (sbp <= 199) score += 0;
+        else score += 2;
+    }
+    // HR
+    if (hr > 0) {
+        if (hr <= 40) score += 2;
+        else if (hr <= 50) score += 1;
+        else if (hr <= 100) score += 0;
+        else if (hr <= 110) score += 1;
+        else if (hr <= 129) score += 2;
+        else score += 3;
+    }
+    // RR
+    if (rr > 0) {
+        if (rr < 9) score += 2;
+        else if (rr <= 14) score += 0;
+        else if (rr <= 20) score += 1;
+        else if (rr <= 29) score += 2;
+        else score += 3;
+    }
+    // Temp
+    if (temp > 0) {
+        if (temp < 35.0) score += 2;
+        else if (temp <= 38.4) score += 0;
+        else score += 2;
+    }
+    // SpO2
+    if (spo2 > 0) {
+        if (spo2 <= 91) score += 3;
+        else if (spo2 <= 93) score += 2;
+        else if (spo2 <= 95) score += 1;
+        else score += 0;
+    }
+    // AVPU
+    if (avpu === 'V') score += 1;
+    else if (avpu === 'P') score += 2;
+    else if (avpu === 'U') score += 3;
+
+    let risk = 'LOW';
+    let title = 'Physiologically Stable';
+    let protocol = ['Continue routine 6–8 hourly ward observation schedule.'];
+
+    if (score >= 6) {
+        risk = 'CRITICAL';
+        title = 'Critical Clinical Deterioration / Code Yellow';
+        protocol = [
+            'Immediately notify Ward In-Charge and Medical Officer on duty.',
+            'Continuous cardiac and pulse oximetry monitoring (repeat vitals Q15min).',
+            'Ensure patent airway, deliver high-flow supplemental oxygen.',
+            'Secure wide-bore IV cannula access (16G/18G) and prepare resuscitation trolley.',
+        ];
+    } else if (score >= 4) {
+        risk = 'HIGH';
+        title = 'High Deterioration Risk';
+        protocol = [
+            'Inform attending clinician within 30 minutes.',
+            'Increase vital signs monitoring frequency to every 30–60 minutes.',
+            'Review fluid balance and recent laboratory investigations.',
+        ];
+    } else if (score >= 2) {
+        risk = 'MEDIUM';
+        title = 'Moderate Risk - Increased Surveillance';
+        protocol = [
+            'Repeat vital signs observation in 2–4 hours.',
+            'Verify pain control, hydration status, and baseline trajectory.',
+        ];
+    }
+
+    return { score, risk, title, protocol };
 });
 
 const submit = () => {
@@ -128,7 +232,83 @@ const formatDate = (dateStr) => {
             </button>
         </div>
         
-        <form @submit.prevent="submit" class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+        <!-- Tablet Bedside Quick Presets Strip -->
+        <div class="flex items-center justify-between p-1.5 rounded-lg bg-muted/40 border border-border/60 text-[10px]">
+            <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="font-bold text-muted-foreground uppercase tracking-wider text-[9px]">Bedside Quick-Fill:</span>
+                <button
+                    type="button"
+                    @click="applyNormalPreset"
+                    class="px-2 py-0.5 rounded bg-card hover:bg-muted border border-border/80 font-bold text-primary shadow-2xs hover:scale-105 transition-transform"
+                >
+                    ⚡ Normal Adult (36.8°C / 72 bpm / 120/80 / 98%)
+                </button>
+                <button
+                    type="button"
+                    @click="setBp('110', '70')"
+                    class="px-1.5 py-0.5 rounded bg-card hover:bg-muted border border-border/80 font-mono text-muted-foreground hover:text-foreground"
+                >
+                    110/70
+                </button>
+                <button
+                    type="button"
+                    @click="setBp('130', '85')"
+                    class="px-1.5 py-0.5 rounded bg-card hover:bg-muted border border-border/80 font-mono text-muted-foreground hover:text-foreground"
+                >
+                    130/85
+                </button>
+                <button
+                    type="button"
+                    @click="setBp('140', '90')"
+                    class="px-1.5 py-0.5 rounded bg-card hover:bg-muted border border-border/80 font-mono text-rose-600 dark:text-rose-400 font-bold"
+                >
+                    140/90
+                </button>
+            </div>
+            <button
+                type="button"
+                @click="form.reset()"
+                class="text-muted-foreground hover:text-rose-600 font-semibold text-[9.5px] px-1"
+            >
+                Clear
+            </button>
+        </div>
+        
+        <!-- Live MEWS Early Warning Score Banner -->
+        <div v-if="mewsScore" class="p-3 rounded-lg border transition shadow-2xs space-y-2" :class="{
+            'bg-emerald-500/10 border-emerald-500/30 text-emerald-950 dark:text-emerald-200': mewsScore.risk === 'LOW',
+            'bg-amber-500/10 border-amber-500/30 text-amber-950 dark:text-amber-200': mewsScore.risk === 'MEDIUM',
+            'bg-orange-500/10 border-orange-500/30 text-orange-950 dark:text-orange-200': mewsScore.risk === 'HIGH',
+            'bg-rose-500/15 border-rose-500/40 text-rose-950 dark:text-rose-100': mewsScore.risk === 'CRITICAL',
+        }">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <ShieldAlert v-if="mewsScore.risk === 'CRITICAL' || mewsScore.risk === 'HIGH'" class="w-4 h-4 text-rose-600 dark:text-rose-400 animate-pulse" />
+                    <ShieldCheck v-else class="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    <span class="font-bold text-xs">
+                        MEWS Deterioration Index: Score {{ mewsScore.score }} — {{ mewsScore.title }}
+                    </span>
+                </div>
+                <span class="px-2 py-0.5 rounded text-[10px] font-extrabold uppercase tracking-wider" :class="{
+                    'bg-emerald-600 text-white': mewsScore.risk === 'LOW',
+                    'bg-amber-600 text-white': mewsScore.risk === 'MEDIUM',
+                    'bg-orange-600 text-white': mewsScore.risk === 'HIGH',
+                    'bg-rose-600 text-white': mewsScore.risk === 'CRITICAL',
+                }">
+                    {{ mewsScore.risk }} RISK
+                </span>
+            </div>
+
+            <!-- Escalation Protocol Guidance -->
+            <div class="text-[11px] space-y-1 bg-black/5 dark:bg-white/5 p-2 rounded border border-border/40">
+                <div class="font-bold text-[10px] uppercase tracking-wider text-muted-foreground">Clinical Escalation Guidance:</div>
+                <ul class="list-disc list-inside space-y-0.5 opacity-90">
+                    <li v-for="(step, idx) in mewsScore.protocol" :key="idx">{{ step }}</li>
+                </ul>
+            </div>
+        </div>
+        
+        <form @submit.prevent="submit" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-2.5">
             <div>
                 <label class="block text-[11px] font-semibold text-foreground mb-1">Temp (°C)</label>
                 <Input v-model="form.temperature_c" type="number" step="0.1" placeholder="36.8" class="h-8 text-xs" />
@@ -154,6 +334,15 @@ const formatDate = (dateStr) => {
                 <Input v-model="form.respiratory_rate" type="number" placeholder="16" class="h-8 text-xs" />
             </div>
             <div>
+                <label class="block text-[11px] font-semibold text-foreground mb-1">Consciousness (AVPU)</label>
+                <select v-model="form.avpu" class="h-8 text-xs w-full rounded-md border border-input bg-background px-2">
+                    <option value="A">A - Alert</option>
+                    <option value="V">V - Voice</option>
+                    <option value="P">P - Pain</option>
+                    <option value="U">U - Unresponsive</option>
+                </select>
+            </div>
+            <div>
                 <label class="block text-[11px] font-semibold text-foreground mb-1">Weight (kg)</label>
                 <Input v-model="form.weight_kg" type="number" step="0.1" placeholder="70.5" class="h-8 text-xs" />
             </div>
@@ -161,7 +350,7 @@ const formatDate = (dateStr) => {
                 <label class="block text-[11px] font-semibold text-foreground mb-1">Height (cm)</label>
                 <Input v-model="form.height_cm" type="number" step="0.1" placeholder="175" class="h-8 text-xs" />
             </div>
-            <div class="flex items-end">
+            <div class="flex items-end sm:col-span-2 lg:col-span-2">
                 <Button v-if="can.recordVitals" type="submit" variant="default" size="sm" :disabled="form.processing" class="w-full h-8 justify-center gap-1 shadow-2xs">
                     <Loader2 v-if="form.processing" class="w-3.5 h-3.5 animate-spin mr-1" />
                     <Save v-else class="w-3.5 h-3.5" />

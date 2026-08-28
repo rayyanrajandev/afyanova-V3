@@ -44,6 +44,7 @@ import AfyaWorkspaceMain from '@/Components/Workspace/AfyaWorkspaceMain.vue';
 import AfyaContextPanel from '@/Components/Workspace/AfyaContextPanel.vue';
 import Button from '@/Components/ui/Button.vue';
 import Input from '@/Components/ui/Input.vue';
+import AfyaDatePicker from '@/Components/Afya/AfyaDatePicker.vue';
 import Table from '@/Components/ui/Table.vue';
 import TableHeader from '@/Components/ui/TableHeader.vue';
 import TableHead from '@/Components/ui/TableHead.vue';
@@ -445,6 +446,48 @@ const submitStocktake = () => {
         onSuccess: () => {
             showStocktakeModal.value = false;
             stocktakeForm.reset();
+        }
+    });
+};
+
+// Blind Physical Count Recording Logic
+const showBlindCountModal = ref(false);
+const activeStocktakeSession = ref(null);
+const blindCountForm = useForm({
+    counts: [],
+});
+
+const openBlindCountModal = (session) => {
+    activeStocktakeSession.value = session;
+    const relevantBalances = (props.stockBalances || []).filter(b => b.location_id === session.location_id);
+    if (relevantBalances.length > 0) {
+        blindCountForm.counts = relevantBalances.map(b => ({
+            medication_id: b.medication_id,
+            medication_name: b.medication?.generic_name || 'Item SKU',
+            batch_id: b.batch_id,
+            batch_number: b.batch?.batch_number || 'Unbatched',
+            physical_counted_quantity: 0,
+            variance_reason: '',
+        }));
+    } else {
+        blindCountForm.counts = (props.itemMasters || []).slice(0, 5).map(i => ({
+            medication_id: i.medication_id || i.id,
+            medication_name: i.name,
+            batch_id: null,
+            batch_number: 'N/A',
+            physical_counted_quantity: 0,
+            variance_reason: '',
+        }));
+    }
+    showBlindCountModal.value = true;
+};
+
+const submitBlindCount = () => {
+    if (!activeStocktakeSession.value) return;
+    blindCountForm.post(route('inventory.stocktake.counts.store', activeStocktakeSession.value.id), {
+        onSuccess: () => {
+            showBlindCountModal.value = false;
+            activeStocktakeSession.value = null;
         }
     });
 };
@@ -1371,14 +1414,14 @@ const breadcrumbLabel = computed(() => {
                                 <Table>
                                     <TableHeader>
                                         <TableRow class="bg-muted/40 text-[10px] uppercase tracking-wider font-bold">
-                                            <TableHead class="py-2 px-3">GRN #</TableHead>
-                                            <TableHead class="py-2 px-3">Supplier</TableHead>
-                                            <TableHead class="py-2 px-3">Delivery Note #</TableHead>
-                                            <TableHead class="py-2 px-3">Invoice #</TableHead>
-                                            <TableHead class="py-2 px-3">Warehouse</TableHead>
-                                            <TableHead class="py-2 px-3 text-right">Received Value</TableHead>
-                                            <TableHead class="py-2 px-3">Received At</TableHead>
-                                            <TableHead class="py-2 px-3">Received By</TableHead>
+                                            <TableHead class="py-2 px-3 whitespace-nowrap min-w-[130px]">GRN #</TableHead>
+                                            <TableHead class="py-2 px-3 whitespace-nowrap min-w-[150px]">Supplier</TableHead>
+                                            <TableHead class="py-2 px-3 whitespace-nowrap min-w-[140px]">Delivery Note #</TableHead>
+                                            <TableHead class="py-2 px-3 whitespace-nowrap min-w-[150px]">Invoice #</TableHead>
+                                            <TableHead class="py-2 px-3 whitespace-nowrap min-w-[130px]">Warehouse</TableHead>
+                                            <TableHead class="py-2 px-3 text-right whitespace-nowrap min-w-[120px]">Received Value</TableHead>
+                                            <TableHead class="py-2 px-3 whitespace-nowrap min-w-[110px]">Received At</TableHead>
+                                            <TableHead class="py-2 px-3 whitespace-nowrap min-w-[130px]">Received By</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -1387,16 +1430,16 @@ const breadcrumbLabel = computed(() => {
                                             :key="grn.id"
                                             class="hover:bg-muted/20 border-b border-border/30"
                                         >
-                                            <TableCell class="py-2 px-3 font-mono font-bold text-primary">
+                                            <TableCell class="py-2 px-3 font-mono font-bold text-primary whitespace-nowrap">
                                                 {{ grn.grn_number }}
                                             </TableCell>
                                             <TableCell class="py-2 px-3 font-bold text-foreground">
                                                 {{ grn.supplier?.name }}
                                             </TableCell>
-                                            <TableCell class="py-2 px-3 font-mono text-xs">
+                                            <TableCell class="py-2 px-3 font-mono text-xs whitespace-nowrap">
                                                 {{ grn.delivery_note_number || 'N/A' }}
                                             </TableCell>
-                                            <TableCell class="py-2 px-3 font-mono text-xs">
+                                            <TableCell class="py-2 px-3 font-mono text-xs whitespace-nowrap">
                                                 {{ grn.supplier_invoice_number || 'N/A' }}
                                             </TableCell>
                                             <TableCell class="py-2 px-3 text-foreground">
@@ -1539,6 +1582,7 @@ const breadcrumbLabel = computed(() => {
                                             <TableHead class="py-2 px-3">Initiated By</TableHead>
                                             <TableHead class="py-2 px-3">Reconciled At</TableHead>
                                             <TableHead class="py-2 px-3">Approver</TableHead>
+                                            <TableHead class="py-2 px-3 text-right">Action</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -1571,9 +1615,20 @@ const breadcrumbLabel = computed(() => {
                                             <TableCell class="py-2 px-3 text-xs text-foreground font-semibold">
                                                 {{ st.approved_by?.first_name }} {{ st.approved_by?.last_name }}
                                             </TableCell>
+                                            <TableCell class="py-2 px-3 text-right">
+                                                <Button
+                                                    v-if="st.status !== 'Approved_Reconciled'"
+                                                    variant="outline"
+                                                    size="sm"
+                                                    class="h-6 text-[10px] font-bold text-indigo-600 border-indigo-300 dark:border-indigo-700 hover:bg-indigo-50"
+                                                    @click="openBlindCountModal(st)"
+                                                >
+                                                    Record Blind Count
+                                                </Button>
+                                            </TableCell>
                                         </TableRow>
                                         <TableRow v-if="stocktakeSessions.length === 0">
-                                            <TableCell colspan="7" class="py-8 text-center text-muted-foreground text-xs">
+                                            <TableCell colspan="8" class="py-8 text-center text-muted-foreground text-xs">
                                                 No active stocktaking sessions found. All store accounts currently balanced.
                                             </TableCell>
                                         </TableRow>
@@ -2146,8 +2201,13 @@ const breadcrumbLabel = computed(() => {
                                     <InputError :message="grnForm.errors[`items.${idx}.batch_number`]" class="mt-1" />
                                 </div>
                                 <div class="col-span-2">
-                                    <Input v-model="item.expiry_date" type="date" class="h-8 text-xs font-mono" />
-                                    <InputError :message="grnForm.errors[`items.${idx}.expiry_date`]" class="mt-1" />
+                                    <AfyaDatePicker
+                                        v-model="item.expiry_date"
+                                        placeholder="Expiry Date"
+                                        size="sm"
+                                        :min="new Date().toISOString().split('T')[0]"
+                                        :error="grnForm.errors[`items.${idx}.expiry_date`]"
+                                    />
                                 </div>
                                 <div class="col-span-1">
                                     <Input v-model.number="item.received_quantity" type="number" min="1" placeholder="Qty" class="h-8 text-xs text-right font-mono" />
@@ -2325,6 +2385,89 @@ const breadcrumbLabel = computed(() => {
             @close="showCameraScanner = false"
             @scan="handleCameraScan"
         />
+
+        <!-- BLIND PHYSICAL STOCKTAKE COUNT MODAL -->
+        <div v-if="showBlindCountModal" class="fixed inset-0 z-50 bg-background/80 backdrop-blur-xs flex items-center justify-center p-4">
+            <div class="bg-card border border-border rounded-xl shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 space-y-4">
+                <div class="flex items-center justify-between border-b border-border/60 pb-3">
+                    <div class="flex items-center gap-2">
+                        <div class="p-2 bg-indigo-500/10 text-indigo-600 rounded-lg">
+                            <ClipboardCheck class="w-4 h-4" />
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-sm text-foreground">Record Blind Physical Counts</h3>
+                            <p class="text-[10px] text-muted-foreground">Log physical quantities counted during stocktake audit without bias</p>
+                        </div>
+                    </div>
+                    <button @click="showBlindCountModal = false" class="text-muted-foreground hover:text-foreground">
+                        <X class="w-4 h-4" />
+                    </button>
+                </div>
+
+                <div v-if="activeStocktakeSession" class="space-y-4 text-xs">
+                    <div class="p-2.5 bg-muted/40 rounded-lg border border-border/70 flex justify-between items-center text-[11px]">
+                        <div>
+                            <span class="text-muted-foreground">Audit Session:</span>
+                            <span class="font-mono font-bold text-foreground ml-1">{{ activeStocktakeSession.session_number }}</span>
+                        </div>
+                        <div>
+                            <span class="text-muted-foreground">Store Location:</span>
+                            <span class="font-bold text-foreground ml-1">{{ activeStocktakeSession.location?.name }}</span>
+                        </div>
+                    </div>
+
+                    <form @submit.prevent="submitBlindCount" class="space-y-3">
+                        <div class="space-y-2 max-h-60 overflow-y-auto pr-1">
+                            <div
+                                v-for="(cnt, idx) in blindCountForm.counts"
+                                :key="idx"
+                                class="p-3 bg-muted/20 rounded-lg border border-border/60 grid grid-cols-1 sm:grid-cols-3 gap-2 items-center"
+                            >
+                                <div class="col-span-1 sm:col-span-1">
+                                    <div class="font-bold text-foreground truncate">{{ cnt.medication_name }}</div>
+                                    <div class="text-[10px] font-mono text-muted-foreground">Batch: {{ cnt.batch_number }}</div>
+                                </div>
+
+                                <div>
+                                    <label class="block font-bold text-[10px] uppercase text-muted-foreground mb-0.5">Counted Quantity *</label>
+                                    <Input
+                                        v-model.number="cnt.physical_counted_quantity"
+                                        type="number"
+                                        min="0"
+                                        required
+                                        placeholder="0"
+                                        class="h-7 text-xs font-mono font-bold"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label class="block font-bold text-[10px] uppercase text-muted-foreground mb-0.5">Variance Note</label>
+                                    <Input
+                                        v-model="cnt.variance_reason"
+                                        placeholder="Optional observation..."
+                                        class="h-7 text-[11px]"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end gap-2 pt-3 border-t border-border/60">
+                            <Button type="button" variant="outline" size="sm" @click="showBlindCountModal = false">Cancel</Button>
+                            <Button
+                                type="submit"
+                                variant="default"
+                                size="sm"
+                                :disabled="blindCountForm.processing || blindCountForm.counts.length === 0"
+                                class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
+                            >
+                                <Loader2 v-if="blindCountForm.processing" class="w-3.5 h-3.5 animate-spin mr-1" />
+                                <span>Commit Physical Counts to Reconciler</span>
+                            </Button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
 
     </AfyaShell>
 </template>

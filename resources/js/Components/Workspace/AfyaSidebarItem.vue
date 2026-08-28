@@ -77,7 +77,7 @@ const itemClasses = computed(() => [
         </div>
 
         <span
-            v-if="!collapsed && badge !== null"
+            v-if="!collapsed && badge !== null && badge !== undefined && badge !== 0 && badge !== '0' && badge !== ''"
             class="ml-auto inline-block py-0.2 px-1.5 text-[10px] font-semibold rounded"
             :class="badgeColor"
         >
@@ -86,7 +86,7 @@ const itemClasses = computed(() => [
 
         <!-- Collapsed Mini Dot Badge -->
         <span
-            v-if="collapsed && badge !== null"
+            v-if="collapsed && badge !== null && badge !== undefined && badge !== 0 && badge !== '0' && badge !== ''"
             class="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-primary"
             aria-hidden="true"
         />

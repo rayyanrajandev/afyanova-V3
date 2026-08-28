@@ -1,6 +1,5 @@
 <?php
 
-use App\Core\Context\TenantContext;
 use App\Domains\Clinical\Actions\StartEncounterAction;
 use App\Domains\Clinical\Models\ClinicalConsent;
 use App\Domains\Clinical\Models\ClinicalReferral;
@@ -34,7 +33,7 @@ function buildClinicalCareFixture(): array
         'status' => 'active',
     ]);
 
-    app(TenantContext::class)->setTenantId($tenant->id);
+    setTestTenantContext($tenant->id);
 
     $facility = Facility::create([
         'tenant_id' => $tenant->id,

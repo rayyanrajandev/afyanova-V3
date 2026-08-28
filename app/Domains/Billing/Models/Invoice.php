@@ -5,6 +5,7 @@ namespace App\Domains\Billing\Models;
 use App\Core\Traits\Auditable;
 use App\Core\Traits\AuditsBulkWrites;
 use App\Core\Traits\BelongsToTenant;
+use App\Core\Traits\HasFacilityScope;
 use App\Core\Traits\HasUuidv7;
 use App\Domains\Billing\Exceptions\InvoiceImmutabilityException;
 use App\Domains\Clinical\Models\Encounter;
@@ -59,7 +60,7 @@ use Illuminate\Support\Carbon;
  */
 class Invoice extends Model
 {
-    use Auditable, AuditsBulkWrites, BelongsToTenant, HasUuidv7;
+    use Auditable, AuditsBulkWrites, BelongsToTenant, HasFacilityScope, HasUuidv7;
 
     const AUDIT_CATEGORY = 'BILLING';
 

@@ -7,11 +7,15 @@ use App\Domains\Clinical\Models\Encounter;
 use App\Domains\Identity\Services\AuthorizationService;
 use App\Domains\Insurance\Actions\AdjudicateClaimAction;
 use App\Domains\Insurance\Actions\GenerateClaimFromEncounterAction;
+use App\Domains\Insurance\Actions\ProcessRemittanceAdviceAction;
 use App\Domains\Insurance\Actions\RequestPreAuthAction;
 use App\Domains\Insurance\Actions\SubmitClaimBatchAction;
 use App\Domains\Insurance\Actions\VerifyPolicyEligibilityAction;
+use App\Domains\Insurance\Models\ClaimRemittance;
 use App\Domains\Insurance\Models\InsuranceClaim;
 use App\Domains\Insurance\Models\InsuranceProvider;
+use App\Domains\Insurance\Models\InsuranceScheme;
+use App\Domains\Insurance\Models\InsuranceTariff;
 use App\Domains\Insurance\Models\PatientPolicy;
 use App\Domains\Insurance\Models\PreAuthorization;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -33,6 +37,8 @@ class InsuranceWorkspaceController extends Controller
             'verifyPolicy' => 'insurance.policy.verify',
             'storePreAuth' => 'insurance.preauth.create',
             'adjudicate' => 'insurance.claim.adjudicate',
+            'processRemittance' => 'insurance.claim.adjudicate',
+            'manageTariffs' => 'insurance.claim.create',
         ]);
 
         $claimsQueue = InsuranceClaim::with(['patient', 'policy.provider', 'policy.scheme', 'encounter.diagnoses', 'items'])
@@ -58,6 +64,11 @@ class InsuranceWorkspaceController extends Controller
             ->where('is_active', true)
             ->get();
 
+        $remittances = ClaimRemittance::with(['provider', 'items.claim.patient'])
+            ->orderBy('created_at', 'desc')
+            ->limit(50)
+            ->get();
+
         $encountersForClaiming = Encounter::with(['patient', 'provider', 'diagnoses', 'invoices'])
             ->whereDoesntHave('claims')
             ->whereHas('patient.policies')
@@ -71,6 +82,7 @@ class InsuranceWorkspaceController extends Controller
             'awaiting_remittance' => InsuranceClaim::where('status', 'Submitted')->count(),
             'total_claimed_value' => floatval(InsuranceClaim::sum('total_claimed_amount')),
             'queried_or_disputed' => InsuranceClaim::whereIn('status', ['Queried', 'Rejected'])->count(),
+            'total_remittances_processed' => $remittances->count(),
         ];
 
         return Inertia::render('Workspace/InsuranceWorkspace', [
@@ -80,6 +92,7 @@ class InsuranceWorkspaceController extends Controller
             'preAuthorizations' => $preAuthorizations,
             'patientPolicies' => $patientPolicies,
             'providers' => $providers,
+            'remittances' => $remittances,
             'encountersForClaiming' => $encountersForClaiming,
             'metrics' => $metrics,
         ]);
@@ -187,5 +200,123 @@ class InsuranceWorkspaceController extends Controller
         } catch (\Exception $e) {
             return back()->withErrors(['batch_submit' => $e->getMessage()]);
         }
+    }
+
+    public function storeRemittance(Request $request, ProcessRemittanceAdviceAction $action, AuthorizationService $authService)
+    {
+        abort_unless($authService->hasPermission($request->user(), 'insurance.claim.adjudicate'), 403);
+
+        $validated = $request->validate([
+            'insurance_provider_id' => 'required|uuid|exists:insurance_providers,id',
+            'payment_reference' => 'required|string|max:100',
+            'remittance_date' => 'required|date',
+            'claim_lines' => 'required|array|min:1',
+            'claim_lines.*.claim_id' => 'required|uuid|exists:insurance_claims,id',
+            'claim_lines.*.settled_amount' => 'required|numeric|min:0',
+            'claim_lines.*.disallowed_amount' => 'nullable|numeric|min:0',
+            'claim_lines.*.reason_code' => 'nullable|string|max:50',
+            'claim_lines.*.remarks' => 'nullable|string|max:255',
+            'notes' => 'nullable|string|max:500',
+        ]);
+
+        $provider = InsuranceProvider::findOrFail($validated['insurance_provider_id']);
+
+        try {
+            $remittance = $action->execute(
+                $provider,
+                $validated['payment_reference'],
+                $validated['remittance_date'],
+                $validated['claim_lines'],
+                $validated['notes'] ?? null
+            );
+
+            return back()->with('success', "Remittance advice {$remittance->remittance_number} processed: TZS ".number_format($remittance->total_settled_amount, 2)." settled and posted to general ledger.");
+        } catch (\Throwable $e) {
+            return back()->withErrors(['remittance' => $e->getMessage()]);
+        }
+    }
+
+    public function storeProvider(Request $request, AuthorizationService $authService)
+    {
+        abort_unless($authService->hasPermission($request->user(), 'insurance.claim.create') || $authService->isTenantAdmin($request->user()), 403);
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:150',
+            'code' => 'required|string|max:50',
+            'provider_type' => 'required|string|max:50',
+            'api_adapter' => 'required|string|max:50',
+            'contact_email' => 'nullable|email|max:100',
+            'contact_phone' => 'nullable|string|max:50',
+        ]);
+
+        $validated['tenant_id'] = $request->user()->tenant_id;
+        $validated['is_active'] = true;
+
+        $provider = InsuranceProvider::create($validated);
+
+        return back()->with('success', "Insurance provider {$provider->name} added successfully.");
+    }
+
+    public function storeScheme(Request $request, AuthorizationService $authService)
+    {
+        abort_unless($authService->hasPermission($request->user(), 'insurance.claim.create') || $authService->isTenantAdmin($request->user()), 403);
+
+        $validated = $request->validate([
+            'insurance_provider_id' => 'required|uuid|exists:insurance_providers,id',
+            'name' => 'required|string|max:150',
+            'code' => 'required|string|max:50',
+            'co_pay_type' => 'required|in:None,Fixed_Amount,Percentage',
+            'co_pay_amount' => 'nullable|numeric|min:0',
+            'annual_limit_amount' => 'nullable|numeric|min:0',
+            'requires_pre_auth' => 'nullable|boolean',
+        ]);
+
+        $validated['tenant_id'] = $request->user()->tenant_id;
+        $validated['is_active'] = true;
+        $validated['co_pay_amount'] = $validated['co_pay_amount'] ?? 0;
+        $validated['requires_pre_auth'] = $validated['requires_pre_auth'] ?? false;
+
+        $scheme = InsuranceScheme::create($validated);
+
+        return back()->with('success', "Scheme {$scheme->name} created under provider.");
+    }
+
+    public function storeTariff(Request $request, AuthorizationService $authService)
+    {
+        abort_unless($authService->hasPermission($request->user(), 'insurance.claim.create') || $authService->isTenantAdmin($request->user()), 403);
+
+        $validated = $request->validate([
+            'insurance_provider_id' => 'required|uuid|exists:insurance_providers,id',
+            'insurance_scheme_id' => 'nullable|uuid|exists:insurance_schemes,id',
+            'item_type' => 'required|string|max:50',
+            'item_code' => 'required|string|max:50',
+            'item_name' => 'required|string|max:200',
+            'tariff_price' => 'required|numeric|min:0',
+            'is_covered' => 'nullable|boolean',
+            'requires_prior_approval' => 'nullable|boolean',
+        ]);
+
+        $validated['tenant_id'] = $request->user()->tenant_id;
+        $validated['is_covered'] = $validated['is_covered'] ?? true;
+        $validated['requires_prior_approval'] = $validated['requires_prior_approval'] ?? false;
+
+        $tariff = InsuranceTariff::create($validated);
+
+        return back()->with('success', "Tariff price for {$tariff->item_name} (TZS ".number_format($tariff->tariff_price, 2).") configured successfully.");
+    }
+
+    public function updateTariff(Request $request, InsuranceTariff $tariff, AuthorizationService $authService)
+    {
+        abort_unless($authService->hasPermission($request->user(), 'insurance.claim.create') || $authService->isTenantAdmin($request->user()), 403);
+
+        $validated = $request->validate([
+            'tariff_price' => 'required|numeric|min:0',
+            'is_covered' => 'required|boolean',
+            'requires_prior_approval' => 'required|boolean',
+        ]);
+
+        $tariff->update($validated);
+
+        return back()->with('success', "Tariff price for {$tariff->item_name} updated successfully.");
     }
 }

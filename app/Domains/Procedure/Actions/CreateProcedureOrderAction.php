@@ -5,6 +5,7 @@ namespace App\Domains\Procedure\Actions;
 use App\Core\Context\TenantContext;
 use App\Domains\Billing\Models\Invoice;
 use App\Domains\Billing\Models\InvoiceLineItem;
+use App\Domains\Billing\Services\InvoiceNumberGenerator;
 use App\Domains\Clinical\Models\Encounter;
 use App\Domains\Procedure\Models\ProcedureCatalog;
 use App\Domains\Procedure\Models\ProcedureOrder;
@@ -14,6 +15,10 @@ use InvalidArgumentException;
 
 class CreateProcedureOrderAction
 {
+    public function __construct(
+        protected InvoiceNumberGenerator $invoiceNumbers,
+    ) {}
+
     public function execute(Encounter $encounter, string $procedureCatalogId, string $priority = 'Routine', ?string $indication = null): ProcedureOrder
     {
         $patient = $encounter->patient;
@@ -45,22 +50,23 @@ class CreateProcedureOrderAction
 
             // Auto-Billing Line Item Integration
             if ($catalog->standard_price > 0) {
-                $invoice = Invoice::firstOrCreate(
-                    [
-                        'encounter_id' => $encounter->id,
-                        'patient_id' => $encounter->patient_id,
-                        'status' => 'Draft',
-                    ],
-                    [
+                $invoice = Invoice::where('encounter_id', $encounter->id)
+                    ->whereIn('status', ['Open', 'Draft'])
+                    ->latest('created_at')
+                    ->first();
+
+                if (! $invoice) {
+                    $invoice = Invoice::create([
                         'tenant_id' => $tenantId,
                         'facility_id' => $encounter->facility_id,
-                        'invoice_number' => 'INV-'.date('Ymd').'-'.strtoupper(Str::random(4)),
-                        'invoice_date' => now()->toDateString(),
+                        'encounter_id' => $encounter->id,
+                        'patient_id' => $encounter->patient_id,
+                        'invoice_number' => $this->invoiceNumbers->generate(),
+                        'status' => 'Open',
                         'total_amount' => 0.00,
                         'paid_amount' => 0.00,
-                        'balance_due' => 0.00,
-                    ]
-                );
+                    ]);
+                }
 
                 InvoiceLineItem::create([
                     'tenant_id' => $tenantId,

@@ -25,6 +25,10 @@ const props = defineProps({
         type: String,
         default: 'open', // 'open' or 'close'
     },
+    notice: {
+        type: String,
+        default: '',
+    },
     activeShift: {
         type: Object,
         default: null,
@@ -39,7 +43,7 @@ const props = defineProps({
     },
 });
 
-const emit = defineEmits(['close']);
+const emit = defineEmits(['close', 'opened']);
 
 // Open Form State
 const openingFloat = ref(50000);
@@ -81,6 +85,9 @@ const handleOpenShift = () => {
         opening_float: Number(openingFloat.value || 0),
         notes: openNotes.value,
     }, {
+        onSuccess: () => {
+            emit('opened');
+        },
         onFinish: () => {
             isSubmittingOpen.value = false;
             emit('close');
@@ -124,6 +131,14 @@ const handleCloseShift = () => {
             </div>
 
             <div class="space-y-4 text-xs">
+                <!-- Context Prompt Notice Banner -->
+                <div v-if="notice" class="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-start gap-2.5 text-amber-900 dark:text-amber-300">
+                    <AlertTriangle class="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <div class="text-[11px] leading-relaxed">
+                        {{ notice }}
+                    </div>
+                </div>
+
                 <div class="p-3.5 bg-muted/40 rounded-xl border border-border/70 space-y-1">
                     <div class="flex items-center gap-2 font-bold text-foreground">
                         <ShieldCheck class="w-4 h-4 text-emerald-600" />

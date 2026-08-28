@@ -34,7 +34,7 @@ const styleConfig = computed(() => {
         case 'dispensed':
         case 'success':
             return {
-                classes: 'bg-emerald-50 text-emerald-800 border-emerald-200/80',
+                classes: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20',
                 dotClass: 'bg-emerald-500',
                 label: props.status,
             };
@@ -48,7 +48,7 @@ const styleConfig = computed(() => {
         case 'collected':
         case 'triage':
             return {
-                classes: 'bg-sky-50 text-sky-800 border-sky-200/80',
+                classes: 'bg-sky-500/10 text-sky-700 dark:text-sky-400 border-sky-500/20',
                 dotClass: 'bg-sky-500 animate-pulse',
                 label: props.status,
             };
@@ -60,7 +60,7 @@ const styleConfig = computed(() => {
         case 'abnormal':
         case 'draft':
             return {
-                classes: 'bg-amber-50 text-amber-900 border-amber-200/80',
+                classes: 'bg-amber-500/10 text-amber-800 dark:text-amber-300 border-amber-500/20',
                 dotClass: 'bg-amber-500',
                 label: props.status,
             };
@@ -72,7 +72,7 @@ const styleConfig = computed(() => {
         case 'danger':
         case 'high':
             return {
-                classes: 'bg-rose-50 text-rose-900 border-rose-200/80 font-bold',
+                classes: 'bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20 font-bold',
                 dotClass: 'bg-rose-600 animate-ping',
                 label: props.status,
             };
@@ -84,14 +84,14 @@ const styleConfig = computed(() => {
         case 'closed':
         case 'ordered':
             return {
-                classes: 'bg-slate-100 text-slate-700 border-slate-200/80',
+                classes: 'bg-muted text-muted-foreground border-border/60',
                 dotClass: 'bg-slate-400',
                 label: props.status,
             };
 
         default:
             return {
-                classes: 'bg-slate-100 text-slate-800 border-slate-200',
+                classes: 'bg-muted text-foreground border-border/60',
                 dotClass: 'bg-slate-400',
                 label: props.status,
             };
@@ -102,7 +102,7 @@ const styleConfig = computed(() => {
 <template>
     <span
         :class="cn(
-            'inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[9px] font-bold border uppercase tracking-wider select-none whitespace-nowrap flex-shrink-0',
+            'inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[9px] font-bold border uppercase tracking-wider select-none whitespace-nowrap flex-shrink-0 shadow-2xs',
             styleConfig.classes,
             props.class
         )"

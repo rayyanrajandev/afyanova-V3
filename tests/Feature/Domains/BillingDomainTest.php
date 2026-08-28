@@ -2,10 +2,14 @@
 
 use App\Domains\Billing\Actions\GenerateInvoiceAction;
 use App\Domains\Billing\Actions\IssueRefundAction;
+use App\Domains\Billing\Actions\OpenCashierShiftAction;
 use App\Domains\Billing\Actions\RecordPaymentAction;
 use App\Domains\Billing\Exceptions\LedgerImbalanceException;
 use App\Domains\Billing\Models\Invoice;
 use App\Domains\Clinical\Actions\StartEncounterAction;
+use App\Domains\Identity\Actions\AssignUserRoleAction;
+use App\Domains\Identity\Models\Permission;
+use App\Domains\Identity\Models\Role;
 use App\Domains\Patient\Actions\RegisterPatientAction;
 
 test('invoice can be generated from an encounter with line items', function () {
@@ -120,4 +124,60 @@ test('refund creates balanced reversing ledger transaction', function () {
     $credits = (float) $refundTx->entries()->sum('credit');
     expect($debits)->toBe(20000.00)
         ->and($credits)->toBe(20000.00);
+});
+
+test('cashier cannot collect payment over HTTP without an active open shift', function () {
+    $env = $this->setupTenantEnvironment();
+    $user = $env['user'];
+
+    // Create Cashier Role & grant permissions
+    $cashierRole = Role::create(['tenant_id' => $env['tenant']->id, 'slug' => 'cashier', 'name' => 'Cashier']);
+    $billingPayPerm = Permission::firstOrCreate(['slug' => 'billing.payment.collect'], ['name' => 'Collect Payment', 'domain' => 'Billing']);
+    $billingViewPerm = Permission::firstOrCreate(['slug' => 'billing.invoice.view'], ['name' => 'View Invoices', 'domain' => 'Billing']);
+    $shiftOpenPerm = Permission::firstOrCreate(['slug' => 'billing.shift.open'], ['name' => 'Open Shift', 'domain' => 'Billing']);
+    $cashierRole->permissions()->syncWithoutDetaching([$billingPayPerm->id, $billingViewPerm->id, $shiftOpenPerm->id]);
+    app(AssignUserRoleAction::class)->execute($user->id, $cashierRole->id);
+
+    $patient = app(RegisterPatientAction::class)->execute([
+        'first_name' => 'Fatuma',
+        'last_name' => 'Kondo',
+        'gender' => 'Female',
+    ]);
+
+    $encounter = app(StartEncounterAction::class)->execute([
+        'tenant_id' => $env['tenant']->id,
+        'patient_id' => $patient->id,
+        'facility_id' => $env['facility']->id,
+        'department_id' => null,
+        'encounter_type' => 'OPD',
+    ]);
+
+    $invoice = app(GenerateInvoiceAction::class)->execute($encounter);
+
+    // 1. Attempt payment without opening shift -> Expect validation error
+    $this->actingAs($user)
+        ->post(route('billing.pay', $invoice->id), [
+            'amount' => 20000.00,
+            'payment_method' => 'Cash',
+        ])
+        ->assertSessionHasErrors('billing');
+
+    $invoice->refresh();
+    expect($invoice->status)->toBe('Open')
+        ->and((float) $invoice->paid_amount)->toBe(0.00);
+
+    // 2. Open Cashier Shift
+    app(OpenCashierShiftAction::class)->execute(50000.00, 'Morning Desk 1');
+
+    // 3. Re-attempt payment with open shift -> Succeeded
+    $this->actingAs($user)
+        ->post(route('billing.pay', $invoice->id), [
+            'amount' => 20000.00,
+            'payment_method' => 'Cash',
+        ])
+        ->assertSessionHasNoErrors();
+
+    $invoice->refresh();
+    expect($invoice->status)->toBe('Paid')
+        ->and((float) $invoice->paid_amount)->toBe(20000.00);
 });

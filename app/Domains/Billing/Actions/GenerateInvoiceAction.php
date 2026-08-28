@@ -2,36 +2,38 @@
 
 namespace App\Domains\Billing\Actions;
 
-use App\Domains\Billing\Exceptions\InvoiceImmutabilityException;
 use App\Domains\Billing\Models\Invoice;
 use App\Domains\Billing\Services\ChargePriceResolver;
+use App\Domains\Billing\Services\InvoiceNumberGenerator;
 use App\Domains\Clinical\Models\Encounter;
 use Illuminate\Support\Facades\DB;
 
 class GenerateInvoiceAction
 {
     public function __construct(
-        protected ChargePriceResolver $prices
+        protected ChargePriceResolver $prices,
+        protected InvoiceNumberGenerator $invoiceNumbers,
     ) {}
 
     public function execute(Encounter $encounter, ?string $description = 'General OPD Consultation', ?float $amount = null, string $category = 'Consultation', int $quantity = 1, string $chargeCode = 'CONSULT-OPD'): Invoice
     {
         return DB::transaction(function () use ($encounter, $description, $amount, $category, $quantity, $chargeCode) {
-            $invoice = Invoice::firstOrCreate(
-                ['encounter_id' => $encounter->id],
-                [
+            $invoice = Invoice::where('encounter_id', $encounter->id)
+                ->whereIn('status', ['Open', 'Draft'])
+                ->latest('created_at')
+                ->first();
+
+            if (! $invoice) {
+                $invoice = Invoice::create([
                     'tenant_id' => $encounter->tenant_id,
                     'patient_id' => $encounter->patient_id,
                     'facility_id' => $encounter->facility_id,
-                    'invoice_number' => 'INV-'.date('Ymd').'-'.strtoupper(substr(uniqid(), -4)),
+                    'encounter_id' => $encounter->id,
+                    'invoice_number' => $this->invoiceNumbers->generate(),
                     'status' => 'Open',
                     'total_amount' => 0.00,
                     'paid_amount' => 0.00,
-                ]
-            );
-
-            if (! in_array($invoice->status, ['Open', 'Draft'], true)) {
-                throw InvoiceImmutabilityException::cannotAddLineItemOnceLocked($invoice->id, $invoice->status);
+                ]);
             }
 
             $unitPrice = $amount ?? $this->prices->priceFor($chargeCode);

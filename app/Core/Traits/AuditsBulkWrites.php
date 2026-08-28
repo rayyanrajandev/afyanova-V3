@@ -6,6 +6,7 @@ use App\Core\Context\TenantContext;
 use App\Domains\Audit\Services\AuditLogger;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\App;
+use Ramsey\Uuid\Uuid;
 
 /**
  * Provides explicit audited bulk-write methods for Eloquent models.
@@ -73,7 +74,13 @@ trait AuditsBulkWrites
             'event_category' => defined(static::class.'::AUDIT_CATEGORY') ? (string) constant(static::class.'::AUDIT_CATEGORY') : 'SYSTEM',
             'action' => 'BULK_UPDATE',
             'entity_type' => class_basename(static::class),
-            'entity_id' => 'bulk',
+            // audit_logs.entity_id is a required, non-nullable uuid column —
+            // there's no single row a bulk operation applies to, so a real
+            // generated id stands in for one. The `action` field
+            // (BULK_UPDATE/BULK_DELETE) is what actually signals "this
+            // entry isn't a reference to an existing entity," not the id
+            // itself.
+            'entity_id' => Uuid::uuid7()->toString(),
             'after_state' => json_encode($attributes) ?: null,
             'justification_reason' => $reason,
         ]);
@@ -109,7 +116,13 @@ trait AuditsBulkWrites
             'event_category' => defined(static::class.'::AUDIT_CATEGORY') ? (string) constant(static::class.'::AUDIT_CATEGORY') : 'SYSTEM',
             'action' => 'BULK_DELETE',
             'entity_type' => class_basename(static::class),
-            'entity_id' => 'bulk',
+            // audit_logs.entity_id is a required, non-nullable uuid column —
+            // there's no single row a bulk operation applies to, so a real
+            // generated id stands in for one. The `action` field
+            // (BULK_UPDATE/BULK_DELETE) is what actually signals "this
+            // entry isn't a reference to an existing entity," not the id
+            // itself.
+            'entity_id' => Uuid::uuid7()->toString(),
             'justification_reason' => $reason,
         ]);
 

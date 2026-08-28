@@ -8,8 +8,10 @@ use App\Domains\Identity\Services\AuthorizationService;
 use App\Domains\Patient\Models\Patient;
 use App\Domains\Scheduling\Actions\BookAppointmentAction;
 use App\Domains\Scheduling\Actions\CheckInPatientAction;
+use App\Domains\Scheduling\Enums\QueueTicketStatus;
 use App\Domains\Scheduling\Exceptions\SchedulingConflictException;
 use App\Domains\Scheduling\Models\Appointment;
+use App\Domains\Scheduling\Models\QueueTicket;
 use App\Domains\Tenancy\Models\Department;
 use App\Domains\Tenancy\Models\Facility;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -29,6 +31,8 @@ class AppointmentController extends Controller
         $can = $this->buildSectionCanMap($request->user(), $authService, [
             'store' => 'scheduling.appointment.create',
             'checkIn' => 'scheduling.appointment.checkin',
+            'patients' => 'patient.registry.view',
+            'queue' => 'scheduling.queue.view',
         ]);
 
         $appointments = Appointment::with(['patient', 'provider', 'facility', 'department'])
@@ -36,16 +40,25 @@ class AppointmentController extends Controller
             ->orderBy('scheduled_time')
             ->get();
 
-        $patients = Patient::select('id', 'first_name', 'last_name', 'primary_mrn')
-            ->latest()
-            ->take(100)
-            ->get();
+        $patients = $can['patients']
+            ? Patient::select('id', 'first_name', 'last_name', 'primary_mrn')
+                ->latest()
+                ->take(100)
+                ->get()
+            : collect();
 
         $providers = User::select('id', 'first_name', 'last_name', 'email')
+            ->whereHas('roleAssignments.role', fn ($q) => $q->where('slug', 'doctor'))
             ->get();
 
         $facilities = Facility::select('id', 'name')->get();
         $departments = Department::select('id', 'name')->get();
+
+        $metrics = [
+            'total_patients' => $can['patients'] ? Patient::count() : null,
+            'lobby_waiting' => QueueTicket::whereIn('status', [QueueTicketStatus::Waiting, QueueTicketStatus::InProgress])->whereDate('created_at', today())->count(),
+            'today_appointments' => Appointment::whereDate('scheduled_time', today())->where('status', 'Scheduled')->count(),
+        ];
 
         return Inertia::render('Domains/Scheduling/Calendar', [
             'can' => $can,
@@ -54,6 +67,7 @@ class AppointmentController extends Controller
             'providers' => $providers,
             'facilities' => $facilities,
             'departments' => $departments,
+            'metrics' => $metrics,
         ]);
     }
 

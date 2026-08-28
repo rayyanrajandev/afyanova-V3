@@ -8,6 +8,7 @@ use App\Domains\Identity\Services\AuthorizationService;
 use App\Domains\Inpatient\Actions\AdministerMedicationAction;
 use App\Domains\Inpatient\Actions\AdmitPatientAction;
 use App\Domains\Inpatient\Actions\DischargePatientAction;
+use App\Domains\Inpatient\Actions\GenerateDailyBedChargesAction;
 use App\Domains\Inpatient\Actions\TransferBedAction;
 use App\Domains\Inpatient\Exceptions\InpatientException;
 use App\Domains\Inpatient\Models\Admission;
@@ -37,6 +38,7 @@ class InpatientWorkspaceController extends Controller
             'discharge' => 'inpatient.admission.discharge',
             'administerMar' => 'inpatient.mar.administer',
             'updateBedStatus' => 'inpatient.bed.manage',
+            'generateBedCharges' => 'inpatient.ward.manage',
         ]);
 
         $wards = Ward::with([
@@ -239,5 +241,85 @@ class InpatientWorkspaceController extends Controller
         $bed->update(['status' => $validated['status']]);
 
         return back()->with('success', "Bed {$bed->bed_number} status updated to {$validated['status']}.");
+    }
+
+    public function generateBedCharges(Request $request, GenerateDailyBedChargesAction $action, AuthorizationService $authService)
+    {
+        abort_unless($authService->hasPermission($request->user(), 'inpatient.ward.manage') || $authService->isTenantAdmin($request->user()), 403);
+
+        $validated = $request->validate([
+            'date' => 'nullable|date',
+        ]);
+
+        try {
+            $result = $action->execute($validated['date'] ?? null);
+
+            return back()->with('success', "Midnight bed billing executed: {$result['billed_count']} admission(s) charged TZS ".number_format($result['total_amount'], 2)." ({$result['skipped_count']} already billed/skipped).");
+        } catch (\Throwable $e) {
+            return back()->withErrors(['bed_charges' => $e->getMessage()]);
+        }
+    }
+
+    public function storeWard(Request $request, AuthorizationService $authService)
+    {
+        abort_unless($authService->hasPermission($request->user(), 'inpatient.ward.manage') || $authService->isTenantAdmin($request->user()), 403);
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:150',
+            'code' => 'required|string|max:50',
+            'ward_type' => 'required|string|max:50',
+            'gender_restriction' => 'required|in:None,Male_Only,Female_Only,Pediatric',
+            'floor_location' => 'nullable|string|max:100',
+            'daily_base_rate' => 'required|numeric|min:0',
+        ]);
+
+        $validated['tenant_id'] = $request->user()->tenant_id;
+        $validated['facility_id'] = $request->user()->facility_id ?? Facility::first()?->id;
+        $validated['is_active'] = true;
+
+        $ward = Ward::create($validated);
+
+        return back()->with('success', "Ward {$ward->name} registered successfully.");
+    }
+
+    public function updateWard(Request $request, Ward $ward, AuthorizationService $authService)
+    {
+        abort_unless($authService->hasPermission($request->user(), 'inpatient.ward.manage') || $authService->isTenantAdmin($request->user()), 403);
+
+        $validated = $request->validate([
+            'name' => 'required|string|max:150',
+            'code' => 'required|string|max:50',
+            'ward_type' => 'required|string|max:50',
+            'gender_restriction' => 'required|in:None,Male_Only,Female_Only,Pediatric',
+            'floor_location' => 'nullable|string|max:100',
+            'daily_base_rate' => 'required|numeric|min:0',
+            'is_active' => 'required|boolean',
+        ]);
+
+        $ward->update($validated);
+
+        return back()->with('success', "Ward {$ward->name} updated successfully.");
+    }
+
+    public function storeBed(Request $request, AuthorizationService $authService)
+    {
+        abort_unless($authService->hasPermission($request->user(), 'inpatient.bed.manage') || $authService->isTenantAdmin($request->user()), 403);
+
+        $validated = $request->validate([
+            'ward_id' => 'required|uuid|exists:wards,id',
+            'bed_number' => 'required|string|max:50',
+            'bed_type' => 'required|string|max:50',
+            'daily_rate_amount' => 'nullable|numeric|min:0',
+            'notes' => 'nullable|string|max:255',
+        ]);
+
+        $validated['tenant_id'] = $request->user()->tenant_id;
+        $validated['facility_id'] = $request->user()->facility_id ?? Facility::first()?->id;
+        $validated['status'] = 'Available';
+        $validated['daily_rate_amount'] = $validated['daily_rate_amount'] ?? 0;
+
+        $bed = Bed::create($validated);
+
+        return back()->with('success', "Bed {$bed->bed_number} added to ward successfully.");
     }
 }

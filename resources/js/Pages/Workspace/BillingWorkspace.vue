@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { 
     Receipt, 
@@ -17,7 +17,8 @@ import {
     AlertCircle,
     FileCheck,
     Edit3,
-    Plus
+    Plus,
+    Printer
 } from '@lucide/vue';
 import AfyaShell from '@/Layouts/AfyaShell.vue';
 import AfyaWorkspace from '@/Components/Workspace/AfyaWorkspace.vue';
@@ -27,6 +28,8 @@ import AfyaWorkspaceMain from '@/Components/Workspace/AfyaWorkspaceMain.vue';
 import AfyaContextPanel from '@/Components/Workspace/AfyaContextPanel.vue';
 import Modal from '@/Components/Modal.vue';
 import InputError from '@/Components/InputError.vue';
+import ThermalReceipt from '@/Components/Print/ThermalReceipt.vue';
+import { useHospitalAudio } from '@/Composables/useHospitalAudio';
 import { useWorkspacePreferences } from '@/Composables/useWorkspacePreferences';
 
 // UI Primitives & Design Foundation
@@ -56,6 +59,14 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
+    patientDeposits: {
+        type: Array,
+        default: () => [],
+    },
+    patients: {
+        type: Array,
+        default: () => [],
+    },
     activeShift: {
         type: Object,
         default: null,
@@ -82,19 +93,56 @@ const props = defineProps({
 const activeSection = ref('invoices');
 const selectedInvoice = ref(props.invoices?.[0] || null);
 const showChargesDrawer = ref(false);
+const printingInvoice = ref(null);
+const { playSuccessCashierTone } = useHospitalAudio();
+
+// Synchronize selected invoice with updated props data (after payment/adjustment/charge operations)
+watch(
+    () => props.invoices,
+    (newInvoices) => {
+        if (!newInvoices || newInvoices.length === 0) {
+            selectedInvoice.value = null;
+            return;
+        }
+        if (selectedInvoice.value) {
+            const updated = newInvoices.find(inv => inv.id === selectedInvoice.value.id);
+            if (updated) {
+                selectedInvoice.value = updated;
+                return;
+            }
+        }
+        selectedInvoice.value = newInvoices[0];
+    },
+    { deep: true }
+);
 
 // Cashier Shift State
 const showShiftModal = ref(false);
 const shiftModalMode = ref('open');
+const shiftModalNotice = ref('');
+const pendingInvoiceForPayment = ref(null);
 
-const openShiftDialog = () => {
+const openShiftDialog = (notice = '', pendingInv = null) => {
     shiftModalMode.value = 'open';
+    shiftModalNotice.value = notice;
+    pendingInvoiceForPayment.value = pendingInv;
     showShiftModal.value = true;
 };
 
 const closeShiftDialog = () => {
     shiftModalMode.value = 'close';
+    shiftModalNotice.value = '';
     showShiftModal.value = true;
+};
+
+const onShiftOpened = () => {
+    if (pendingInvoiceForPayment.value) {
+        const invToPay = pendingInvoiceForPayment.value;
+        pendingInvoiceForPayment.value = null;
+        setTimeout(() => {
+            openPaymentModal(invToPay);
+        }, 150);
+    }
 };
 
 const openChargesDrawer = (inv) => {
@@ -197,16 +245,42 @@ const selectInvoice = (inv) => {
 };
 
 const openPaymentModal = (inv) => {
+    if (!props.activeShift) {
+        openShiftDialog(
+            'An active cashier shift session is required to collect payments. Please open your shift session and declare your opening cash float to proceed.',
+            inv
+        );
+        return;
+    }
+
     selectedInvoice.value = inv;
     const balance = Number(inv.total_amount) - Number(inv.paid_amount);
     paymentAmount.value = balance > 0 ? balance : 0;
     paymentReferenceNumber.value = '';
+    mpesaPhone.value = inv.patient?.phone_number || '';
     isSplitPayment.value = false;
     splitMethods.value = [
         { method: 'Cash', amount: '', reference_number: '' },
         { method: 'Lipa Namba', amount: '', reference_number: '' },
     ];
     showPaymentModal.value = true;
+};
+
+const mpesaPhone = ref('');
+const isMpesaSending = ref(false);
+
+const sendMpesaStkPush = () => {
+    if (!selectedInvoice.value || !mpesaPhone.value || !paymentAmount.value) return;
+    isMpesaSending.value = true;
+    router.post(route('billing.invoices.mpesa-stk-push', selectedInvoice.value.id), {
+        phone_number: mpesaPhone.value,
+        amount: Number(paymentAmount.value),
+    }, {
+        preserveScroll: true,
+        onFinish: () => {
+            isMpesaSending.value = false;
+        }
+    });
 };
 
 const closePaymentModal = () => {
@@ -245,6 +319,12 @@ const submitPayment = () => {
         };
 
     router.post(route('billing.pay', selectedInvoice.value.id), payload, {
+        onSuccess: () => {
+            playSuccessCashierTone();
+            if (selectedInvoice.value) {
+                printingInvoice.value = selectedInvoice.value;
+            }
+        },
         onFinish: () => {
             isSubmittingPayment.value = false;
             closePaymentModal();
@@ -279,9 +359,98 @@ const submitRefund = () => {
     });
 };
 
+// Patient Prepayment Deposits & Drawdown Logic
+const showRecordDepositModal = ref(false);
+const showApplyDepositModal = ref(false);
+
+const recordDepositForm = useForm({
+    patient_id: '',
+    amount: '',
+    payment_method: 'Cash',
+    reference_number: '',
+    notes: '',
+});
+
+const applyDepositForm = useForm({
+    deposit_id: '',
+    amount: '',
+});
+
+const patientDepositBalance = computed(() => {
+    if (!selectedInvoice.value?.patient_id) return 0;
+    const deposits = (props.patientDeposits || []).filter(
+        d => d.patient_id === selectedInvoice.value.patient_id && d.status === 'Active'
+    );
+    return deposits.reduce((sum, d) => sum + Number(d.balance_remaining || 0), 0);
+});
+
+const patientActiveDeposits = computed(() => {
+    if (!selectedInvoice.value?.patient_id) return [];
+    return (props.patientDeposits || []).filter(
+        d => d.patient_id === selectedInvoice.value.patient_id && d.status === 'Active' && Number(d.balance_remaining) > 0
+    );
+});
+
+const openRecordDepositModal = (patientId = null) => {
+    recordDepositForm.reset();
+    recordDepositForm.clearErrors();
+    recordDepositForm.payment_method = 'Cash';
+    if (patientId) {
+        recordDepositForm.patient_id = patientId;
+    } else if (selectedInvoice.value?.patient_id) {
+        recordDepositForm.patient_id = selectedInvoice.value.patient_id;
+    } else if (props.patients?.[0]?.id) {
+        recordDepositForm.patient_id = props.patients[0].id;
+    }
+    showRecordDepositModal.value = true;
+};
+
+const submitRecordDeposit = () => {
+    recordDepositForm.post(route('billing.deposits.store'), {
+        preserveScroll: true,
+        onSuccess: () => {
+            playSuccessCashierTone();
+            showRecordDepositModal.value = false;
+            recordDepositForm.reset();
+        },
+    });
+};
+
+const openApplyDepositModal = (inv, deposit = null) => {
+    selectedInvoice.value = inv;
+    applyDepositForm.reset();
+    applyDepositForm.clearErrors();
+
+    const activeDeps = (props.patientDeposits || []).filter(
+        d => d.patient_id === inv.patient_id && d.status === 'Active' && Number(d.balance_remaining) > 0
+    );
+
+    const targetDep = deposit || activeDeps[0];
+    if (targetDep) {
+        applyDepositForm.deposit_id = targetDep.id;
+        const invRemaining = Number(inv.total_amount) - Number(inv.paid_amount);
+        applyDepositForm.amount = Math.min(Number(targetDep.balance_remaining), invRemaining);
+    }
+
+    showApplyDepositModal.value = true;
+};
+
+const submitApplyDeposit = () => {
+    if (!selectedInvoice.value) return;
+
+    applyDepositForm.post(route('billing.invoices.apply-deposit', selectedInvoice.value.id), {
+        preserveScroll: true,
+        onSuccess: () => {
+            playSuccessCashierTone();
+            showApplyDepositModal.value = false;
+            applyDepositForm.reset();
+        },
+    });
+};
+
 // Keyboard Traversal (Gap 2.3)
 const handleTableKeydown = (e) => {
-    if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName) || showPaymentModal.value || showRefundModal.value) return;
+    if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName) || showPaymentModal.value || showRefundModal.value || showRecordDepositModal.value || showApplyDepositModal.value) return;
     if (!props.invoices || props.invoices.length === 0) return;
 
     const currentIndex = props.invoices.findIndex(inv => inv.id === selectedInvoice.value?.id);
@@ -352,6 +521,14 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                         Financial Management
                     </div>
                     <AfyaSidebarItem
+                        label="Patient Advance Deposits"
+                        :icon="Wallet"
+                        :badge="patientDeposits.length"
+                        :active="activeSection === 'deposits'"
+                        :collapsed="state === 'collapsed'"
+                        @click="activeSection = 'deposits'"
+                    />
+                    <AfyaSidebarItem
                         label="NHIF & Claims Desk"
                         :icon="Building2"
                         :collapsed="state === 'collapsed'"
@@ -377,11 +554,23 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                 <AfyaWorkspaceMain
                     :breadcrumbs="[
                         { label: 'Billing', href: route('billing.desk') },
-                        { label: 'Cashier POS Desk', active: true }
+                        { label: activeSection === 'deposits' ? 'Patient Advance Deposits' : 'Cashier POS Desk', active: true }
                     ]"
                 >
                     <template #actions>
                         <div class="flex items-center gap-2">
+                            <!-- Advance Deposit Button -->
+                            <Button
+                                v-if="can.recordDeposit"
+                                variant="outline"
+                                size="sm"
+                                class="h-7 px-2.5 text-[11px] gap-1 text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 shadow-2xs font-semibold"
+                                @click="openRecordDepositModal()"
+                            >
+                                <Plus class="w-3.5 h-3.5" />
+                                <span>Advance Deposit</span>
+                            </Button>
+
                             <!-- Active Shift Indicator & Action -->
                             <div v-if="activeShift" class="flex items-center gap-2">
                                 <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
@@ -485,18 +674,18 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                             </div>
                         </div>
 
-                        <!-- Invoice List Table (Modern Surface Elevation & Balanced Columns) -->
-                        <div class="w-full bg-card rounded-lg overflow-hidden shadow-2xs flex flex-col">
+                        <!-- SECTION A: Invoice List Table -->
+                        <div v-if="activeSection !== 'deposits'" class="w-full bg-card rounded-lg overflow-hidden shadow-2xs flex flex-col">
                             <Table class="w-full text-xs">
                                 <TableHeader>
                                     <TableRow class="h-8 text-[10px] uppercase font-bold text-muted-foreground bg-muted/10 border-b border-border/40">
-                                        <TableHead class="py-1.5 px-4 w-36">Invoice #</TableHead>
+                                        <TableHead class="py-1.5 px-4 min-w-[175px] whitespace-nowrap">Invoice #</TableHead>
                                         <TableHead class="py-1.5 px-3">Patient Details</TableHead>
                                         <TableHead class="py-1.5 px-3 text-right w-32">Total (TZS)</TableHead>
                                         <TableHead class="py-1.5 px-3 text-right w-28">Paid (TZS)</TableHead>
                                         <TableHead class="py-1.5 px-3 text-right w-32">Balance Due</TableHead>
                                         <TableHead class="py-1.5 px-3 text-center w-28">Status</TableHead>
-                                        <TableHead class="py-1.5 px-4 text-right w-48">Action</TableHead>
+                                        <TableHead class="py-1.5 px-4 text-right whitespace-nowrap min-w-[210px]">Action</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -508,9 +697,9 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                                         @click="selectInvoice(inv)"
                                         @dblclick="openChargesDrawer(inv)"
                                     >
-                                        <TableCell class="py-1.5 px-4 font-mono font-bold text-foreground w-36">
+                                        <TableCell class="py-1.5 px-4 font-mono font-bold text-foreground min-w-[175px] whitespace-nowrap">
                                             <button 
-                                                class="hover:underline text-primary text-left"
+                                                class="hover:underline text-primary text-left whitespace-nowrap"
                                                 @click.stop="openChargesDrawer(inv)"
                                                 title="Open Itemized Charges Drawer"
                                             >
@@ -529,7 +718,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                                         <TableCell class="py-1.5 px-3 text-center w-28">
                                             <AfyaStatusBadge :status="inv.status" dot />
                                         </TableCell>
-                                        <TableCell class="py-1.5 px-4 text-right w-48">
+                                        <TableCell class="py-1.5 px-4 text-right whitespace-nowrap min-w-[210px]">
                                             <div class="flex items-center justify-end gap-1.5">
                                                 <Button
                                                     variant="outline"
@@ -571,6 +760,73 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                                 </TableBody>
                             </Table>
                         </div>
+
+                        <!-- SECTION B: Patient Advance Deposits Table -->
+                        <div v-else class="w-full bg-card rounded-lg overflow-hidden shadow-2xs flex flex-col">
+                            <Table class="w-full text-xs">
+                                <TableHeader>
+                                    <TableRow class="h-8 text-[10px] uppercase font-bold text-muted-foreground bg-muted/10 border-b border-border/40">
+                                        <TableHead class="py-1.5 px-4 min-w-[160px] whitespace-nowrap">Deposit #</TableHead>
+                                        <TableHead class="py-1.5 px-3">Patient Details</TableHead>
+                                        <TableHead class="py-1.5 px-3 text-right w-32">Original (TZS)</TableHead>
+                                        <TableHead class="py-1.5 px-3 text-right w-32">Balance (TZS)</TableHead>
+                                        <TableHead class="py-1.5 px-3">Payment Channel</TableHead>
+                                        <TableHead class="py-1.5 px-3 text-center w-28">Status</TableHead>
+                                        <TableHead class="py-1.5 px-4 text-right whitespace-nowrap min-w-[150px]">Action</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    <TableRow
+                                        v-for="dep in patientDeposits"
+                                        :key="dep.id"
+                                        class="h-10 hover:bg-muted/30 border-b border-border/30 transition-colors"
+                                    >
+                                        <TableCell class="py-1.5 px-4 font-mono font-bold text-emerald-600 dark:text-emerald-400 min-w-[160px] whitespace-nowrap">
+                                            {{ dep.deposit_number }}
+                                        </TableCell>
+                                        <TableCell class="py-1.5 px-3">
+                                            <div class="font-bold text-foreground">{{ dep.patient?.first_name }} {{ dep.patient?.last_name }}</div>
+                                            <div class="text-[10px] font-mono text-muted-foreground">MRN: {{ dep.patient?.primary_mrn }}</div>
+                                        </TableCell>
+                                        <TableCell class="py-1.5 px-3 font-mono font-semibold text-right w-32">
+                                            {{ Number(dep.amount).toLocaleString() }}
+                                        </TableCell>
+                                        <TableCell class="py-1.5 px-3 font-mono font-bold text-emerald-700 dark:text-emerald-400 text-right w-32">
+                                            {{ Number(dep.balance_remaining).toLocaleString() }}
+                                        </TableCell>
+                                        <TableCell class="py-1.5 px-3">
+                                            <div class="font-medium text-foreground">{{ dep.payment_method }}</div>
+                                            <div v-if="dep.transaction_reference" class="text-[10px] font-mono text-muted-foreground truncate">
+                                                Ref: {{ dep.transaction_reference }}
+                                            </div>
+                                        </TableCell>
+                                        <TableCell class="py-1.5 px-3 text-center w-28">
+                                            <AfyaStatusBadge :status="dep.status" dot />
+                                        </TableCell>
+                                        <TableCell class="py-1.5 px-4 text-right whitespace-nowrap min-w-[150px]">
+                                            <div class="flex items-center justify-end gap-1.5">
+                                                <Button
+                                                    v-if="can.recordDeposit"
+                                                    variant="outline"
+                                                    size="sm"
+                                                    class="h-6 px-2 text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 border-emerald-300 dark:border-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
+                                                    @click="openRecordDepositModal(dep.patient_id)"
+                                                    title="Add more advance funds to patient wallet"
+                                                >
+                                                    Top Up
+                                                </Button>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+
+                                    <TableRow v-if="patientDeposits.length === 0">
+                                        <TableCell colspan="7" class="text-center py-10 text-muted-foreground text-xs">
+                                            No advance patient deposits found. Click "+ Advance Deposit" to accept unallocated funds.
+                                        </TableCell>
+                                    </TableRow>
+                                </TableBody>
+                            </Table>
+                        </div>
                     </div>
                 </AfyaWorkspaceMain>
             </template>
@@ -604,15 +860,26 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                                     <span class="font-mono font-bold text-rose-600 dark:text-rose-400">TZS {{ (Number(selectedInvoice.total_amount) - Number(selectedInvoice.paid_amount)).toLocaleString() }}</span>
                                 </div>
                             </div>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                class="w-full h-7 text-[11px] font-semibold gap-1.5 shadow-2xs mt-1"
-                                @click="openChargesDrawer(selectedInvoice)"
-                            >
-                                <Receipt class="w-3.5 h-3.5 text-primary" />
-                                <span>Open Full Charges Drawer</span>
-                            </Button>
+                            <div class="grid grid-cols-2 gap-1.5 mt-1">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    class="h-7 text-[10.5px] font-semibold gap-1 shadow-2xs"
+                                    @click="openChargesDrawer(selectedInvoice)"
+                                >
+                                    <Receipt class="w-3 h-3 text-primary" />
+                                    <span>Charges</span>
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    class="h-7 text-[10.5px] font-semibold gap-1 shadow-2xs"
+                                    @click="printingInvoice = selectedInvoice"
+                                >
+                                    <Printer class="w-3 h-3 text-emerald-600" />
+                                    <span>80mm POS</span>
+                                </Button>
+                            </div>
                         </div>
 
                         <!-- Itemized Charges Preview Card -->
@@ -657,6 +924,30 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                                     <span class="font-bold text-foreground">TZS {{ Number(selectedInvoice.paid_amount).toLocaleString() }}</span>
                                 </div>
                             </div>
+                        </div>
+
+                        <!-- Patient Advance Deposit Credit Banner -->
+                        <div v-if="patientDepositBalance > 0" class="p-3 rounded-lg bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 space-y-2 shadow-2xs">
+                            <div class="flex items-center justify-between text-xs font-bold text-emerald-900 dark:text-emerald-300">
+                                <span class="flex items-center gap-1.5">
+                                    <Wallet class="w-3.5 h-3.5 text-emerald-600" />
+                                    <span>Advance Prepayment Available</span>
+                                </span>
+                                <span class="font-mono text-sm">TZS {{ Number(patientDepositBalance).toLocaleString() }}</span>
+                            </div>
+                            <p class="text-[10px] text-emerald-800 dark:text-emerald-400 leading-tight">
+                                Patient has unallocated advance deposit funds on file.
+                            </p>
+                            <Button
+                                v-if="can.applyDeposit && (Number(selectedInvoice.total_amount) - Number(selectedInvoice.paid_amount)) > 0"
+                                variant="default"
+                                size="sm"
+                                class="w-full h-7 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-1.5 shadow-2xs"
+                                @click="openApplyDepositModal(selectedInvoice)"
+                            >
+                                <CheckCircle2 class="w-3.5 h-3.5" />
+                                <span>Apply Deposit (TZS {{ Math.min(patientDepositBalance, (Number(selectedInvoice.total_amount) - Number(selectedInvoice.paid_amount))).toLocaleString() }})</span>
+                            </Button>
                         </div>
 
                         <!-- Management Actions -->
@@ -802,6 +1093,37 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                                     </div>
                                 </button>
                             </div>
+                        </div>
+
+                        <!-- Instant M-Pesa STK Push Box -->
+                        <div v-if="paymentMethod === 'Lipa Namba'" class="p-3 bg-emerald-500/10 rounded-xl border border-emerald-500/30 space-y-2">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-300 font-bold text-xs">
+                                    <Smartphone class="w-4 h-4" />
+                                    <span>Instant M-Pesa STK Push Prompt</span>
+                                </div>
+                                <span class="text-[9.5px] font-mono text-emerald-600 bg-emerald-500/15 px-1.5 py-0.5 rounded font-bold">Automated Webhook Reconciliation</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <Input
+                                    v-model="mpesaPhone"
+                                    type="text"
+                                    placeholder="e.g. 0712345678 or 2557..."
+                                    class="h-8 text-xs font-mono flex-1 bg-background"
+                                />
+                                <Button
+                                    type="button"
+                                    variant="default"
+                                    size="sm"
+                                    class="h-8 px-3 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-bold gap-1 shadow-2xs"
+                                    :disabled="isMpesaSending || !mpesaPhone || !paymentAmount"
+                                    @click="sendMpesaStkPush"
+                                >
+                                    <Loader2 v-if="isMpesaSending" class="w-3.5 h-3.5 animate-spin mr-1" />
+                                    <span>Send Handset Prompt</span>
+                                </Button>
+                            </div>
+                            <p class="text-[10px] text-muted-foreground">Sends an interactive USSD prompt to patient's phone. Upon entering PIN, the general ledger reconciles automatically via webhook.</p>
                         </div>
 
                         <!-- Amount & Reference Number (2 Columns) -->
@@ -1032,10 +1354,156 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
         <CashierShiftModal
             :show="showShiftModal"
             :mode="shiftModalMode"
+            :notice="shiftModalNotice"
             :active-shift="activeShift"
             :telemetry="tillTelemetry"
             :can="can"
             @close="showShiftModal = false"
+            @opened="onShiftOpened"
         />
+
+        <!-- 80mm ESC/POS Thermal Receipt Print Modal -->
+        <ThermalReceipt
+            v-if="printingInvoice"
+            :invoice="printingInvoice"
+            @close="printingInvoice = null"
+        />
+
+        <!-- Record Patient Advance Deposit Modal Dialog -->
+        <Modal :show="showRecordDepositModal" max-width="md" @close="showRecordDepositModal = false">
+            <div class="p-6 space-y-4 text-xs">
+                <div class="flex items-center justify-between border-b border-border/60 pb-3">
+                    <div class="flex items-center gap-2">
+                        <div class="p-2 bg-emerald-500/10 text-emerald-600 rounded-lg">
+                            <Wallet class="w-4 h-4" />
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-sm text-foreground">Record Patient Advance Deposit</h3>
+                            <p class="text-[10px] text-muted-foreground">Credit unallocated funds to patient wallet ledger</p>
+                        </div>
+                    </div>
+                    <button @click="showRecordDepositModal = false" class="text-muted-foreground hover:text-foreground">
+                        <X class="w-4 h-4" />
+                    </button>
+                </div>
+
+                <form @submit.prevent="submitRecordDeposit" class="space-y-3">
+                    <div>
+                        <label class="block font-bold text-[10px] uppercase text-muted-foreground mb-1">Patient *</label>
+                        <select v-model="recordDepositForm.patient_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                            <option value="" disabled>Select patient...</option>
+                            <option v-for="p in patients" :key="p.id" :value="p.id">
+                                {{ p.first_name }} {{ p.last_name }} ({{ p.primary_mrn }})
+                            </option>
+                        </select>
+                        <InputError :message="recordDepositForm.errors.patient_id" class="mt-1" />
+                    </div>
+
+                    <div>
+                        <label class="block font-bold text-[10px] uppercase text-muted-foreground mb-1">Deposit Amount (TZS) *</label>
+                        <Input v-model="recordDepositForm.amount" type="number" step="1" min="1" placeholder="e.g. 50000" class="h-8 text-xs font-mono" />
+                        <InputError :message="recordDepositForm.errors.amount" class="mt-1" />
+                    </div>
+
+                    <div>
+                        <label class="block font-bold text-[10px] uppercase text-muted-foreground mb-1">Payment Tender Method *</label>
+                        <select v-model="recordDepositForm.payment_method" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                            <option value="Cash">Cash (Taslimu)</option>
+                            <option value="Lipa Namba">Lipa Namba / M-Pesa STK</option>
+                            <option value="Card">Bank POS Card (Visa / Mastercard)</option>
+                            <option value="Airtel Money">Airtel Money</option>
+                            <option value="Tigo Pesa">Tigo Pesa</option>
+                        </select>
+                        <InputError :message="recordDepositForm.errors.payment_method" class="mt-1" />
+                    </div>
+
+                    <div>
+                        <label class="block font-bold text-[10px] uppercase text-muted-foreground mb-1">Transaction Reference Number</label>
+                        <Input v-model="recordDepositForm.reference_number" placeholder="e.g. MPESA-QW98124 / POS Slip #" class="h-8 text-xs font-mono" />
+                        <InputError :message="recordDepositForm.errors.reference_number" class="mt-1" />
+                    </div>
+
+                    <div>
+                        <label class="block font-bold text-[10px] uppercase text-muted-foreground mb-1">Notes / Internal Memo</label>
+                        <Input v-model="recordDepositForm.notes" placeholder="e.g. Advance deposit for upcoming surgical admission" class="h-8 text-xs" />
+                        <InputError :message="recordDepositForm.errors.notes" class="mt-1" />
+                    </div>
+
+                    <div class="flex justify-end gap-2 pt-3 border-t border-border/60">
+                        <Button type="button" variant="outline" size="sm" @click="showRecordDepositModal = false">Cancel</Button>
+                        <Button type="submit" variant="default" size="sm" :disabled="recordDepositForm.processing || !recordDepositForm.amount || !recordDepositForm.patient_id" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold">
+                            <Loader2 v-if="recordDepositForm.processing" class="w-3.5 h-3.5 animate-spin mr-1" />
+                            <span>Record Deposit & Post to Ledger</span>
+                        </Button>
+                    </div>
+                </form>
+            </div>
+        </Modal>
+
+        <!-- Apply Patient Deposit to Invoice Modal Dialog -->
+        <Modal :show="showApplyDepositModal" max-width="md" @close="showApplyDepositModal = false">
+            <div class="p-6 space-y-4 text-xs">
+                <div class="flex items-center justify-between border-b border-border/60 pb-3">
+                    <div class="flex items-center gap-2">
+                        <div class="p-2 bg-emerald-500/10 text-emerald-600 rounded-lg">
+                            <CheckCircle2 class="w-4 h-4" />
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-sm text-foreground">Apply Deposit to Invoice</h3>
+                            <p class="text-[10px] text-muted-foreground">Draw down available prepayment funds towards invoice balance</p>
+                        </div>
+                    </div>
+                    <button @click="showApplyDepositModal = false" class="text-muted-foreground hover:text-foreground">
+                        <X class="w-4 h-4" />
+                    </button>
+                </div>
+
+                <div v-if="selectedInvoice" class="space-y-3">
+                    <div class="p-3 bg-muted/40 rounded-lg border border-border/70 text-[11px] space-y-1">
+                        <div class="flex justify-between">
+                            <span class="text-muted-foreground">Invoice:</span>
+                            <span class="font-mono font-bold text-foreground">{{ selectedInvoice.invoice_number }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-muted-foreground">Patient:</span>
+                            <span class="font-bold text-foreground">{{ selectedInvoice.patient?.first_name }} {{ selectedInvoice.patient?.last_name }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-muted-foreground">Invoice Balance Due:</span>
+                            <span class="font-mono font-bold text-rose-600 dark:text-rose-400">
+                                TZS {{ (Number(selectedInvoice.total_amount) - Number(selectedInvoice.paid_amount)).toLocaleString() }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <form @submit.prevent="submitApplyDeposit" class="space-y-3">
+                        <div>
+                            <label class="block font-bold text-[10px] uppercase text-muted-foreground mb-1">Source Patient Deposit *</label>
+                            <select v-model="applyDepositForm.deposit_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                                <option value="" disabled>Select active deposit...</option>
+                                <option v-for="d in patientActiveDeposits" :key="d.id" :value="d.id">
+                                    {{ d.deposit_number }} — TZS {{ Number(d.balance_remaining).toLocaleString() }} available ({{ d.payment_method }})
+                                </option>
+                            </select>
+                            <InputError :message="applyDepositForm.errors.deposit_id" class="mt-1" />
+                        </div>
+
+                        <div>
+                            <label class="block font-bold text-[10px] uppercase text-muted-foreground mb-1">Drawdown Amount (TZS) *</label>
+                            <Input v-model="applyDepositForm.amount" type="number" step="0.01" min="0.01" class="h-8 text-xs font-mono" />
+                            <InputError :message="applyDepositForm.errors.amount" class="mt-1" />
+                        </div>
+
+                        <div class="flex justify-end gap-2 pt-3 border-t border-border/60">
+                            <Button type="button" variant="outline" size="sm" @click="showApplyDepositModal = false">Cancel</Button>
+                            <Button type="submit" variant="default" size="sm" :disabled="applyDepositForm.processing || !applyDepositForm.deposit_id || !applyDepositForm.amount" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold">
+                                <Loader2 v-if="applyDepositForm.processing" class="w-3.5 h-3.5 animate-spin mr-1" />
+                                <span>Confirm Prepayment Drawdown</span>
+                            </Button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </Modal>
     </AfyaShell>
 </template>

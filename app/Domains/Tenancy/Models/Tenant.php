@@ -42,11 +42,15 @@ class Tenant extends Model
 
     protected $guarded = ['id'];
 
-    // We explicitly cast the ULID to string to ensure strictly typed comparisons
     protected $casts = [
         'id' => 'string',
         'is_active' => 'boolean',
         'settings' => 'array',
+        'feature_flags' => 'array',
+        'max_facilities' => 'integer',
+        'max_users' => 'integer',
+        'storage_quota_mb' => 'integer',
+        'trial_ends_at' => 'datetime',
     ];
 
     /**
@@ -55,5 +59,52 @@ class Tenant extends Model
     public function facilities(): HasMany
     {
         return $this->hasMany(Facility::class);
+    }
+
+    /**
+     * @return HasMany<\App\Domains\Identity\Models\User, $this>
+     */
+    public function users(): HasMany
+    {
+        return $this->hasMany(\App\Domains\Identity\Models\User::class);
+    }
+
+    /**
+     * @return HasMany<ImpersonationLog, $this>
+     */
+    public function impersonationLogs(): HasMany
+    {
+        return $this->hasMany(ImpersonationLog::class, 'impersonated_tenant_id');
+    }
+
+    public function isSuspended(): bool
+    {
+        return strtolower($this->subscription_status ?? $this->status) === 'suspended';
+    }
+
+    public function isActive(): bool
+    {
+        return strtolower($this->subscription_status ?? $this->status) === 'active' || strtolower($this->subscription_status ?? '') === 'trial';
+    }
+
+    public function hasFeature(string $feature): bool
+    {
+        if ($this->subscription_tier === 'enterprise') {
+            return true;
+        }
+
+        $flags = $this->feature_flags ?? ['inpatient', 'pharmacy', 'laboratory', 'billing'];
+
+        return in_array($feature, $flags);
+    }
+
+    public function canAddFacility(): bool
+    {
+        return $this->facilities()->count() < ($this->max_facilities ?? 5);
+    }
+
+    public function canAddUser(): bool
+    {
+        return $this->users()->count() < ($this->max_users ?? 50);
     }
 }

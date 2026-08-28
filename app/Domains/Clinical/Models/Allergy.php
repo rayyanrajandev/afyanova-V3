@@ -61,6 +61,8 @@ class Allergy extends Model
 
     const AUDIT_CATEGORY = 'CLINICAL';
 
+    const AUDIT_REDACT = ['allergen', 'reaction', 'amendment_reason'];
+
     protected $guarded = ['id'];
 
     protected $casts = [

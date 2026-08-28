@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, watch, onUnmounted } from 'vue';
 import { usePage, router } from '@inertiajs/vue3';
-import { CheckCircle2, AlertTriangle, X, Clock, LogOut, ShieldAlert } from 'lucide-vue-next';
+import { CheckCircle2, AlertTriangle, X, Clock, LogOut, ShieldAlert, UserCheck } from 'lucide-vue-next';
 import AfyaHeader from '@/Components/Workspace/AfyaHeader.vue';
 import { useIdleTimeout } from '@/Composables/useIdleTimeout';
 
@@ -15,6 +15,12 @@ const props = defineProps({
 const page = usePage();
 const flashSuccess = computed(() => page.props.flash?.success);
 const flashError = computed(() => page.props.flash?.error || (page.props.errors && Object.keys(page.props.errors).length > 0 ? 'Validation error occurred' : null));
+
+// Superadmin Impersonation Session
+const impersonation = computed(() => page.props.impersonation);
+const exitImpersonation = () => {
+    router.post(route('superadmin.exit-impersonation'));
+};
 
 // Break-Glass State & Countdown
 const breakGlass = computed(() => page.props.breakGlass);
@@ -77,6 +83,26 @@ const formattedCountdown = computed(() => {
     <div class="h-screen w-screen flex flex-col overflow-hidden bg-background text-foreground antialiased font-sans">
         <!-- Persistent Global Header (48px) -->
         <AfyaHeader :active-module="activeModule" />
+
+        <!-- Superadmin Audited Support Impersonation Banner -->
+        <div v-if="impersonation && impersonation.is_active" class="bg-purple-700 dark:bg-purple-800 text-white text-xs px-4 py-1.5 flex items-center justify-between shadow-xs transition z-50">
+            <div class="flex items-center space-x-2">
+                <UserCheck class="w-4 h-4 text-purple-200 animate-pulse" />
+                <span class="font-bold tracking-wide">SUPERADMIN SUPPORT SESSION:</span>
+                <span class="bg-black/30 text-white px-2 py-0.5 rounded font-mono text-[11px] font-bold">
+                    Viewing as {{ impersonation.target_user_name }} ({{ impersonation.target_tenant_name }})
+                </span>
+                <span class="hidden md:inline text-purple-200 text-[11px]">— Initiated by {{ impersonation.superadmin_name }} (Audited)</span>
+            </div>
+            <button 
+                type="button"
+                @click="exitImpersonation" 
+                class="bg-black/30 hover:bg-black/50 text-white text-[11px] font-bold px-3 py-0.5 rounded transition border border-white/40 flex items-center gap-1.5 cursor-pointer shadow-xs"
+            >
+                <LogOut class="w-3 h-3" />
+                Exit Support Impersonation
+            </button>
+        </div>
 
         <!-- Break-Glass Emergency Override Banner -->
         <div v-if="breakGlass && breakGlassRemaining > 0" class="bg-amber-600 dark:bg-amber-700 text-white text-xs px-4 py-1.5 flex items-center justify-between shadow-xs transition z-50">

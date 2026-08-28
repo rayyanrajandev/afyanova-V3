@@ -3,6 +3,7 @@
 namespace App\Domains\Insurance\Actions;
 
 use App\Core\Context\TenantContext;
+use App\Domains\Billing\Services\ChargePriceResolver;
 use App\Domains\Clinical\Models\Encounter;
 use App\Domains\Insurance\Models\InsuranceClaim;
 use App\Domains\Insurance\Models\PatientPolicy;
@@ -68,16 +69,22 @@ class GenerateClaimFromEncounterAction
                     ];
                 }
             } else {
+                try {
+                    $consultationPrice = app(ChargePriceResolver::class)->priceFor('CONSULT-OPD');
+                } catch (\Exception) {
+                    $consultationPrice = 20000.00;
+                }
+
                 // Fallback default consultation claim item
-                $totalClaimed = 15000.00;
+                $totalClaimed = $consultationPrice;
                 $claimItems[] = [
                     'item_type' => 'Consultation',
-                    'item_code' => 'CON-OPD-001',
+                    'item_code' => 'CONSULT-OPD',
                     'description' => 'General Medical Officer Outpatient Consultation',
                     'quantity' => 1,
-                    'unit_price' => 15000.00,
-                    'claimed_amount' => 15000.00,
-                    'approved_amount' => 15000.00,
+                    'unit_price' => $consultationPrice,
+                    'claimed_amount' => $consultationPrice,
+                    'approved_amount' => $consultationPrice,
                     'status' => 'Claimed',
                 ];
             }

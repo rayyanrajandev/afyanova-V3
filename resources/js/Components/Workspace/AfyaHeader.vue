@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { Link, router, usePage } from '@inertiajs/vue3';
 import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
@@ -24,7 +24,11 @@ import {
     TrendingUp,
     Package,
     Shield,
-    ScanLine
+    ScanLine,
+    User,
+    KeyRound,
+    LogOut,
+    Globe
 } from '@lucide/vue';
 import { useWorkspacePreferences } from '@/Composables/useWorkspacePreferences';
 
@@ -75,14 +79,24 @@ const hospitalModules = [
     { id: 'pharmacy', label: 'Pharmacy', icon: Pill, route: 'pharmacy.queue', permAny: ['pharmacy.prescription.view', 'pharmacy.inventory.view'] },
     { id: 'inventory', label: 'Inventory & Warehousing', icon: Package, route: 'inventory.workspace', permAny: ['inventory.stock.view', 'inventory.catalog.view', 'inventory.requisition.view', 'inventory.transfer.view', 'inventory.po.view', 'inventory.predictive.view', 'inventory.grn.view', 'inventory.dda.view', 'inventory.gas.view', 'inventory.stocktake.view'] },
     { id: 'access-control', label: 'Access Control & RBAC', icon: Shield, route: 'access-control.workspace', permAny: ['identity.user.manage', 'identity.role.manage'] },
+    { id: 'audit', label: 'Forensic Audit & Integrity', icon: ShieldCheck, route: 'audit.workspace', permAny: ['identity.user.view', 'identity.user.manage'] },
     { id: 'patients', label: 'Patient Registry', icon: Users, route: 'patients.index', permAny: ['patient.registry.view'] },
     { id: 'scheduling', label: 'Live Queue & Triage', icon: Clock, route: 'queue.index', permAny: ['scheduling.appointment.view', 'scheduling.queue.view'] },
+    { id: 'superadmin', label: 'Superadmin Platform Control', icon: Globe, route: 'superadmin.workspace', permAny: ['platform.superadmin.access'] },
 ];
 
 const userPermissions = page.props.auth?.permissions || [];
 const visibleModules = hospitalModules.filter(
     (mod) => mod.permAny.length === 0 || mod.permAny.some((slug) => userPermissions.includes(slug))
 );
+
+const activeTenantName = computed(() => {
+    return page.props.auth?.tenant?.name || page.props.auth?.user?.tenant?.name || 'AfyaNova Health Network';
+});
+
+const activeFacilityName = computed(() => {
+    return page.props.auth?.facility?.name || '';
+});
 
 const currentModuleObj = () => {
     return hospitalModules.find(m => m.id === props.activeModule) || visibleModules[0] || hospitalModules[0];
@@ -130,8 +144,8 @@ const logout = () => {
             <!-- Facility / Tenant Indicator (Clean Tonal Pill) -->
             <div class="hidden lg:flex items-center space-x-1.5 text-xs text-muted-foreground bg-muted/40 px-2.5 py-0.5 rounded-md h-7">
                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-500" title="Connected to Primary DB"></span>
-                <span class="font-medium text-foreground text-[11px]">Dar es Salaam Medical Center</span>
-                <span class="text-muted-foreground text-[10px]">· HQ Campus</span>
+                <span class="font-medium text-foreground text-[11px]">{{ activeTenantName }}</span>
+                <span v-if="activeFacilityName" class="text-muted-foreground text-[10px]">· {{ activeFacilityName }}</span>
             </div>
 
             <!-- Workspace Module Switcher Dropdown (Compact 28px height, Clean Semantic Surface) -->
@@ -215,9 +229,9 @@ const logout = () => {
             </button>
 
             <!-- User Menu Dropdown -->
-            <Dropdown align="right" width="48" content-classes="p-1 bg-card text-card-foreground border border-border">
+            <Dropdown align="right" width="56" content-classes="p-1 bg-card text-card-foreground border border-border shadow-lg rounded-lg">
                 <template #trigger>
-                    <button class="flex items-center space-x-1.5 text-xs font-medium text-foreground hover:bg-muted p-1 rounded transition focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring h-7">
+                    <button class="flex items-center space-x-1.5 text-xs font-medium text-foreground hover:bg-muted p-1 rounded-md transition focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring h-7">
                         <div class="w-5 h-5 rounded bg-primary/10 text-primary font-bold flex items-center justify-center text-[10px] border border-primary/20">
                             {{ user.first_name ? user.first_name[0] : 'U' }}
                         </div>
@@ -229,20 +243,29 @@ const logout = () => {
                 </template>
 
                 <template #content>
-                    <div class="px-3 py-1.5 text-[11px] text-muted-foreground border-b border-border/60">
-                        Signed in as <span class="font-semibold text-foreground">{{ user.email }}</span>
+                    <div class="px-2.5 py-2 text-[11px] border-b border-border/60">
+                        <div class="font-semibold text-foreground truncate">{{ user.first_name }} {{ user.last_name }}</div>
+                        <div class="text-[10px] text-muted-foreground truncate">{{ user.email }}</div>
                     </div>
-                    <div class="py-1">
-                        <DropdownLink :href="route('profile.edit')" class="text-xs px-3 py-1.5 hover:bg-muted text-foreground">User Settings</DropdownLink>
-                        <DropdownLink :href="route('profile.edit')" class="text-xs px-3 py-1.5 hover:bg-muted text-foreground flex items-center justify-between">
-                            <span>Two-Factor Auth</span>
-                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                    <div class="py-1 space-y-0.5">
+                        <DropdownLink :href="route('profile.edit')" class="text-xs px-2.5 py-1.5 hover:bg-muted text-foreground flex items-center gap-2 rounded transition-colors">
+                            <User class="w-3.5 h-3.5 text-muted-foreground" />
+                            <span>User Settings</span>
                         </DropdownLink>
+                        <DropdownLink :href="route('profile.edit')" class="text-xs px-2.5 py-1.5 hover:bg-muted text-foreground flex items-center justify-between rounded transition-colors">
+                            <div class="flex items-center gap-2">
+                                <KeyRound class="w-3.5 h-3.5 text-muted-foreground" />
+                                <span>Two-Factor Auth</span>
+                            </div>
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500" title="2FA Active"></span>
+                        </DropdownLink>
+                        <div class="my-1 border-t border-border/60"></div>
                         <button
                             @click="logout"
-                            class="block w-full px-3 py-1.5 text-left text-xs leading-5 text-destructive hover:bg-destructive/10 rounded transition"
+                            class="w-full px-2.5 py-1.5 text-left text-xs text-destructive hover:bg-destructive/10 rounded transition-colors flex items-center gap-2 font-medium"
                         >
-                            Sign Out
+                            <LogOut class="w-3.5 h-3.5 text-destructive" />
+                            <span>Sign Out</span>
                         </button>
                     </div>
                 </template>
