@@ -44,15 +44,22 @@ class AccessControlWorkspaceController extends Controller
         // is a landmine, not a safety net.
         $tenantId = auth()->user()?->tenant_id;
 
+        $roles = Role::with('permissions')
+            ->where('tenant_id', $tenantId)
+            ->get();
+
+        if ($tenantId && $roles->count() < 10) {
+            app(\App\Domains\Tenancy\Actions\SyncTenantStandardRolesAction::class)->execute($tenantId);
+            $roles = Role::with('permissions')
+                ->where('tenant_id', $tenantId)
+                ->get();
+        }
+
         $users = $can['users']
             ? User::with(['roleAssignments.role', 'roleAssignments.facility', 'roleAssignments.department', 'roles'])
                 ->where('tenant_id', $tenantId)
                 ->get()
             : collect();
-
-        $roles = Role::with('permissions')
-            ->where('tenant_id', $tenantId)
-            ->get();
 
         $permissions = $can['permissions'] ? Permission::all()->groupBy('domain') : collect();
         $facilities = Facility::with('departments')->where('tenant_id', $tenantId)->get();
