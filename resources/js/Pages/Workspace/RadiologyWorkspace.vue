@@ -47,6 +47,7 @@ import InputError from '@/Components/InputError.vue';
 // UI Primitives
 import Button from '@/Components/ui/Button.vue';
 import Input from '@/Components/ui/Input.vue';
+import SearchInput from '@/Components/ui/SearchInput.vue';
 import Table from '@/Components/ui/Table.vue';
 import TableHeader from '@/Components/ui/TableHeader.vue';
 import TableHead from '@/Components/ui/TableHead.vue';
@@ -333,13 +334,12 @@ const formatDate = (dateStr) => {
                     </div>
 
                     <!-- Search & Action Toolbar -->
-                    <div class="flex flex-col sm:flex-row items-center justify-between gap-2 p-2 bg-card border border-border/60 rounded-xl shadow-2xs mb-4">
+                    <div class="flex flex-col sm:flex-row items-center justify-between gap-2 p-2 bg-card border border-border/60 rounded-lg shadow-2xs mb-3">
                         <div class="flex items-center gap-2 w-full sm:w-80">
-                            <Search class="w-4 h-4 text-muted-foreground shrink-0 ml-1" />
-                            <Input
+                            <SearchInput
                                 v-model="searchQuery"
                                 placeholder="Search by order #, MRN, patient name..."
-                                class="h-8 text-xs bg-background"
+                                size="sm"
                             />
                         </div>
                         <div class="flex items-center gap-2 text-xs font-semibold text-muted-foreground">

@@ -40,6 +40,7 @@ import Modal from '@/Components/Modal.vue';
 // UI Primitives
 import Button from '@/Components/ui/Button.vue';
 import Input from '@/Components/ui/Input.vue';
+import SearchInput from '@/Components/ui/SearchInput.vue';
 import Table from '@/Components/ui/Table.vue';
 import TableBody from '@/Components/ui/TableBody.vue';
 import TableCell from '@/Components/ui/TableCell.vue';
@@ -890,12 +891,10 @@ const formatTime = (dateStr) => {
                         <!-- Search Strip -->
                         <div class="flex flex-wrap items-center justify-between gap-2 bg-card p-2 rounded-lg shadow-2xs">
                             <div class="flex items-center gap-1.5 flex-1 max-w-sm">
-                                <Search class="w-3.5 h-3.5 text-muted-foreground" />
-                                <Input
+                                <SearchInput
                                     v-model="searchQuery"
-                                    type="text"
                                     placeholder="Search by patient name, MRN, or order number..."
-                                    class="h-7 text-xs w-full"
+                                    size="sm"
                                 />
                             </div>
                         </div>

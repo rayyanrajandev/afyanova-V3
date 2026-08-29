@@ -39,6 +39,7 @@ import Modal from '@/Components/Modal.vue';
 // UI Primitives
 import Button from '@/Components/ui/Button.vue';
 import Input from '@/Components/ui/Input.vue';
+import SearchInput from '@/Components/ui/SearchInput.vue';
 import AfyaDatePicker from '@/Components/Afya/AfyaDatePicker.vue';
 import Table from '@/Components/ui/Table.vue';
 import TableHeader from '@/Components/ui/TableHeader.vue';
@@ -678,12 +679,10 @@ const formatDate = (dateStr) => {
                         <!-- Insurer Filter & Search Strip (Seamless Container) -->
                         <div class="flex flex-wrap items-center justify-between gap-2 bg-card p-2 rounded-lg shadow-2xs">
                             <div class="flex items-center gap-1.5 flex-1 max-w-xs">
-                                <Search class="w-3.5 h-3.5 text-muted-foreground" />
-                                <Input
+                                <SearchInput
                                     v-model="searchQuery"
-                                    type="text"
                                     placeholder="Search claim #, card #, or patient..."
-                                    class="h-7 text-xs w-full"
+                                    size="sm"
                                 />
                             </div>
                             

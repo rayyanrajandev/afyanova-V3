@@ -28,6 +28,7 @@ import AfyaWorkspaceMain from '@/Components/Workspace/AfyaWorkspaceMain.vue';
 import AfyaContextPanel from '@/Components/Workspace/AfyaContextPanel.vue';
 import Button from '@/Components/ui/Button.vue';
 import Input from '@/Components/ui/Input.vue';
+import SearchInput from '@/Components/ui/SearchInput.vue';
 import Table from '@/Components/ui/Table.vue';
 import TableHeader from '@/Components/ui/TableHeader.vue';
 import TableHead from '@/Components/ui/TableHead.vue';
@@ -511,10 +512,11 @@ const breadcrumbLabel = computed(() => {
                         <!-- ============================================================== -->
                         <div v-if="activeSection === 'users'" class="space-y-3">
                             <div class="flex items-center justify-between">
-                                <Input
+                                <SearchInput
                                     v-model="searchQuery"
                                     placeholder="Search staff by name, email, role, or MCT license..."
-                                    class="h-8 text-xs bg-card max-w-sm"
+                                    size="default"
+                                    class="max-w-sm"
                                 />
                             </div>
 

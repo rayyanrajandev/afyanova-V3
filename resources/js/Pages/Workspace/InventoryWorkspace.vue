@@ -44,6 +44,7 @@ import AfyaWorkspaceMain from '@/Components/Workspace/AfyaWorkspaceMain.vue';
 import AfyaContextPanel from '@/Components/Workspace/AfyaContextPanel.vue';
 import Button from '@/Components/ui/Button.vue';
 import Input from '@/Components/ui/Input.vue';
+import SearchInput from '@/Components/ui/SearchInput.vue';
 import AfyaDatePicker from '@/Components/Afya/AfyaDatePicker.vue';
 import Table from '@/Components/ui/Table.vue';
 import TableHeader from '@/Components/ui/TableHeader.vue';
@@ -913,10 +914,11 @@ const breadcrumbLabel = computed(() => {
                             </div>
 
                             <div class="flex items-center justify-between">
-                                <Input
+                                <SearchInput
                                     v-model="searchQuery"
                                     placeholder="Search catalog by name, MSD code, or category..."
-                                    class="h-8 text-xs bg-card max-w-sm"
+                                    size="default"
+                                    class="max-w-sm"
                                 />
                             </div>
 
@@ -1059,10 +1061,11 @@ const breadcrumbLabel = computed(() => {
                         <!-- ============================================================== -->
                         <div v-if="activeSection === 'stock'" class="space-y-3">
                             <div class="flex items-center justify-between gap-3">
-                                <Input
+                                <SearchInput
                                     v-model="searchQuery"
                                     placeholder="Search by drug name or batch..."
-                                    class="h-8 text-xs bg-card max-w-sm"
+                                    size="default"
+                                    class="max-w-sm"
                                 />
 
                                 <div v-if="filterLowStockOnly" class="flex items-center gap-2 bg-amber-500/10 border border-amber-500/30 px-2.5 py-1 rounded-md text-xs text-amber-700 dark:text-amber-300 font-bold">
