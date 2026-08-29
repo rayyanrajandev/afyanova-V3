@@ -97,6 +97,14 @@ const assignRoleStaffLabel = computed(() => {
     const u = props.users.find(u => u.id === assignRoleForm.user_id);
     return u ? `${u.first_name} ${u.last_name} (${u.email})` : '';
 });
+const assignRoleFacilityLabel = computed(() => {
+    const f = props.facilities.find(f => f.id === assignRoleForm.facility_id);
+    return f ? f.name : '';
+});
+const createUserFacilityLabel = computed(() => {
+    const f = props.facilities.find(f => f.id === createUserForm.facility_id);
+    return f ? f.name : '';
+});
 
 const createUserForm = useForm({
     first_name: '',
@@ -240,6 +248,10 @@ const submitCreateDepartment = () => {
 // Live Permission Tester State
 const testPermissionSlug = ref('clinical.encounter.create');
 const testFacilityId = ref('');
+const testFacilityLabel = computed(() => {
+    const f = props.facilities.find(f => f.id === testFacilityId.value);
+    return f ? f.name : '';
+});
 const testResult = ref(null);
 const isTesting = ref(false);
 
@@ -825,10 +837,36 @@ const breadcrumbLabel = computed(() => {
                                 </div>
                                 <div>
                                     <label class="text-[10px] font-bold text-muted-foreground uppercase">Facility Scope (Optional)</label>
-                                    <Select v-model="testFacilityId" class="w-full" size="sm">
-                                        <option value="">Global Tenant Check</option>
-                                        <option v-for="f in facilities" :key="f.id" :value="f.id">{{ f.name }}</option>
-                                    </Select>
+                                    <Combobox v-model="testFacilityId">
+                                        <ComboboxAnchor as-child>
+                                            <ComboboxTrigger class="w-full h-7 text-xs rounded border border-border bg-card px-2 flex items-center justify-between gap-2 hover:border-primary/50 transition-colors">
+                                                <span class="truncate text-left" :class="!testFacilityLabel && 'text-muted-foreground'">
+                                                    {{ testFacilityLabel || 'Global Tenant Check' }}
+                                                </span>
+                                                <ChevronsUpDown class="w-3.5 h-3.5 opacity-50 shrink-0" />
+                                            </ComboboxTrigger>
+                                        </ComboboxAnchor>
+                                        <ComboboxList>
+                                            <ComboboxInput placeholder="Search facilities..." />
+                                            <ComboboxEmpty>No facility found.</ComboboxEmpty>
+                                            <ComboboxViewport>
+                                                <ComboboxGroup>
+                                                    <ComboboxItem value="">
+                                                        Global Tenant Check
+                                                        <ComboboxItemIndicator>
+                                                            <Check class="w-3.5 h-3.5" />
+                                                        </ComboboxItemIndicator>
+                                                    </ComboboxItem>
+                                                    <ComboboxItem v-for="f in facilities" :key="f.id" :value="f.id">
+                                                        {{ f.name }}
+                                                        <ComboboxItemIndicator>
+                                                            <Check class="w-3.5 h-3.5" />
+                                                        </ComboboxItemIndicator>
+                                                    </ComboboxItem>
+                                                </ComboboxGroup>
+                                            </ComboboxViewport>
+                                        </ComboboxList>
+                                    </Combobox>
                                 </div>
                                 <Button 
                                     variant="default" 
@@ -914,10 +952,36 @@ const breadcrumbLabel = computed(() => {
 
                     <div>
                         <label class="font-bold text-muted-foreground text-[10px] uppercase">Facility Scope</label>
-                        <Select v-model="assignRoleForm.facility_id" class="w-full">
-                            <option value="">All Facilities (Tenant Wide)</option>
-                            <option v-for="f in facilities" :key="f.id" :value="f.id">{{ f.name }}</option>
-                        </Select>
+                        <Combobox v-model="assignRoleForm.facility_id">
+                            <ComboboxAnchor as-child>
+                                <ComboboxTrigger class="w-full h-8 text-xs rounded border border-border bg-card px-2.5 flex items-center justify-between gap-2 hover:border-primary/50 transition-colors">
+                                    <span class="truncate text-left" :class="!assignRoleFacilityLabel && 'text-muted-foreground'">
+                                        {{ assignRoleFacilityLabel || 'All Facilities (Tenant Wide)' }}
+                                    </span>
+                                    <ChevronsUpDown class="w-3.5 h-3.5 opacity-50 shrink-0" />
+                                </ComboboxTrigger>
+                            </ComboboxAnchor>
+                            <ComboboxList>
+                                <ComboboxInput placeholder="Search facilities..." />
+                                <ComboboxEmpty>No facility found.</ComboboxEmpty>
+                                <ComboboxViewport>
+                                    <ComboboxGroup>
+                                        <ComboboxItem value="">
+                                            All Facilities (Tenant Wide)
+                                            <ComboboxItemIndicator>
+                                                <Check class="w-3.5 h-3.5" />
+                                            </ComboboxItemIndicator>
+                                        </ComboboxItem>
+                                        <ComboboxItem v-for="f in facilities" :key="f.id" :value="f.id">
+                                            {{ f.name }}
+                                            <ComboboxItemIndicator>
+                                                <Check class="w-3.5 h-3.5" />
+                                            </ComboboxItemIndicator>
+                                        </ComboboxItem>
+                                    </ComboboxGroup>
+                                </ComboboxViewport>
+                            </ComboboxList>
+                        </Combobox>
                         <InputError :message="assignRoleForm.errors.facility_id" class="mt-1" />
                     </div>
                 </div>
@@ -1038,10 +1102,36 @@ const breadcrumbLabel = computed(() => {
                         </div>
                         <div>
                             <label class="font-bold text-muted-foreground text-[10px] uppercase">Facility Branch</label>
-                            <Select v-model="createUserForm.facility_id" class="w-full">
-                                <option value="">All Branches (Tenant Wide)</option>
-                                <option v-for="f in facilities" :key="f.id" :value="f.id">{{ f.name }}</option>
-                            </Select>
+                            <Combobox v-model="createUserForm.facility_id">
+                                <ComboboxAnchor as-child>
+                                    <ComboboxTrigger class="w-full h-8 text-xs rounded border border-border bg-card px-2.5 flex items-center justify-between gap-2 hover:border-primary/50 transition-colors">
+                                        <span class="truncate text-left" :class="!createUserFacilityLabel && 'text-muted-foreground'">
+                                            {{ createUserFacilityLabel || 'All Branches (Tenant Wide)' }}
+                                        </span>
+                                        <ChevronsUpDown class="w-3.5 h-3.5 opacity-50 shrink-0" />
+                                    </ComboboxTrigger>
+                                </ComboboxAnchor>
+                                <ComboboxList>
+                                    <ComboboxInput placeholder="Search facilities..." />
+                                    <ComboboxEmpty>No facility found.</ComboboxEmpty>
+                                    <ComboboxViewport>
+                                        <ComboboxGroup>
+                                            <ComboboxItem value="">
+                                                All Branches (Tenant Wide)
+                                                <ComboboxItemIndicator>
+                                                    <Check class="w-3.5 h-3.5" />
+                                                </ComboboxItemIndicator>
+                                            </ComboboxItem>
+                                            <ComboboxItem v-for="f in facilities" :key="f.id" :value="f.id">
+                                                {{ f.name }}
+                                                <ComboboxItemIndicator>
+                                                    <Check class="w-3.5 h-3.5" />
+                                                </ComboboxItemIndicator>
+                                            </ComboboxItem>
+                                        </ComboboxGroup>
+                                    </ComboboxViewport>
+                                </ComboboxList>
+                            </Combobox>
                             <InputError :message="createUserForm.errors.facility_id" class="mt-1" />
                         </div>
                     </div>
