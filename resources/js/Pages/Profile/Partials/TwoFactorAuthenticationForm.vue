@@ -9,6 +9,7 @@ import {
 import Button from '@/Components/ui/Button.vue';
 import InputError from '@/Components/InputError.vue';
 import Input from '@/Components/ui/Input.vue';
+import Modal from '@/Components/Modal.vue';
 
 const props = defineProps({
     enabled: {
@@ -79,16 +80,40 @@ const confirmEnrollment = () => {
 
 // ── Disable form ─────────────────────────────────────────────────────────────
 const disableForm = useForm({});
-const disableMfa = () => {
-    if (!confirm('Are you sure you want to disable two-factor authentication? This will reduce your account security.')) return;
-    disableForm.delete(route('two-factor.disable'));
+const showDisableModal = ref(false);
+
+const openDisableModal = () => {
+    showDisableModal.value = true;
+};
+
+const confirmDisableMfa = () => {
+    disableForm.delete(route('two-factor.disable'), {
+        preserveScroll: true,
+        onSuccess: () => {
+            showDisableModal.value = false;
+        }
+    });
 };
 
 // ── Recovery codes ────────────────────────────────────────────────────────────
 const regenForm = useForm({});
+const showRegenModal = ref(false);
+
+const openRegenModal = () => {
+    showRegenModal.value = true;
+};
+
+const confirmRegenerateCodes = () => {
+    regenForm.post(route('two-factor.recovery-codes'), {
+        preserveScroll: true,
+        onSuccess: () => {
+            showRegenModal.value = false;
+        }
+    });
+};
+
 const regenerateCodes = () => {
-    if (!confirm('This will invalidate all existing recovery codes. Continue?')) return;
-    regenForm.post(route('two-factor.recovery-codes'));
+    openRegenModal();
 };
 
 const recoveryCodes = ref(props.recoveryCodes ?? []);
@@ -327,5 +352,85 @@ const copyAll = () => {
                 </form>
             </div>
         </div>
+
+        <!-- MODAL: CONFIRM DISABLE 2FA -->
+        <Modal :show="showDisableModal" @close="showDisableModal = false" max-width="md">
+            <div class="p-5 space-y-4">
+                <div class="flex items-center gap-3 border-b border-border pb-3">
+                    <div class="w-9 h-9 rounded-full bg-rose-500/10 text-rose-600 flex items-center justify-center shrink-0">
+                        <ShieldOff class="w-5 h-5" />
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-sm text-foreground">Disable Two-Factor Authentication</h3>
+                        <p class="text-[11px] text-muted-foreground">Account Security Downgrade</p>
+                    </div>
+                </div>
+
+                <div class="space-y-2 text-xs">
+                    <p class="text-foreground leading-relaxed">
+                        Are you sure you want to disable two-factor authentication for your account?
+                    </p>
+                    <div class="p-2.5 rounded-lg border bg-rose-500/5 border-rose-500/20 text-[11px] text-rose-700 dark:text-rose-300 leading-relaxed">
+                        Disabling 2FA will remove one-time passcode verification on future logins, leaving your account protected by password only.
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-end gap-2 pt-3 border-t border-border">
+                    <Button variant="outline" size="sm" :disabled="disableForm.processing" @click="showDisableModal = false">
+                        Cancel
+                    </Button>
+                    <Button 
+                        variant="destructive" 
+                        size="sm" 
+                        :disabled="disableForm.processing" 
+                        @click="confirmDisableMfa"
+                        class="font-bold"
+                    >
+                        <Loader2 v-if="disableForm.processing" class="w-3.5 h-3.5 animate-spin mr-1" />
+                        <span>Disable 2FA</span>
+                    </Button>
+                </div>
+            </div>
+        </Modal>
+
+        <!-- MODAL: CONFIRM REGENERATE RECOVERY CODES -->
+        <Modal :show="showRegenModal" @close="showRegenModal = false" max-width="md">
+            <div class="p-5 space-y-4">
+                <div class="flex items-center gap-3 border-b border-border pb-3">
+                    <div class="w-9 h-9 rounded-full bg-amber-500/10 text-amber-600 flex items-center justify-center shrink-0">
+                        <RefreshCw class="w-5 h-5" />
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-sm text-foreground">Regenerate Recovery Codes</h3>
+                        <p class="text-[11px] text-muted-foreground">Emergency Access Key Replacement</p>
+                    </div>
+                </div>
+
+                <div class="space-y-2 text-xs">
+                    <p class="text-foreground leading-relaxed">
+                        Regenerating will instantly invalidate all existing recovery codes.
+                    </p>
+                    <div class="p-2.5 rounded-lg border bg-amber-500/5 border-amber-500/20 text-[11px] text-amber-700 dark:text-amber-300 leading-relaxed">
+                        Any previously printed or saved recovery codes will no longer work for account access.
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-end gap-2 pt-3 border-t border-border">
+                    <Button variant="outline" size="sm" :disabled="regenForm.processing" @click="showRegenModal = false">
+                        Cancel
+                    </Button>
+                    <Button 
+                        variant="default" 
+                        size="sm" 
+                        :disabled="regenForm.processing" 
+                        @click="confirmRegenerateCodes"
+                        class="font-bold"
+                    >
+                        <Loader2 v-if="regenForm.processing" class="w-3.5 h-3.5 animate-spin mr-1" />
+                        <span>Regenerate Codes</span>
+                    </Button>
+                </div>
+            </div>
+        </Modal>
     </section>
 </template>

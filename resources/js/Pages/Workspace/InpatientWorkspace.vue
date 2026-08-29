@@ -57,6 +57,7 @@ import TableBody from '@/Components/ui/TableBody.vue';
 import TableRow from '@/Components/ui/TableRow.vue';
 import TableCell from '@/Components/ui/TableCell.vue';
 import AfyaStatusBadge from '@/Components/Afya/AfyaStatusBadge.vue';
+import AfyaTablePagination from '@/Components/Afya/AfyaTablePagination.vue';
 import AfyaPatientIdentity from '@/Components/Afya/AfyaPatientIdentity.vue';
 import { useWorkspacePreferences } from '@/Composables/useWorkspacePreferences';
 
@@ -218,17 +219,25 @@ const submitMar = () => {
 
 // Midnight Bed Billing Trigger
 const isGeneratingCharges = ref(false);
-const triggerBedBilling = () => {
-    if (!confirm('Run midnight bed & board billing engine for all currently admitted patients? This will generate daily accommodation charges.')) {
-        return;
-    }
+const showBedBillingModal = ref(false);
+
+const openBedBillingModal = () => {
+    showBedBillingModal.value = true;
+};
+
+const confirmBedBilling = () => {
     isGeneratingCharges.value = true;
     router.post(route('inpatient.generate-bed-charges'), {}, {
         preserveScroll: true,
         onFinish: () => {
             isGeneratingCharges.value = false;
+            showBedBillingModal.value = false;
         }
     });
+};
+
+const triggerBedBilling = () => {
+    openBedBillingModal();
 };
 
 // Selection handlers
@@ -1809,6 +1818,51 @@ const formatCurrency = (val) => {
                         </Button>
                     </div>
                 </form>
+            </div>
+        </Modal>
+
+        <!-- MODAL: CONFIRM MIDNIGHT BED BILLING -->
+        <Modal :show="showBedBillingModal" @close="showBedBillingModal = false" max-width="md">
+            <div class="p-5 space-y-4">
+                <div class="flex items-center gap-3 border-b border-border pb-3">
+                    <div class="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                        <Clock class="w-5 h-5" />
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-sm text-foreground">Execute Bed & Board Billing</h3>
+                        <p class="text-[11px] text-muted-foreground">Automated Daily Accommodation Charge Engine</p>
+                    </div>
+                </div>
+
+                <div class="space-y-2 text-xs">
+                    <p class="text-foreground leading-relaxed">
+                        Run the accommodation billing engine for all 
+                        <strong class="font-bold text-foreground">{{ activeAdmissions.length }} currently admitted patients</strong>?
+                    </p>
+                    <div class="p-2.5 rounded-lg border bg-muted/20 border-border/40 text-[11px] text-muted-foreground leading-relaxed space-y-1">
+                        <p>
+                            • Computes daily ward and bed tariffs based on active admission records.<br>
+                            • Appends non-duplicate bill items to each patient's open inpatient billing folder.<br>
+                            • Re-evaluates NHIF / private insurance co-pays and daily bed caps automatically.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-end gap-2 pt-3 border-t border-border">
+                    <Button variant="outline" size="sm" :disabled="isGeneratingCharges" @click="showBedBillingModal = false">
+                        Cancel
+                    </Button>
+                    <Button 
+                        variant="default" 
+                        size="sm" 
+                        :disabled="isGeneratingCharges" 
+                        @click="confirmBedBilling"
+                        class="font-bold"
+                    >
+                        <Loader2 v-if="isGeneratingCharges" class="w-3.5 h-3.5 animate-spin mr-1" />
+                        <span>Generate Bed Charges</span>
+                    </Button>
+                </div>
             </div>
         </Modal>
     </AfyaShell>

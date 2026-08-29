@@ -141,6 +141,7 @@ const otcCart = ref([]);
 const otcSearchQuery = ref('');
 const otcNotes = ref('');
 const isSubmittingOtc = ref(false);
+const otcStockWarning = ref(null);
 
 const startOtcForTicket = (ticket) => {
     otcTicket.value = ticket;
@@ -149,12 +150,13 @@ const startOtcForTicket = (ticket) => {
 };
 
 const addMedicationToOtcCart = (med) => {
+    otcStockWarning.value = null;
     const existing = otcCart.value.find(i => i.medication_id === med.id);
     const availableStock = med.batches?.filter(b => b.status === 'Active' && Number(b.current_quantity) > 0)
         .reduce((sum, b) => sum + Number(b.current_quantity), 0) || 0;
 
     if (availableStock <= 0) {
-        alert(`${med.generic_name} is currently out of stock.`);
+        otcStockWarning.value = `${med.generic_name} is currently out of stock.`;
         return;
     }
 
@@ -957,6 +959,15 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                                             <button v-if="otcPatient" @click="otcPatient = null; otcTicket = null" class="text-[10px] text-rose-600 font-semibold hover:underline">
                                                 Clear
                                             </button>
+                                        </div>
+
+                                        <!-- Out-of-Stock Warning Alert -->
+                                        <div v-if="otcStockWarning" class="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300 text-xs flex items-center justify-between gap-2">
+                                            <div class="flex items-center gap-1.5 font-medium min-w-0">
+                                                <AlertTriangle class="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                                                <span class="truncate">{{ otcStockWarning }}</span>
+                                            </div>
+                                            <button @click="otcStockWarning = null" class="text-xs text-muted-foreground hover:text-foreground shrink-0 font-bold px-1">✕</button>
                                         </div>
 
                                         <!-- Cart Items List -->

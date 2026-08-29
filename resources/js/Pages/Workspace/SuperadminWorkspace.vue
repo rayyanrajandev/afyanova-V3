@@ -67,6 +67,7 @@ import TableBody from '@/Components/ui/TableBody.vue';
 import TableRow from '@/Components/ui/TableRow.vue';
 import TableCell from '@/Components/ui/TableCell.vue';
 import AfyaStatusBadge from '@/Components/Afya/AfyaStatusBadge.vue';
+import AfyaTablePagination from '@/Components/Afya/AfyaTablePagination.vue';
 import Modal from '@/Components/Modal.vue';
 import InputError from '@/Components/InputError.vue';
 import { useWorkspacePreferences } from '@/Composables/useWorkspacePreferences';
@@ -117,6 +118,19 @@ const filteredTenants = computed(() => {
 
         return matchesSearch && matchesTier && matchesStatus;
     });
+});
+
+const tenantsCurrentPage = ref(1);
+const tenantsPerPage = ref(25);
+const tenantsPerPageOptions = [10, 25, 50, 100];
+
+watch([searchQuery, filterTier, filterStatus], () => {
+    tenantsCurrentPage.value = 1;
+});
+
+const paginatedTenants = computed(() => {
+    const start = (tenantsCurrentPage.value - 1) * tenantsPerPage.value;
+    return filteredTenants.value.slice(start, start + tenantsPerPage.value);
 });
 
 // Modals State
@@ -396,10 +410,31 @@ const submitUpdateSubscription = () => {
     });
 };
 
+// Tenant Status Modal State
+const showTenantStatusModal = ref(false);
+const targetTenantForStatus = ref(null);
+const isTogglingTenantStatus = ref(false);
+
+const openTenantStatusModal = (tenant) => {
+    targetTenantForStatus.value = tenant;
+    showTenantStatusModal.value = true;
+};
+
+const confirmTenantStatusToggle = () => {
+    if (!targetTenantForStatus.value) return;
+    isTogglingTenantStatus.value = true;
+    router.post(route('superadmin.tenants.toggle-status', targetTenantForStatus.value.id), {}, {
+        preserveScroll: true,
+        onFinish: () => {
+            isTogglingTenantStatus.value = false;
+            showTenantStatusModal.value = false;
+            targetTenantForStatus.value = null;
+        }
+    });
+};
+
 const toggleTenantStatus = (tenant) => {
-    if (confirm(`Are you sure you want to change the operational status of ${tenant.name}?`)) {
-        router.post(route('superadmin.tenants.toggle-status', tenant.id), {}, { preserveScroll: true });
-    }
+    openTenantStatusModal(tenant);
 };
 
 // Plan Blueprint Management Form
@@ -482,16 +517,30 @@ const togglePlanFeature = (key) => {
     }
 };
 
+// Plan Propagation Modal State
+const showPropagatePlanModal = ref(false);
+const targetPlanForPropagate = ref(null);
+
+const openPropagatePlanModal = (plan) => {
+    targetPlanForPropagate.value = plan;
+    showPropagatePlanModal.value = true;
+};
+
+const confirmPropagatePlan = () => {
+    if (!targetPlanForPropagate.value) return;
+    isPropagatingId.value = targetPlanForPropagate.value.id;
+    router.post(route('superadmin.plans.propagate', targetPlanForPropagate.value.id), {}, { 
+        preserveScroll: true,
+        onFinish: () => {
+            isPropagatingId.value = null;
+            showPropagatePlanModal.value = false;
+            targetPlanForPropagate.value = null;
+        }
+    });
+};
+
 const propagatePlan = (plan) => {
-    if (confirm(`Propagate '${plan.name}' feature flags and quotas to all active hospitals on this tier?`)) {
-        isPropagatingId.value = plan.id;
-        router.post(route('superadmin.plans.propagate', plan.id), {}, { 
-            preserveScroll: true,
-            onFinish: () => {
-                isPropagatingId.value = null;
-            }
-        });
-    }
+    openPropagatePlanModal(plan);
 };
 
 // Impersonation Form
@@ -795,142 +844,153 @@ const formatDate = (iso) => {
                             </div>
 
                             <!-- Master High-Density Tenants Table -->
-                            <div class="w-full bg-card rounded-lg overflow-hidden shadow-2xs border border-border/60">
-                                <Table class="w-full text-xs">
-                                    <TableHeader>
-                                        <TableRow class="h-7 text-[9.5px] uppercase font-bold text-muted-foreground bg-muted/20 border-b border-border/40">
-                                            <TableHead class="py-1 px-3">Hospital Organization</TableHead>
-                                            <TableHead class="py-1 px-2.5">Plan Tier</TableHead>
-                                            <TableHead class="py-1 px-2.5">Branches Quota</TableHead>
-                                            <TableHead class="py-1 px-2.5">Staff Seats</TableHead>
-                                            <TableHead class="py-1 px-2.5">Status</TableHead>
-                                            <TableHead class="py-1 px-2.5">Created</TableHead>
-                                            <TableHead class="py-1 px-3 text-right">Actions</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        <TableRow
-                                            v-for="tenant in filteredTenants"
-                                            :key="tenant.id"
-                                            class="h-8.5 border-b border-border/30 hover:bg-muted/20 cursor-pointer transition-colors"
-                                            :class="selectedTenant?.id === tenant.id ? 'bg-purple-500/5 dark:bg-purple-500/10 border-l-2 border-l-purple-600' : ''"
-                                            @click="inspectTenant(tenant)"
-                                        >
-                                            <!-- Organization & Domain -->
-                                            <TableCell class="py-1 px-3">
-                                                <div class="flex items-center gap-2">
-                                                    <div class="w-6 h-6 rounded bg-purple-500/10 border border-purple-500/20 text-purple-600 font-bold flex items-center justify-center text-[10px]">
-                                                        {{ tenant.name.substring(0, 2).toUpperCase() }}
-                                                    </div>
-                                                    <div>
-                                                        <div class="font-bold text-foreground text-xs hover:text-purple-600 transition-colors">
-                                                            {{ tenant.name }}
+                            <div class="w-full bg-card rounded-lg overflow-hidden shadow-2xs border border-border/60 flex flex-col">
+                                <div class="max-h-[580px] overflow-y-auto">
+                                    <Table class="w-full text-xs">
+                                        <TableHeader class="sticky top-0 bg-muted/95 backdrop-blur-xs z-10">
+                                            <TableRow class="h-7 text-[9.5px] uppercase font-bold text-muted-foreground border-b border-border/40">
+                                                <TableHead class="py-1 px-3">Hospital Organization</TableHead>
+                                                <TableHead class="py-1 px-2.5">Plan Tier</TableHead>
+                                                <TableHead class="py-1 px-2.5">Branches Quota</TableHead>
+                                                <TableHead class="py-1 px-2.5">Staff Seats</TableHead>
+                                                <TableHead class="py-1 px-2.5">Status</TableHead>
+                                                <TableHead class="py-1 px-2.5">Created</TableHead>
+                                                <TableHead class="py-1 px-3 text-right">Actions</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            <TableRow
+                                                v-for="tenant in paginatedTenants"
+                                                :key="tenant.id"
+                                                class="h-8.5 border-b border-border/30 hover:bg-muted/20 cursor-pointer transition-colors"
+                                                :class="selectedTenant?.id === tenant.id ? 'bg-purple-500/5 dark:bg-purple-500/10 border-l-2 border-l-purple-600' : ''"
+                                                @click="inspectTenant(tenant)"
+                                            >
+                                                <!-- Organization & Domain -->
+                                                <TableCell class="py-1 px-3">
+                                                    <div class="flex items-center gap-2">
+                                                        <div class="w-6 h-6 rounded bg-purple-500/10 border border-purple-500/20 text-purple-600 font-bold flex items-center justify-center text-[10px]">
+                                                            {{ tenant.name.substring(0, 2).toUpperCase() }}
                                                         </div>
-                                                        <div class="font-mono text-[9.5px] text-muted-foreground flex items-center gap-1">
-                                                            <span>{{ tenant.slug }}</span>
-                                                            <span v-if="tenant.domain" class="text-purple-600">· {{ tenant.domain }}</span>
+                                                        <div>
+                                                            <div class="font-bold text-foreground text-xs hover:text-purple-600 transition-colors">
+                                                                {{ tenant.name }}
+                                                            </div>
+                                                            <div class="font-mono text-[9.5px] text-muted-foreground flex items-center gap-1">
+                                                                <span>{{ tenant.slug }}</span>
+                                                                <span v-if="tenant.domain" class="text-purple-600">· {{ tenant.domain }}</span>
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                            </TableCell>
+                                                </TableCell>
 
-                                            <!-- Subscription Tier -->
-                                            <TableCell class="py-1 px-2.5">
-                                                <span 
-                                                    class="px-1.5 py-0.2 rounded text-[9.5px] font-bold uppercase tracking-wider"
-                                                    :class="{
-                                                        'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20': tenant.subscription_tier === 'starter',
-                                                        'bg-blue-500/10 text-blue-600 border border-blue-500/20': tenant.subscription_tier === 'growth',
-                                                        'bg-purple-500/10 text-purple-600 border border-purple-500/20': tenant.subscription_tier === 'enterprise',
-                                                    }"
-                                                >
-                                                    {{ tenant.subscription_tier }}
-                                                </span>
-                                            </TableCell>
-
-                                            <!-- Facilities Quota -->
-                                            <TableCell class="py-1 px-2.5">
-                                                <div class="space-y-0.5">
-                                                    <div class="text-[10px] font-mono font-bold text-foreground">
-                                                        {{ tenant.facilities_count }} / {{ tenant.max_facilities }}
-                                                    </div>
-                                                    <div class="w-14 bg-muted rounded-full h-1 overflow-hidden">
-                                                        <div class="bg-primary h-1 rounded-full" :style="{ width: `${Math.min(100, (tenant.facilities_count / tenant.max_facilities) * 100)}%` }"></div>
-                                                    </div>
-                                                </div>
-                                            </TableCell>
-
-                                            <!-- Users Quota -->
-                                            <TableCell class="py-1 px-2.5">
-                                                <div class="space-y-0.5">
-                                                    <div class="text-[10px] font-mono font-bold text-foreground">
-                                                        {{ tenant.users_count }} / {{ tenant.max_users }}
-                                                    </div>
-                                                    <div class="w-14 bg-muted rounded-full h-1 overflow-hidden">
-                                                        <div class="bg-purple-600 h-1 rounded-full" :style="{ width: `${Math.min(100, (tenant.users_count / tenant.max_users) * 100)}%` }"></div>
-                                                    </div>
-                                                </div>
-                                            </TableCell>
-
-                                            <!-- Status -->
-                                            <TableCell class="py-1 px-2.5">
-                                                <AfyaStatusBadge :status="tenant.subscription_status || tenant.status" />
-                                            </TableCell>
-
-                                            <!-- Created At -->
-                                            <TableCell class="py-1 px-2.5 text-[10px] text-muted-foreground font-mono whitespace-nowrap">
-                                                {{ formatDate(tenant.created_at) }}
-                                            </TableCell>
-
-                                            <!-- Actions -->
-                                            <TableCell class="py-1 px-3 text-right">
-                                                <div class="flex items-center justify-end gap-1" @click.stop>
-                                                    <!-- Impersonate Support Button -->
-                                                    <Button
-                                                        size="sm"
-                                                        variant="outline"
-                                                        class="h-6 px-2 text-[10.5px] font-semibold text-purple-600 border-purple-500/30 hover:bg-purple-500/10 gap-1"
-                                                        title="Audited Support Impersonation"
-                                                        @click="openImpersonate(tenant)"
+                                                <!-- Subscription Tier -->
+                                                <TableCell class="py-1 px-2.5">
+                                                    <span 
+                                                        class="px-1.5 py-0.2 rounded text-[9.5px] font-bold uppercase tracking-wider"
+                                                        :class="{
+                                                            'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20': tenant.subscription_tier === 'starter',
+                                                            'bg-blue-500/10 text-blue-600 border border-blue-500/20': tenant.subscription_tier === 'growth',
+                                                            'bg-purple-500/10 text-purple-600 border border-purple-500/20': tenant.subscription_tier === 'enterprise',
+                                                        }"
                                                     >
-                                                        <UserCheck class="w-3 h-3" />
-                                                        <span>Support</span>
-                                                    </Button>
+                                                        {{ tenant.subscription_tier }}
+                                                    </span>
+                                                </TableCell>
 
-                                                    <!-- Edit Subscription Button -->
-                                                    <Button
-                                                        size="sm"
-                                                        variant="ghost"
-                                                        class="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
-                                                        title="Edit Subscription & Quotas"
-                                                        @click="openEditSubscription(tenant)"
-                                                    >
-                                                        <Sliders class="w-3 h-3" />
-                                                    </Button>
+                                                <!-- Facilities Quota -->
+                                                <TableCell class="py-1 px-2.5">
+                                                    <div class="space-y-0.5">
+                                                        <div class="text-[10px] font-mono font-bold text-foreground">
+                                                            {{ tenant.facilities_count }} / {{ tenant.max_facilities }}
+                                                        </div>
+                                                        <div class="w-14 bg-muted rounded-full h-1 overflow-hidden">
+                                                            <div class="bg-primary h-1 rounded-full" :style="{ width: `${Math.min(100, (tenant.facilities_count / tenant.max_facilities) * 100)}%` }"></div>
+                                                        </div>
+                                                    </div>
+                                                </TableCell>
 
-                                                    <!-- Suspend / Activate Toggle -->
-                                                    <Button
-                                                        size="sm"
-                                                        variant="ghost"
-                                                        class="h-6 w-6 p-0"
-                                                        :class="tenant.status === 'suspended' ? 'text-emerald-600 hover:text-emerald-700' : 'text-rose-600 hover:text-rose-700'"
-                                                        :title="tenant.status === 'suspended' ? 'Reactivate Tenant' : 'Suspend Tenant'"
-                                                        @click="toggleTenantStatus(tenant)"
-                                                    >
-                                                        <Power class="w-3 h-3" />
-                                                    </Button>
-                                                </div>
-                                            </TableCell>
-                                        </TableRow>
+                                                <!-- Users Quota -->
+                                                <TableCell class="py-1 px-2.5">
+                                                    <div class="space-y-0.5">
+                                                        <div class="text-[10px] font-mono font-bold text-foreground">
+                                                            {{ tenant.users_count }} / {{ tenant.max_users }}
+                                                        </div>
+                                                        <div class="w-14 bg-muted rounded-full h-1 overflow-hidden">
+                                                            <div class="bg-purple-600 h-1 rounded-full" :style="{ width: `${Math.min(100, (tenant.users_count / tenant.max_users) * 100)}%` }"></div>
+                                                        </div>
+                                                    </div>
+                                                </TableCell>
 
-                                        <TableRow v-if="filteredTenants.length === 0">
-                                            <TableCell colspan="7" class="text-center py-8 text-muted-foreground text-xs">
-                                                <Building2 class="w-6 h-6 mx-auto text-muted-foreground/40 mb-1" />
-                                                No hospital organizations match search criteria.
-                                            </TableCell>
-                                        </TableRow>
-                                    </TableBody>
-                                </Table>
+                                                <!-- Status -->
+                                                <TableCell class="py-1 px-2.5">
+                                                    <AfyaStatusBadge :status="tenant.subscription_status || tenant.status" />
+                                                </TableCell>
+
+                                                <!-- Created At -->
+                                                <TableCell class="py-1 px-2.5 text-[10px] text-muted-foreground font-mono whitespace-nowrap">
+                                                    {{ formatDate(tenant.created_at) }}
+                                                </TableCell>
+
+                                                <!-- Actions -->
+                                                <TableCell class="py-1 px-3 text-right">
+                                                    <div class="flex items-center justify-end gap-1" @click.stop>
+                                                        <!-- Impersonate Support Button -->
+                                                        <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            class="h-6 px-2 text-[10.5px] font-semibold text-purple-600 border-purple-500/30 hover:bg-purple-500/10 gap-1"
+                                                            title="Audited Support Impersonation"
+                                                            @click="openImpersonate(tenant)"
+                                                        >
+                                                            <UserCheck class="w-3 h-3" />
+                                                            <span>Support</span>
+                                                        </Button>
+
+                                                        <!-- Edit Subscription Button -->
+                                                        <Button
+                                                            size="sm"
+                                                            variant="ghost"
+                                                            class="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+                                                            title="Edit Subscription & Quotas"
+                                                            @click="openEditSubscription(tenant)"
+                                                        >
+                                                            <Sliders class="w-3 h-3" />
+                                                        </Button>
+
+                                                        <!-- Suspend / Activate Toggle -->
+                                                        <Button
+                                                            size="sm"
+                                                            variant="ghost"
+                                                            class="h-6 w-6 p-0"
+                                                            :class="tenant.status === 'suspended' ? 'text-emerald-600 hover:text-emerald-700' : 'text-rose-600 hover:text-rose-700'"
+                                                            :title="tenant.status === 'suspended' ? 'Reactivate Tenant' : 'Suspend Tenant'"
+                                                            @click="toggleTenantStatus(tenant)"
+                                                        >
+                                                            <Power class="w-3 h-3" />
+                                                        </Button>
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+
+                                            <TableRow v-if="filteredTenants.length === 0">
+                                                <TableCell colspan="7" class="text-center py-8 text-muted-foreground text-xs">
+                                                    <Building2 class="w-6 h-6 mx-auto text-muted-foreground/40 mb-1" />
+                                                    No hospital organizations match search criteria.
+                                                </TableCell>
+                                            </TableRow>
+                                        </TableBody>
+                                    </Table>
+                                </div>
+
+                                <!-- Pagination Footer -->
+                                <AfyaTablePagination
+                                    v-model:currentPage="tenantsCurrentPage"
+                                    v-model:perPage="tenantsPerPage"
+                                    :total-items="filteredTenants.length"
+                                    :per-page-options="tenantsPerPageOptions"
+                                    item-label="hospitals"
+                                />
                             </div>
                         </div>
 
@@ -2104,5 +2164,109 @@ const formatDate = (iso) => {
                 </Button>
             </div>
         </form>
+    </Modal>
+
+    <!-- 7. MODAL: CONFIRM TENANT STATUS TOGGLE -->
+    <Modal :show="showTenantStatusModal && !!targetTenantForStatus" @close="showTenantStatusModal = false" max-width="md">
+        <div class="p-5 space-y-4">
+            <div class="flex items-center gap-3 border-b border-border pb-3">
+                <div 
+                    class="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+                    :class="targetTenantForStatus?.status === 'suspended' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-rose-500/10 text-rose-600'"
+                >
+                    <Power class="w-5 h-5" />
+                </div>
+                <div>
+                    <h3 class="font-bold text-sm text-foreground">
+                        {{ targetTenantForStatus?.status === 'suspended' ? 'Reactivate Hospital Tenant' : 'Suspend Hospital Tenant' }}
+                    </h3>
+                    <p class="text-[11px] text-muted-foreground">{{ targetTenantForStatus?.name }}</p>
+                </div>
+            </div>
+
+            <div class="space-y-2 text-xs">
+                <p class="text-foreground leading-relaxed">
+                    Are you sure you want to {{ targetTenantForStatus?.status === 'suspended' ? 'reactivate' : 'suspend' }}
+                    <strong class="font-bold text-foreground">{{ targetTenantForStatus?.name }}</strong> 
+                    <span class="font-mono text-muted-foreground">({{ targetTenantForStatus?.slug }})</span>?
+                </p>
+                <div 
+                    class="p-2.5 rounded-lg border text-[11px] leading-relaxed"
+                    :class="targetTenantForStatus?.status === 'suspended' ? 'bg-emerald-500/5 border-emerald-500/20 text-emerald-700 dark:text-emerald-300' : 'bg-rose-500/5 border-rose-500/20 text-rose-700 dark:text-rose-300'"
+                >
+                    <span v-if="targetTenantForStatus?.status === 'suspended'">
+                        Reactivating will restore operational status, staff logins, and clinical encounter capabilities immediately.
+                    </span>
+                    <span v-else>
+                        Suspending will immediately block all staff logins, new patient check-ins, and API requests across all branch facilities under this tenant.
+                    </span>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-3 border-t border-border">
+                <Button type="button" variant="outline" size="sm" :disabled="isTogglingTenantStatus" @click="showTenantStatusModal = false">
+                    Cancel
+                </Button>
+                <Button 
+                    type="button" 
+                    size="sm" 
+                    :variant="targetTenantForStatus?.status === 'suspended' ? 'default' : 'destructive'"
+                    :disabled="isTogglingTenantStatus"
+                    @click="confirmTenantStatusToggle"
+                    class="font-bold"
+                >
+                    <Loader2 v-if="isTogglingTenantStatus" class="w-3.5 h-3.5 animate-spin mr-1" />
+                    <span>{{ targetTenantForStatus?.status === 'suspended' ? 'Reactivate Hospital' : 'Suspend Hospital' }}</span>
+                </Button>
+            </div>
+        </div>
+    </Modal>
+
+    <!-- 8. MODAL: CONFIRM PLAN PROPAGATION -->
+    <Modal :show="showPropagatePlanModal && !!targetPlanForPropagate" @close="showPropagatePlanModal = false" max-width="md">
+        <div class="p-5 space-y-4">
+            <div class="flex items-center gap-3 border-b border-border pb-3">
+                <div class="w-9 h-9 rounded-full bg-purple-500/10 text-purple-600 flex items-center justify-center shrink-0">
+                    <Sparkles class="w-5 h-5" />
+                </div>
+                <div>
+                    <h3 class="font-bold text-sm text-foreground">Propagate Plan Blueprint</h3>
+                    <p class="text-[11px] text-muted-foreground">{{ targetPlanForPropagate?.name }} (Tier {{ targetPlanForPropagate?.code }})</p>
+                </div>
+            </div>
+
+            <div class="space-y-2 text-xs">
+                <p class="text-foreground leading-relaxed">
+                    This will synchronize and propagate all quotas and feature flags from 
+                    <strong class="font-bold text-purple-600">{{ targetPlanForPropagate?.name }}</strong> 
+                    to all active hospital tenants subscribed to this tier.
+                </p>
+                <div class="p-2.5 rounded-lg border bg-purple-500/5 border-purple-500/20 text-[11px] text-purple-700 dark:text-purple-300 space-y-1">
+                    <div class="font-bold">Plan Quotas to Apply:</div>
+                    <ul class="list-disc list-inside space-y-0.5 font-mono text-[10px]">
+                        <li>Max Branch Facilities: {{ targetPlanForPropagate?.max_facilities }}</li>
+                        <li>Max Staff Seats: {{ targetPlanForPropagate?.max_users }}</li>
+                        <li>Storage Quota: {{ targetPlanForPropagate?.storage_quota_mb }} MB</li>
+                        <li>Feature Flags: {{ (targetPlanForPropagate?.feature_flags || []).join(', ') || 'None' }}</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-3 border-t border-border">
+                <Button type="button" variant="outline" size="sm" :disabled="!!isPropagatingId" @click="showPropagatePlanModal = false">
+                    Cancel
+                </Button>
+                <Button 
+                    type="button" 
+                    size="sm" 
+                    class="bg-purple-600 hover:bg-purple-700 text-white font-bold" 
+                    :disabled="!!isPropagatingId"
+                    @click="confirmPropagatePlan"
+                >
+                    <Loader2 v-if="isPropagatingId" class="w-3.5 h-3.5 animate-spin mr-1" />
+                    <span>Propagate to All Hospitals</span>
+                </Button>
+            </div>
+        </div>
     </Modal>
 </template>

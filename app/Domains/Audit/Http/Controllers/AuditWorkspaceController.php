@@ -45,7 +45,8 @@ class AuditWorkspaceController extends Controller
             });
         }
 
-        $logs = $query->paginate(50)->withQueryString();
+        $perPage = min(100, max(10, $request->integer('per_page', 50)));
+        $logs = $query->paginate($perPage)->withQueryString();
 
         $categories = AuditLog::distinct()->pluck('event_category')->filter()->values();
         $users = User::select('id', 'first_name', 'last_name', 'email')->orderBy('first_name')->get();

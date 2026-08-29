@@ -44,6 +44,7 @@ import TableBody from '@/Components/ui/TableBody.vue';
 import TableRow from '@/Components/ui/TableRow.vue';
 import TableCell from '@/Components/ui/TableCell.vue';
 import AfyaStatusBadge from '@/Components/Afya/AfyaStatusBadge.vue';
+import AfyaTablePagination from '@/Components/Afya/AfyaTablePagination.vue';
 import InputError from '@/Components/InputError.vue';
 import { useWorkspacePreferences } from '@/Composables/useWorkspacePreferences';
 
@@ -757,52 +758,13 @@ const breadcrumbLabel = computed(() => {
                                 </div>
 
                                 <!-- Pagination Controls Footer -->
-                                <div class="px-3 py-2 border-t border-border/50 bg-muted/20 flex flex-wrap items-center justify-between gap-2 text-xs">
-                                    <div class="text-muted-foreground text-[11px]">
-                                        Showing <span class="font-bold text-foreground">{{ filteredUsers.length === 0 ? 0 : (currentPage - 1) * perPage + 1 }}</span>
-                                        to <span class="font-bold text-foreground">{{ Math.min(currentPage * perPage, filteredUsers.length) }}</span>
-                                        of <span class="font-bold text-foreground">{{ filteredUsers.length }}</span> staff members
-                                    </div>
-
-                                    <div class="flex items-center gap-3">
-                                        <div class="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                                            <span>Per page:</span>
-                                            <select 
-                                                v-model="perPage" 
-                                                @change="currentPage = 1"
-                                                class="h-6 text-xs bg-background border border-border rounded px-1.5 py-0 focus:outline-none focus:border-primary text-foreground"
-                                            >
-                                                <option v-for="size in perPageOptions" :key="size" :value="size">{{ size }}</option>
-                                            </select>
-                                        </div>
-
-                                        <div class="flex items-center gap-1">
-                                            <Button 
-                                                variant="outline" 
-                                                size="sm" 
-                                                class="h-6 w-6 p-0" 
-                                                :disabled="currentPage <= 1"
-                                                @click="currentPage--"
-                                                title="Previous page"
-                                            >
-                                                <ChevronLeft class="w-3.5 h-3.5" />
-                                            </Button>
-                                            <span class="text-[11px] font-mono text-muted-foreground px-1.5">
-                                                {{ currentPage }} / {{ totalPages }}
-                                            </span>
-                                            <Button 
-                                                variant="outline" 
-                                                size="sm" 
-                                                class="h-6 w-6 p-0" 
-                                                :disabled="currentPage >= totalPages"
-                                                @click="currentPage++"
-                                                title="Next page"
-                                            >
-                                                <ChevronRight class="w-3.5 h-3.5" />
-                                            </Button>
-                                        </div>
-                                    </div>
-                                </div>
+                                <AfyaTablePagination
+                                    v-model:currentPage="currentPage"
+                                    v-model:perPage="perPage"
+                                    :total-items="filteredUsers.length"
+                                    :per-page-options="perPageOptions"
+                                    item-label="staff members"
+                                />
                             </div>
                         </div>
 
