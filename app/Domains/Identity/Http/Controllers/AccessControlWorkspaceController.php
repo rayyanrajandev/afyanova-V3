@@ -61,7 +61,7 @@ class AccessControlWorkspaceController extends Controller
                 ->get()
             : collect();
 
-        $permissions = $can['permissions'] ? Permission::all()->groupBy('domain') : collect();
+        $permissions = Permission::all()->groupBy('domain');
         $facilities = Facility::with('departments')->where('tenant_id', $tenantId)->get();
 
         $selectedUserId = $can['users'] ? $request->get('user_id', $users->first()?->id) : null;

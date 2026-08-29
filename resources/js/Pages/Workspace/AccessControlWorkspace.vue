@@ -244,7 +244,7 @@ const submitCreateDepartment = () => {
 };
 
 // Live Permission Tester State
-const testPermissionSlug = ref('clinical.encounter.create');
+const testPermissionSlug = ref('');
 const testFacilityId = ref('');
 const testResult = ref(null);
 const isTesting = ref(false);
@@ -260,6 +260,33 @@ const getUserPrimaryRole = (user) => {
     }
     return user.role || 'Staff';
 };
+
+const permissionTestOptions = computed(() => {
+    const list = [];
+    if (props.permissionsByDomain && typeof props.permissionsByDomain === 'object') {
+        Object.entries(props.permissionsByDomain).forEach(([domain, perms]) => {
+            (perms || []).forEach(p => {
+                list.push({
+                    label: p.name,
+                    value: p.slug,
+                    description: p.slug,
+                    badge: domain,
+                });
+            });
+        });
+    }
+    if (list.length === 0 && props.effectivePermissions?.length) {
+        props.effectivePermissions.forEach(slug => {
+            list.push({
+                label: slug,
+                value: slug,
+                description: slug,
+                badge: 'Assigned',
+            });
+        });
+    }
+    return list;
+});
 
 const facilityTestOptions = computed(() => [
     { label: 'Global Tenant Check', value: '' },
@@ -837,9 +864,18 @@ const breadcrumbLabel = computed(() => {
                                 <span class="font-mono text-primary font-bold">{{ effectivePermissions.length }} granted</span>
                             </div>
                             <div class="max-h-40 overflow-y-auto space-y-1 p-2 bg-muted/20 rounded border border-border/30 font-mono text-[10px]">
-                                <div v-for="slug in effectivePermissions" :key="slug" class="text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
-                                    <CheckCircle2 class="w-3 h-3 shrink-0" />
-                                    <span class="truncate">{{ slug }}</span>
+                                <div 
+                                    v-for="slug in effectivePermissions" 
+                                    :key="slug" 
+                                    class="text-emerald-700 dark:text-emerald-400 flex items-center justify-between gap-1 hover:bg-emerald-500/10 p-0.5 rounded cursor-pointer transition-colors group"
+                                    title="Click to select this permission for gate testing"
+                                    @click="testPermissionSlug = slug"
+                                >
+                                    <div class="flex items-center gap-1 min-w-0 truncate">
+                                        <CheckCircle2 class="w-3 h-3 shrink-0" />
+                                        <span class="truncate">{{ slug }}</span>
+                                    </div>
+                                    <span class="text-[9px] opacity-0 group-hover:opacity-100 text-muted-foreground">select</span>
                                 </div>
                             </div>
                         </div>
@@ -851,8 +887,14 @@ const breadcrumbLabel = computed(() => {
                             </div>
                             <div class="space-y-2">
                                 <div>
-                                    <label class="text-[10px] font-bold text-muted-foreground uppercase">Permission Slug</label>
-                                    <Input v-model="testPermissionSlug" placeholder="e.g. clinical.notes.sign" class="h-7 text-xs font-mono" />
+                                    <label class="text-[10px] font-bold text-muted-foreground uppercase">Permission to Evaluate</label>
+                                    <Combobox
+                                        v-model="testPermissionSlug"
+                                        :options="permissionTestOptions"
+                                        placeholder="Select permission to test..."
+                                        search-placeholder="Search all permissions..."
+                                        size="sm"
+                                    />
                                 </div>
                                 <div>
                                     <label class="text-[10px] font-bold text-muted-foreground uppercase">Facility Scope (Optional)</label>
