@@ -6,12 +6,16 @@ const props = defineProps({
         type: String,
         default: '',
     },
+    wrapperClass: {
+        type: String,
+        default: '',
+    },
 });
 </script>
 
 <template>
-    <div class="w-full overflow-x-auto">
-        <table :class="cn('w-full caption-bottom text-xs border-collapse', props.class)">
+    <div :class="cn('w-full overflow-x-auto relative', props.wrapperClass)">
+        <table :class="cn('w-full caption-bottom text-xs border-separate border-spacing-0', props.class)">
             <slot />
         </table>
     </div>
