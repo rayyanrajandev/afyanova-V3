@@ -195,7 +195,7 @@ const getCategoryColor = (cat) => {
                                     {{ u.first_name }} {{ u.last_name }}
                                 </option>
                             </select>
-                            <ChevronDown class="w-3.5 h-3.5 absolute right-2.5 top-2.5 pointer-events-none text-muted-foreground opacity-70" />
+                            <ChevronDown class="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground opacity-70" />
                         </div>
                     </div>
                 </AfyaSidebar>

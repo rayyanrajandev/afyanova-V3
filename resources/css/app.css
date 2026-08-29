@@ -121,8 +121,18 @@
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 
+  select {
+    @apply truncate text-xs;
+    padding-right: 2rem !important; /* 32px room so text never overlaps native or custom dropdown arrow */
+    padding-left: 0.625rem;
+    line-height: 1.25rem !important;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: middle;
+  }
+
   select option {
-    @apply bg-card text-foreground;
+    @apply bg-card text-foreground py-1 px-2;
   }
 }
 

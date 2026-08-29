@@ -5,13 +5,14 @@ import { cn } from '@/lib/utils';
 import { ChevronDown } from 'lucide-vue-next';
 
 const selectVariants = cva(
-    'flex w-full appearance-none rounded-md border border-slate-300 dark:border-border/80 bg-white dark:bg-card pl-2.5 pr-8 text-slate-900 dark:text-foreground shadow-2xs transition-all placeholder:text-muted-foreground hover:border-slate-400 dark:hover:border-border focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer font-medium select-none',
+    'block w-full appearance-none rounded-md border border-slate-300 dark:border-border/80 bg-white dark:bg-card text-slate-900 dark:text-foreground shadow-2xs transition-all placeholder:text-muted-foreground hover:border-slate-400 dark:hover:border-border focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer font-medium truncate',
     {
         variants: {
             size: {
-                sm: 'h-7 text-[11px] py-0.5 rounded',
-                default: 'h-8 text-xs py-1 rounded-md',
-                lg: 'h-9 text-xs py-1.5 rounded-md',
+                xs: 'h-6 text-[10.5px] pl-2 pr-7 rounded leading-tight',
+                sm: 'h-7 text-xs pl-2.5 pr-8 rounded leading-normal',
+                default: 'h-8 text-xs pl-2.5 pr-8 rounded-md leading-normal',
+                lg: 'h-9 text-sm pl-3 pr-9 rounded-md leading-normal',
             },
         },
         defaultVariants: {
@@ -89,7 +90,7 @@ const onChange = (event) => {
             )"
             @change="onChange"
         >
-            <option v-if="placeholder" value="" disabled :selected="!modelValue">
+            <option v-if="placeholder" value="" disabled :selected="!modelValue" class="bg-card text-muted-foreground py-1 px-2">
                 {{ placeholder }}
             </option>
 
@@ -99,6 +100,7 @@ const onChange = (event) => {
                     :key="opt.value"
                     :value="opt.value"
                     :disabled="opt.disabled"
+                    class="bg-card text-foreground py-1 px-2"
                 >
                     {{ opt.label }}
                 </option>
@@ -109,7 +111,7 @@ const onChange = (event) => {
         </select>
 
         <!-- Custom Dropdown Arrow -->
-        <div class="pointer-events-none absolute right-2.5 flex items-center text-muted-foreground">
+        <div class="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center text-muted-foreground">
             <ChevronDown class="w-3.5 h-3.5 opacity-70" />
         </div>
     </div>
