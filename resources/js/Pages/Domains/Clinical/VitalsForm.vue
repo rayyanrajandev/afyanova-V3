@@ -336,7 +336,7 @@ const formatDate = (dateStr) => {
             </div>
             <div>
                 <label class="block text-[11px] font-semibold text-foreground mb-1">Consciousness (AVPU)</label>
-                <Select v-model="form.avpu" class="h-8 text-xs w-full rounded-md border border-input bg-background px-2">
+                <Select v-model="form.avpu" class="w-full">
                     <option value="A">A - Alert</option>
                     <option value="V">V - Voice</option>
                     <option value="P">P - Pain</option>

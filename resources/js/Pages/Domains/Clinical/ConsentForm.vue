@@ -113,7 +113,7 @@ const formatDate = (dateStr) => {
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                     <label class="block text-[11px] font-semibold text-foreground mb-1">Consent Type *</label>
-                    <Select v-model="form.consent_type" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                    <Select v-model="form.consent_type" class="w-full">
                         <option value="Surgical">Surgical Procedure</option>
                         <option value="Anesthesia">Anesthesia Administration</option>
                         <option value="BloodTransfusion">Blood & Blood Products Transfusion</option>
@@ -145,7 +145,7 @@ const formatDate = (dateStr) => {
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                     <label class="block text-[11px] font-semibold text-foreground mb-1">Signatory Type *</label>
-                    <Select v-model="form.signatory_type" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                    <Select v-model="form.signatory_type" class="w-full">
                         <option value="Patient">Patient Self</option>
                         <option value="NextOfKin">Next of Kin</option>
                         <option value="Guardian">Legal Guardian</option>

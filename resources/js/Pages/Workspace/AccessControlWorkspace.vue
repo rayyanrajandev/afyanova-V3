@@ -825,7 +825,7 @@ const breadcrumbLabel = computed(() => {
                                 </div>
                                 <div>
                                     <label class="text-[10px] font-bold text-muted-foreground uppercase">Facility Scope (Optional)</label>
-                                    <Select v-model="testFacilityId" class="w-full h-7 text-xs rounded border border-border bg-card px-2">
+                                    <Select v-model="testFacilityId" class="w-full" size="sm">
                                         <option value="">Global Tenant Check</option>
                                         <option v-for="f in facilities" :key="f.id" :value="f.id">{{ f.name }}</option>
                                     </Select>
@@ -906,7 +906,7 @@ const breadcrumbLabel = computed(() => {
 
                     <div>
                         <label class="font-bold text-muted-foreground text-[10px] uppercase">System Role</label>
-                        <Select v-model="assignRoleForm.role_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                        <Select v-model="assignRoleForm.role_id" class="w-full">
                             <option v-for="r in roles" :key="r.id" :value="r.id">{{ r.name }}</option>
                         </Select>
                         <InputError :message="assignRoleForm.errors.role_id" class="mt-1" />
@@ -914,7 +914,7 @@ const breadcrumbLabel = computed(() => {
 
                     <div>
                         <label class="font-bold text-muted-foreground text-[10px] uppercase">Facility Scope</label>
-                        <Select v-model="assignRoleForm.facility_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                        <Select v-model="assignRoleForm.facility_id" class="w-full">
                             <option value="">All Facilities (Tenant Wide)</option>
                             <option v-for="f in facilities" :key="f.id" :value="f.id">{{ f.name }}</option>
                         </Select>
@@ -1031,14 +1031,14 @@ const breadcrumbLabel = computed(() => {
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="font-bold text-muted-foreground text-[10px] uppercase">Primary Role Archetype *</label>
-                            <Select v-model="createUserForm.role_id" required class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                            <Select v-model="createUserForm.role_id" required class="w-full">
                                 <option v-for="r in roles" :key="r.id" :value="r.id">{{ r.name }}</option>
                             </Select>
                             <InputError :message="createUserForm.errors.role_id" class="mt-1" />
                         </div>
                         <div>
                             <label class="font-bold text-muted-foreground text-[10px] uppercase">Facility Branch</label>
-                            <Select v-model="createUserForm.facility_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                            <Select v-model="createUserForm.facility_id" class="w-full">
                                 <option value="">All Branches (Tenant Wide)</option>
                                 <option v-for="f in facilities" :key="f.id" :value="f.id">{{ f.name }}</option>
                             </Select>
@@ -1103,7 +1103,7 @@ const breadcrumbLabel = computed(() => {
 
                     <div>
                         <label class="font-bold text-muted-foreground text-[10px] uppercase">Account Status</label>
-                        <Select v-model="editUserForm.status" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                        <Select v-model="editUserForm.status" class="w-full">
                             <option value="Active">Active</option>
                             <option value="Suspended">Suspended</option>
                             <option value="Inactive">Inactive</option>
@@ -1181,7 +1181,7 @@ const breadcrumbLabel = computed(() => {
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="font-bold text-muted-foreground text-[10px] uppercase">Facility Type *</label>
-                            <Select v-model="createFacilityForm.facility_type" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                            <Select v-model="createFacilityForm.facility_type" class="w-full">
                                 <option value="Hospital">General Hospital</option>
                                 <option value="Clinic">Polyclinic / Outpatient</option>
                                 <option value="Dispensary">Dispensary</option>
@@ -1253,7 +1253,7 @@ const breadcrumbLabel = computed(() => {
                         </div>
                         <div>
                             <label class="font-bold text-muted-foreground text-[10px] uppercase">Department Type *</label>
-                            <Select v-model="createDepartmentForm.department_type" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                            <Select v-model="createDepartmentForm.department_type" class="w-full">
                                 <option value="Clinical">Clinical</option>
                                 <option value="Diagnostic">Diagnostic / Lab / Rad</option>
                                 <option value="Surgical">Surgical / Theatre</option>

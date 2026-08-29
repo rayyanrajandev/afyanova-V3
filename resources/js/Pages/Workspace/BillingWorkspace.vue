@@ -1310,7 +1310,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                 <form @submit.prevent="submitAdjust" class="space-y-3">
                     <div>
                         <label class="block font-bold text-[10px] uppercase text-muted-foreground mb-1">Adjustment Type *</label>
-                        <Select v-model="adjustForm.type" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                        <Select v-model="adjustForm.type" class="w-full">
                             <option value="Credit">Credit Note (Reduce Invoice Amount)</option>
                             <option value="Debit">Debit Note (Increase Invoice Amount)</option>
                         </Select>
@@ -1390,7 +1390,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                 <form @submit.prevent="submitRecordDeposit" class="space-y-3">
                     <div>
                         <label class="block font-bold text-[10px] uppercase text-muted-foreground mb-1">Patient *</label>
-                        <Select v-model="recordDepositForm.patient_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                        <Select v-model="recordDepositForm.patient_id" class="w-full">
                             <option value="" disabled>Select patient...</option>
                             <option v-for="p in patients" :key="p.id" :value="p.id">
                                 {{ p.first_name }} {{ p.last_name }} ({{ p.primary_mrn }})
@@ -1407,7 +1407,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
 
                     <div>
                         <label class="block font-bold text-[10px] uppercase text-muted-foreground mb-1">Payment Tender Method *</label>
-                        <Select v-model="recordDepositForm.payment_method" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                        <Select v-model="recordDepositForm.payment_method" class="w-full">
                             <option value="Cash">Cash (Taslimu)</option>
                             <option value="Lipa Namba">Lipa Namba / M-Pesa STK</option>
                             <option value="Card">Bank POS Card (Visa / Mastercard)</option>
@@ -1479,7 +1479,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                     <form @submit.prevent="submitApplyDeposit" class="space-y-3">
                         <div>
                             <label class="block font-bold text-[10px] uppercase text-muted-foreground mb-1">Source Patient Deposit *</label>
-                            <Select v-model="applyDepositForm.deposit_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                            <Select v-model="applyDepositForm.deposit_id" class="w-full">
                                 <option value="" disabled>Select active deposit...</option>
                                 <option v-for="d in patientActiveDeposits" :key="d.id" :value="d.id">
                                     {{ d.deposit_number }} — TZS {{ Number(d.balance_remaining).toLocaleString() }} available ({{ d.payment_method }})

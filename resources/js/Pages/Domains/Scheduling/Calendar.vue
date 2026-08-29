@@ -378,7 +378,7 @@ const confirmCheckIn = () => {
                 <form @submit.prevent="submitBookAppointment" class="space-y-3">
                     <div>
                         <label class="block font-bold text-[10px] uppercase text-muted-foreground mb-1">Select Patient *</label>
-                        <Select v-model="bookForm.patient_id" class="w-full h-8 text-xs rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-2 font-medium">
+                        <Select v-model="bookForm.patient_id" class="w-full">
                             <option value="" disabled class="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">-- Choose Patient --</option>
                             <option v-for="p in patients" :key="p.id" :value="p.id" class="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">{{ p.first_name }} {{ p.last_name }} ({{ p.primary_mrn }})</option>
                         </Select>
@@ -388,14 +388,14 @@ const confirmCheckIn = () => {
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="block font-bold text-[10px] uppercase text-muted-foreground mb-1">Facility *</label>
-                            <Select v-model="bookForm.facility_id" class="w-full h-8 text-xs rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-2 font-medium">
+                            <Select v-model="bookForm.facility_id" class="w-full">
                                 <option v-for="f in facilities" :key="f.id" :value="f.id" class="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">{{ f.name }}</option>
                             </Select>
                             <InputError :message="bookForm.errors.facility_id" class="mt-1" />
                         </div>
                         <div>
                             <label class="block font-bold text-[10px] uppercase text-muted-foreground mb-1">Department</label>
-                            <Select v-model="bookForm.department_id" class="w-full h-8 text-xs rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-2 font-medium">
+                            <Select v-model="bookForm.department_id" class="w-full">
                                 <option value="" class="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">General OPD</option>
                                 <option v-for="d in departments" :key="d.id" :value="d.id" class="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">{{ d.name }}</option>
                             </Select>
@@ -406,7 +406,7 @@ const confirmCheckIn = () => {
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="block font-bold text-[10px] uppercase text-muted-foreground mb-1">Provider / Doctor</label>
-                            <Select v-model="bookForm.provider_id" class="w-full h-8 text-xs rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-2 font-medium">
+                            <Select v-model="bookForm.provider_id" class="w-full">
                                 <option value="" class="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Any Available Clinician</option>
                                 <option v-for="u in providers" :key="u.id" :value="u.id" class="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100">Dr. {{ u.first_name }} {{ u.last_name }}</option>
                             </Select>

@@ -160,7 +160,7 @@ const formatDate = (dateStr) => {
             <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
                 <div>
                     <label class="block text-[11px] font-semibold text-foreground mb-1">Modality *</label>
-                    <Select v-model="form.modality" @change="onModalityChange" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                    <Select v-model="form.modality" @change="onModalityChange" class="w-full">
                         <option value="X-Ray">X-Ray (Plain Radiography)</option>
                         <option value="Ultrasound">Ultrasound (US / Doppler)</option>
                         <option value="CT Scan">Computed Tomography (CT)</option>
@@ -171,7 +171,7 @@ const formatDate = (dateStr) => {
                 </div>
                 <div>
                     <label class="block text-[11px] font-semibold text-foreground mb-1">Standard Study Preset</label>
-                    <Select v-model="form.procedure_name" @change="onProcedureSelect" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                    <Select v-model="form.procedure_name" @change="onProcedureSelect" class="w-full">
                         <option v-for="p in standardProcedures[form.modality] || []" :key="p.name" :value="p.name">{{ p.name }}</option>
                     </Select>
                 </div>
@@ -182,7 +182,7 @@ const formatDate = (dateStr) => {
                 </div>
                 <div>
                     <label class="block text-[11px] font-semibold text-foreground mb-1">Priority *</label>
-                    <Select v-model="form.priority" class="w-full h-8 text-xs rounded border border-border bg-card px-2 font-bold"
+                    <Select v-model="form.priority" class="w-full font-bold"
                         :class="{
                             'text-rose-600': form.priority === 'STAT',
                             'text-amber-600': form.priority === 'Urgent',

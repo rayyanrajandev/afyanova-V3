@@ -111,7 +111,7 @@ const formatDate = (dateStr) => {
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                     <label class="block text-[11px] font-semibold text-foreground mb-1">Urgency Level *</label>
-                    <Select v-model="form.urgency" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                    <Select v-model="form.urgency" class="w-full">
                         <option value="Routine">Routine (Elective / Outpatient)</option>
                         <option value="Urgent">Urgent (&lt; 24 Hours)</option>
                         <option value="Emergency">Emergency (Immediate Transfer)</option>
@@ -156,7 +156,7 @@ const formatDate = (dateStr) => {
                 </div>
                 <div>
                     <label class="block text-[11px] font-semibold text-foreground mb-1">Mode of Transport</label>
-                    <Select v-model="form.transport_mode" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                    <Select v-model="form.transport_mode" class="w-full">
                         <option value="Private Transport">Patient / Family Private Transport</option>
                         <option value="Hospital Ambulance">Hospital Ambulance</option>
                         <option value="Emergency Medical Evacuation">Emergency Medical Evacuation (Aero/STAT)</option>

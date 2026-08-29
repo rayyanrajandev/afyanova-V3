@@ -184,7 +184,7 @@ const formatDate = (dateStr) => {
                 </div>
                 <div>
                     <label class="block text-[11px] font-semibold text-foreground mb-1">Fetal Presentation</label>
-                    <Select v-model="form.fetal_presentation" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                    <Select v-model="form.fetal_presentation" class="w-full">
                         <option value="Cephalic">Cephalic (Vertex)</option>
                         <option value="Breech">Breech</option>
                         <option value="Transverse">Transverse / Oblique</option>
@@ -201,7 +201,7 @@ const formatDate = (dateStr) => {
             <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
                 <div>
                     <label class="block text-[11px] font-semibold text-foreground mb-1">Fetal Movement</label>
-                    <Select v-model="form.fetal_movement" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                    <Select v-model="form.fetal_movement" class="w-full">
                         <option value="Normal">Normal (> 10 kicks/12h)</option>
                         <option value="Reduced">Reduced / Decreased</option>
                         <option value="Absent">Absent</option>
@@ -210,7 +210,7 @@ const formatDate = (dateStr) => {
                 </div>
                 <div>
                     <label class="block text-[11px] font-semibold text-foreground mb-1">Urine Protein (Dipstick)</label>
-                    <Select v-model.number="form.urinary_protein" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                    <Select v-model.number="form.urinary_protein" class="w-full">
                         <option :value="0">Nil / Negative</option>
                         <option :value="1">+1 (30 mg/dL)</option>
                         <option :value="2">+2 (100 mg/dL)</option>
@@ -220,7 +220,7 @@ const formatDate = (dateStr) => {
                 </div>
                 <div>
                     <label class="block text-[11px] font-semibold text-foreground mb-1">IPTp Malaria Dose</label>
-                    <Select v-model="form.iptp_malaria_dose" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                    <Select v-model="form.iptp_malaria_dose" class="w-full">
                         <option value="None">None / Not Due</option>
                         <option value="IPTp-1">IPTp-1 (SP Dose 1)</option>
                         <option value="IPTp-2">IPTp-2 (SP Dose 2)</option>

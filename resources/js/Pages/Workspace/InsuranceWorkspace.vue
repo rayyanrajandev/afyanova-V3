@@ -1625,7 +1625,7 @@ const formatDate = (dateStr) => {
                             <Select
                                 v-model="remittanceForm.insurance_provider_id"
                                 @change="populateRemittanceLines"
-                                class="w-full h-8 text-xs rounded border border-border bg-card px-2"
+                                class="w-full"
                                 required
                             >
                                 <option value="" disabled>Select Provider...</option>
@@ -1689,7 +1689,7 @@ const formatDate = (dateStr) => {
                                             />
                                         </td>
                                         <td class="p-1">
-                                            <Select v-model="line.reason_code" class="w-full h-7 text-[10px] rounded border border-border bg-card px-1">
+                                            <Select v-model="line.reason_code" class="w-full" size="xs">
                                                 <option value="">None</option>
                                                 <option value="CO_PAY">Co-Pay Deduction</option>
                                                 <option value="TARIFF_LIMIT">Tariff Exceeded</option>
@@ -1775,7 +1775,7 @@ const formatDate = (dateStr) => {
                     <div class="grid grid-cols-2 gap-3">
                         <div class="space-y-1">
                             <label class="block font-bold text-muted-foreground text-[10px] uppercase">Provider Type *</label>
-                            <Select v-model="createProviderForm.provider_type" class="w-full h-8 rounded border border-input bg-background px-2 text-xs">
+                            <Select v-model="createProviderForm.provider_type" class="w-full">
                                 <option value="NHIF">NHIF / National Fund</option>
                                 <option value="Private_Commercial">Private Commercial Underwriter</option>
                                 <option value="Corporate_Self_Insured">Corporate Employer Direct</option>
@@ -1784,7 +1784,7 @@ const formatDate = (dateStr) => {
                         </div>
                         <div class="space-y-1">
                             <label class="block font-bold text-muted-foreground text-[10px] uppercase">API Adapter / Protocol</label>
-                            <Select v-model="createProviderForm.api_adapter" class="w-full h-8 rounded border border-input bg-background px-2 text-xs">
+                            <Select v-model="createProviderForm.api_adapter" class="w-full">
                                 <option value="DIRECT_REST">REST API (Automated)</option>
                                 <option value="NHIF_REST">NHIF Claims Gateway</option>
                                 <option value="SMART_CARD">Smart Card / Switch</option>
@@ -1843,7 +1843,7 @@ const formatDate = (dateStr) => {
                     <div class="grid grid-cols-2 gap-3">
                         <div class="space-y-1">
                             <label class="block font-bold text-muted-foreground text-[10px] uppercase">Co-Pay Type</label>
-                            <Select v-model="createSchemeForm.co_pay_type" class="w-full h-8 rounded border border-input bg-background px-2 text-xs">
+                            <Select v-model="createSchemeForm.co_pay_type" class="w-full">
                                 <option value="None">None (100% Covered)</option>
                                 <option value="Fixed_Amount">Fixed Amount per Visit</option>
                                 <option value="Percentage">Percentage of Total</option>
@@ -1892,7 +1892,7 @@ const formatDate = (dateStr) => {
                 <form @submit.prevent="submitCreateTariff" class="space-y-3">
                     <div class="space-y-1">
                         <label class="block font-bold text-muted-foreground text-[10px] uppercase">Underwriter / Provider *</label>
-                        <Select v-model="createTariffForm.insurance_provider_id" required class="w-full h-8 rounded border border-input bg-background px-2 text-xs">
+                        <Select v-model="createTariffForm.insurance_provider_id" required class="w-full">
                             <option v-for="p in providers" :key="p.id" :value="p.id">{{ p.name }} ({{ p.code }})</option>
                         </Select>
                     </div>
@@ -1900,7 +1900,7 @@ const formatDate = (dateStr) => {
                     <div class="grid grid-cols-2 gap-3">
                         <div class="space-y-1">
                             <label class="block font-bold text-muted-foreground text-[10px] uppercase">Service Category *</label>
-                            <Select v-model="createTariffForm.item_type" class="w-full h-8 rounded border border-input bg-background px-2 text-xs">
+                            <Select v-model="createTariffForm.item_type" class="w-full">
                                 <option value="Consultation">Consultation Fee</option>
                                 <option value="Laboratory">Laboratory Investigation</option>
                                 <option value="Radiology">Radiology / Imaging</option>

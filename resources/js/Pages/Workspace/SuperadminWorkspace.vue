@@ -1680,7 +1680,7 @@ const formatDate = (iso) => {
 
                 <div class="space-y-1">
                     <label class="font-bold text-foreground text-[11px]">Subscription Tier *</label>
-                    <Select v-model="provisionForm.subscription_tier" class="w-full h-8 px-2.5 rounded-md border border-border bg-background text-xs font-medium">
+                    <Select v-model="provisionForm.subscription_tier" class="w-full">
                         <option v-for="plan in subscriptionPlans" :key="plan.id" :value="plan.code">
                             {{ plan.name }} ({{ plan.max_facilities }} Br / {{ plan.max_users }} Seats)
                         </option>
@@ -1689,7 +1689,7 @@ const formatDate = (iso) => {
 
                 <div class="space-y-1">
                     <label class="font-bold text-foreground text-[11px]">Initial Status *</label>
-                    <Select v-model="provisionForm.subscription_status" class="w-full h-8 px-2.5 rounded-md border border-border bg-background text-xs font-medium">
+                    <Select v-model="provisionForm.subscription_status" class="w-full">
                         <option value="active">Active (Production)</option>
                         <option value="trial">Trial (14 Days)</option>
                     </Select>
@@ -1704,7 +1704,7 @@ const formatDate = (iso) => {
 
                 <div class="space-y-1">
                     <label class="font-bold text-foreground text-[11px]">Facility Classification</label>
-                    <Select v-model="provisionForm.facility_type" class="w-full h-8 px-2.5 rounded-md border border-border bg-background text-xs font-medium">
+                    <Select v-model="provisionForm.facility_type" class="w-full">
                         <option value="National Referral Hospital">National Referral Hospital</option>
                         <option value="Regional Referral Hospital">Regional Referral Hospital</option>
                         <option value="District Hospital">District Hospital</option>
@@ -1832,7 +1832,7 @@ const formatDate = (iso) => {
 
                 <div class="space-y-1">
                     <label class="font-bold text-foreground text-[11px]">Facility Classification *</label>
-                    <Select v-model="facilityForm.facility_type" class="w-full h-8 px-2.5 rounded-md border border-border bg-background text-xs font-medium">
+                    <Select v-model="facilityForm.facility_type" class="w-full">
                         <option value="Polyclinic">Polyclinic / Outpatient Center</option>
                         <option value="District Hospital">District Hospital Wing</option>
                         <option value="Specialized Center">Specialized Dialysis / Diagnostics</option>
@@ -1909,7 +1909,7 @@ const formatDate = (iso) => {
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                 <div class="space-y-1">
                     <label class="font-bold text-foreground text-[11px]">Subscription Tier</label>
-                    <Select v-model="editSubForm.subscription_tier" class="w-full h-8 px-2.5 rounded-md border border-border bg-background text-xs font-medium">
+                    <Select v-model="editSubForm.subscription_tier" class="w-full">
                         <option v-for="plan in subscriptionPlans" :key="plan.id" :value="plan.code">
                             {{ plan.name }}
                         </option>
@@ -1918,7 +1918,7 @@ const formatDate = (iso) => {
 
                 <div class="space-y-1">
                     <label class="font-bold text-foreground text-[11px]">Status</label>
-                    <Select v-model="editSubForm.subscription_status" class="w-full h-8 px-2.5 rounded-md border border-border bg-background text-xs font-medium">
+                    <Select v-model="editSubForm.subscription_status" class="w-full">
                         <option value="active">Active</option>
                         <option value="trial">Trial</option>
                         <option value="past_due">Past Due</option>
@@ -2013,7 +2013,7 @@ const formatDate = (iso) => {
             <div class="space-y-2.5 text-xs">
                 <div class="space-y-1">
                     <label class="font-bold text-foreground text-[11px]">Select Target Staff Account *</label>
-                    <Select v-model="impersonateForm.user_id" class="w-full h-8 px-2.5 rounded-md border border-border bg-background text-xs font-medium" required>
+                    <Select v-model="impersonateForm.user_id" class="w-full" required>
                         <option value="" disabled>Select User</option>
                         <option v-for="u in (tenantToImpersonate?.users || [])" :key="u.id" :value="u.id">
                             {{ u.name }} ({{ u.email }}) — {{ u.role }}
@@ -2071,7 +2071,7 @@ const formatDate = (iso) => {
             <div class="space-y-2.5 text-xs">
                 <div class="space-y-1">
                     <label class="font-bold text-foreground text-[11px]">Dictionary Type</label>
-                    <Select v-model="syncForm.dictionary_type" class="w-full h-8 px-2.5 rounded-md border border-border bg-background text-xs font-medium">
+                    <Select v-model="syncForm.dictionary_type" class="w-full">
                         <option value="all">All Catalogs (NEMLIT Drugs, LOINC Lab, ICD-10 Diagnoses)</option>
                         <option value="nemlit">Tanzania MSD / WHO Essential Drugs Formulary</option>
                         <option value="loinc">Clinical Laboratory Diagnostic Tests Catalog</option>
@@ -2080,7 +2080,7 @@ const formatDate = (iso) => {
 
                 <div class="space-y-1">
                     <label class="font-bold text-foreground text-[11px]">Target Scope</label>
-                    <Select v-model="syncForm.tenant_id" class="w-full h-8 px-2.5 rounded-md border border-border bg-background text-xs font-medium">
+                    <Select v-model="syncForm.tenant_id" class="w-full">
                         <option value="">Broadcast to ALL Active Hospital Tenants</option>
                         <option v-for="t in tenants" :key="t.id" :value="t.id">
                             Only {{ t.name }} ({{ t.slug }})

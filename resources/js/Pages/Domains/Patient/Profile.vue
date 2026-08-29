@@ -1195,7 +1195,7 @@ const totalOutstanding = computed(() => {
                         />
                         <div class="space-y-1">
                             <label class="block text-xs font-semibold text-foreground">Clinical Status</label>
-                            <Select v-model="problemForm.clinical_status" class="w-full h-8.5 text-xs rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/90 px-3">
+                            <Select v-model="problemForm.clinical_status" class="w-full">
                                 <option value="Confirmed">Confirmed</option>
                                 <option value="Provisional">Provisional</option>
                                 <option value="Differential">Differential</option>
@@ -1204,7 +1204,7 @@ const totalOutstanding = computed(() => {
                         </div>
                         <div class="space-y-1">
                             <label class="block text-xs font-semibold text-foreground">Severity</label>
-                            <Select v-model="problemForm.severity" class="w-full h-8.5 text-xs rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/90 px-3">
+                            <Select v-model="problemForm.severity" class="w-full">
                                 <option value="Mild">Mild</option>
                                 <option value="Moderate">Moderate</option>
                                 <option value="Severe">Severe</option>
@@ -1243,7 +1243,7 @@ const totalOutstanding = computed(() => {
                         />
                         <div class="space-y-1">
                             <label class="block text-xs font-semibold text-foreground">Allergen Type</label>
-                            <Select v-model="allergyForm.allergen_type" class="w-full h-8.5 text-xs rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/90 px-3">
+                            <Select v-model="allergyForm.allergen_type" class="w-full">
                                 <option value="Drug">Drug</option>
                                 <option value="Food">Food</option>
                                 <option value="Environmental">Environmental</option>
@@ -1253,7 +1253,7 @@ const totalOutstanding = computed(() => {
                         </div>
                         <div class="space-y-1">
                             <label class="block text-xs font-semibold text-foreground">Severity</label>
-                            <Select v-model="allergyForm.severity" class="w-full h-8.5 text-xs rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/90 px-3">
+                            <Select v-model="allergyForm.severity" class="w-full">
                                 <option value="Mild">Mild</option>
                                 <option value="Moderate">Moderate</option>
                                 <option value="Severe">Severe</option>
@@ -1296,7 +1296,7 @@ const totalOutstanding = computed(() => {
                         />
                         <div class="space-y-1">
                             <label class="block text-xs font-semibold text-foreground">Allergen Type</label>
-                            <Select v-model="amendAllergyForm.allergen_type" class="w-full h-8.5 text-xs rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/90 px-3">
+                            <Select v-model="amendAllergyForm.allergen_type" class="w-full">
                                 <option value="Drug">Drug</option>
                                 <option value="Food">Food</option>
                                 <option value="Environmental">Environmental</option>
@@ -1306,7 +1306,7 @@ const totalOutstanding = computed(() => {
                         </div>
                         <div class="space-y-1">
                             <label class="block text-xs font-semibold text-foreground">Severity</label>
-                            <Select v-model="amendAllergyForm.severity" class="w-full h-8.5 text-xs rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/90 px-3">
+                            <Select v-model="amendAllergyForm.severity" class="w-full">
                                 <option value="Mild">Mild</option>
                                 <option value="Moderate">Moderate</option>
                                 <option value="Severe">Severe</option>
@@ -1315,7 +1315,7 @@ const totalOutstanding = computed(() => {
                         </div>
                         <div class="space-y-1">
                             <label class="block text-xs font-semibold text-foreground">Status</label>
-                            <Select v-model="amendAllergyForm.status" class="w-full h-8.5 text-xs rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/90 px-3">
+                            <Select v-model="amendAllergyForm.status" class="w-full">
                                 <option value="Active">Active</option>
                                 <option value="Inactive">Inactive</option>
                             </Select>
@@ -1350,7 +1350,7 @@ const totalOutstanding = computed(() => {
                 <form @submit.prevent="submitReconciliation" class="space-y-4">
                     <div class="space-y-1 max-w-xs">
                         <label class="block text-xs font-semibold text-foreground">Stage</label>
-                        <Select v-model="reconciliationForm.stage" class="w-full h-8.5 text-xs rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/90 px-3">
+                        <Select v-model="reconciliationForm.stage" class="w-full">
                             <option value="Admission">Admission</option>
                             <option value="Transfer">Transfer</option>
                             <option value="Discharge">Discharge</option>
@@ -1388,7 +1388,7 @@ const totalOutstanding = computed(() => {
                                 <AfyaInput v-model="med.route" label="Route" />
                                 <div class="space-y-1">
                                     <label class="block text-xs font-semibold text-foreground">Action Taken</label>
-                                    <Select v-model="med.action_taken" class="w-full h-8.5 text-xs rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/90 px-3">
+                                    <Select v-model="med.action_taken" class="w-full">
                                         <option value="Continue">Continue</option>
                                         <option value="Discontinue">Discontinue</option>
                                         <option value="Substitute">Substitute</option>

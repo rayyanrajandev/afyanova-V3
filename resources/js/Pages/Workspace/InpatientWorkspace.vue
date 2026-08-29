@@ -1634,7 +1634,7 @@ const formatCurrency = (val) => {
                     <div class="grid grid-cols-2 gap-3">
                         <div class="space-y-1">
                             <label class="block font-bold text-muted-foreground text-[10px] uppercase">Ward Type *</label>
-                            <Select v-model="createWardForm.ward_type" class="w-full h-8 rounded border border-input bg-background px-2 text-xs">
+                            <Select v-model="createWardForm.ward_type" class="w-full">
                                 <option value="General">General Medical/Surgical</option>
                                 <option value="ICU">Intensive Care Unit (ICU)</option>
                                 <option value="HDU">High Dependency Unit (HDU)</option>
@@ -1646,7 +1646,7 @@ const formatCurrency = (val) => {
                         </div>
                         <div class="space-y-1">
                             <label class="block font-bold text-muted-foreground text-[10px] uppercase">Gender Restriction</label>
-                            <Select v-model="createWardForm.gender_restriction" class="w-full h-8 rounded border border-input bg-background px-2 text-xs">
+                            <Select v-model="createWardForm.gender_restriction" class="w-full">
                                 <option value="None">None (Co-ed / Private)</option>
                                 <option value="Male_Only">Male Only</option>
                                 <option value="Female_Only">Female Only</option>
@@ -1705,7 +1705,7 @@ const formatCurrency = (val) => {
                     <div class="grid grid-cols-2 gap-3">
                         <div class="space-y-1">
                             <label class="block font-bold text-muted-foreground text-[10px] uppercase">Ward Type</label>
-                            <Select v-model="editWardForm.ward_type" class="w-full h-8 rounded border border-input bg-background px-2 text-xs">
+                            <Select v-model="editWardForm.ward_type" class="w-full">
                                 <option value="General">General Medical/Surgical</option>
                                 <option value="ICU">Intensive Care Unit (ICU)</option>
                                 <option value="HDU">High Dependency Unit (HDU)</option>
@@ -1717,7 +1717,7 @@ const formatCurrency = (val) => {
                         </div>
                         <div class="space-y-1">
                             <label class="block font-bold text-muted-foreground text-[10px] uppercase">Gender Restriction</label>
-                            <Select v-model="editWardForm.gender_restriction" class="w-full h-8 rounded border border-input bg-background px-2 text-xs">
+                            <Select v-model="editWardForm.gender_restriction" class="w-full">
                                 <option value="None">None (Co-ed / Private)</option>
                                 <option value="Male_Only">Male Only</option>
                                 <option value="Female_Only">Female Only</option>
@@ -1769,7 +1769,7 @@ const formatCurrency = (val) => {
                 <form @submit.prevent="submitCreateBed" class="space-y-3">
                     <div class="space-y-1">
                         <label class="block font-bold text-muted-foreground text-[10px] uppercase">Target Ward *</label>
-                        <Select v-model="createBedForm.ward_id" required class="w-full h-8 rounded border border-input bg-background px-2 text-xs">
+                        <Select v-model="createBedForm.ward_id" required class="w-full">
                             <option v-for="w in wards" :key="w.id" :value="w.id">{{ w.name }} ({{ w.ward_type }})</option>
                         </Select>
                     </div>
@@ -1781,7 +1781,7 @@ const formatCurrency = (val) => {
                         </div>
                         <div class="space-y-1">
                             <label class="block font-bold text-muted-foreground text-[10px] uppercase">Bed Type</label>
-                            <Select v-model="createBedForm.bed_type" class="w-full h-8 rounded border border-input bg-background px-2 text-xs">
+                            <Select v-model="createBedForm.bed_type" class="w-full">
                                 <option value="Standard">Standard Hospital Bed</option>
                                 <option value="Electric_ICU">Electric ICU / Critical Bed</option>
                                 <option value="Pediatric_Crib">Pediatric Cot / Crib</option>

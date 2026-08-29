@@ -150,7 +150,7 @@ const formatDate = (dateStr) => {
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                     <label class="block text-[11px] font-semibold text-foreground mb-1">Standard Vaccine Schedule *</label>
-                    <Select v-model="form.vaccine_code" @change="onVaccineSelect" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                    <Select v-model="form.vaccine_code" @change="onVaccineSelect" class="w-full">
                         <option v-for="v in standardVaccines" :key="v.code" :value="v.code">{{ v.code }} - {{ v.name }}</option>
                     </Select>
                     <InputError :message="form.errors.vaccine_code" class="mt-1" />
@@ -184,7 +184,7 @@ const formatDate = (dateStr) => {
                 </div>
                 <div>
                     <label class="block text-[11px] font-semibold text-foreground mb-1">Route *</label>
-                    <Select v-model="form.route" class="w-full h-8.5 text-xs rounded border border-border bg-card px-2">
+                    <Select v-model="form.route" class="w-full">
                         <option value="Intradermal">Intradermal (ID)</option>
                         <option value="Intramuscular">Intramuscular (IM)</option>
                         <option value="Subcutaneous">Subcutaneous (SC)</option>

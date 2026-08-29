@@ -129,7 +129,7 @@ const formatTime = (dateStr) => {
                 </div>
                 <div>
                     <label class="block text-[11px] font-semibold text-foreground mb-1">Liquor Status</label>
-                    <Select v-model="form.liquor_status" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                    <Select v-model="form.liquor_status" class="w-full">
                         <option value="Intact">I - Intact Membranes</option>
                         <option value="Clear">C - Clear Liquor</option>
                         <option value="Meconium">M - Meconium Stained</option>
@@ -140,7 +140,7 @@ const formatTime = (dateStr) => {
                 </div>
                 <div>
                     <label class="block text-[11px] font-semibold text-foreground mb-1">Head Descent (Fifth)</label>
-                    <Select v-model="form.fetal_head_descent" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                    <Select v-model="form.fetal_head_descent" class="w-full">
                         <option value="5/5">5/5 - High & Free</option>
                         <option value="4/5">4/5 - Above Brim</option>
                         <option value="3/5">3/5 - Engaged</option>
