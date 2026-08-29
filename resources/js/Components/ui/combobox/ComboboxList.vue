@@ -9,7 +9,7 @@ defineOptions({
 
 const props = defineProps({
   position: { type: String, required: false, default: "popper" },
-  align: { type: String, required: false, default: "center" },
+  align: { type: String, required: false, default: "start" },
   sideOffset: { type: Number, required: false, default: 4 },
   class: {
     type: [Boolean, null, String, Object, Array],
@@ -33,7 +33,11 @@ const forwarded = useForwardPropsEmits(delegatedProps, emits);
     <ComboboxContent
       data-slot="combobox-content"
       v-bind="{ ...$attrs, ...forwarded }"
-      :class="cn('bg-popover text-popover-foreground data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 ring-foreground/10 *:data-[slot=input-group]:bg-input/30 *:data-[slot=input-group]:border-input/30 max-h-72 min-w-36 overflow-hidden rounded-lg shadow-md ring-1 duration-100 *:data-[slot=input-group]:m-1 *:data-[slot=input-group]:mb-0 *:data-[slot=input-group]:h-8 *:data-[slot=input-group]:shadow-none data-[side=inline-start]:slide-in-from-right-2 data-[side=inline-end]:slide-in-from-left-2 cn-menu-target cn-menu-translucent group/combobox-content z-50 w-(--reka-combobox-trigger-width)', props.class)"
+      :class="cn(
+        'z-50 min-w-[180px] w-[var(--reka-combobox-trigger-width)] max-h-72 overflow-hidden rounded-lg border border-border/80 bg-popover text-popover-foreground shadow-xl',
+        'data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 data-[side=bottom]:slide-in-from-top-1 data-[side=top]:slide-in-from-bottom-1',
+        props.class
+      )"
     >
       <slot />
     </ComboboxContent>

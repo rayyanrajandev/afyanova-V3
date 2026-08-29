@@ -353,7 +353,7 @@ onUnmounted(() => {
         <!-- DROPDOWN POPOVER (Smart Top/Bottom Placement) -->
         <div
             v-if="isOpen"
-            class="absolute left-0 z-100 bg-card border border-border/80 rounded-lg shadow-2xl overflow-hidden animate-in fade-in-0 duration-100 flex flex-col max-h-[340px] w-full min-w-[380px]"
+            class="absolute left-0 z-100 bg-popover text-popover-foreground border border-border/80 rounded-lg shadow-2xl overflow-hidden animate-in fade-in-0 duration-100 flex flex-col max-h-[340px] w-full min-w-[300px] max-w-[calc(100vw-2rem)]"
             :class="openUpwards ? 'bottom-full mb-1 zoom-in-95 origin-bottom' : 'top-full mt-1 zoom-in-95 origin-top'"
         >
             <!-- 1. LIVE SEARCH HEADER -->
@@ -365,7 +365,7 @@ onUnmounted(() => {
                         v-model="searchQuery"
                         type="text"
                         :placeholder="categoryScope !== 'ALL' ? `Search ${categoryScope.replace('_', ' ')} items...` : 'Type to search 5,000+ items across all categories...'"
-                        class="w-full h-8 pl-8 pr-7 text-xs bg-background border border-border rounded-md focus:outline-hidden focus:border-primary focus:ring-1 focus:ring-primary/20 text-foreground placeholder:text-muted-foreground/70"
+                        class="w-full h-8 pl-8 pr-7 text-xs bg-background border border-border rounded-md focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 text-foreground placeholder:text-muted-foreground/70"
                     />
                     <div class="absolute right-2 flex items-center gap-1">
                         <Loader2 v-if="isLoading" class="w-3.5 h-3.5 animate-spin text-primary" />

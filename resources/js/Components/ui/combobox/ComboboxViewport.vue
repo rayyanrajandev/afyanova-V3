@@ -12,7 +12,6 @@ const props = defineProps({
 });
 
 const delegatedProps = reactiveOmit(props, "class");
-
 const forwarded = useForwardProps(delegatedProps);
 </script>
 
@@ -20,7 +19,7 @@ const forwarded = useForwardProps(delegatedProps);
   <ComboboxViewport
     data-slot="combobox-viewport"
     v-bind="forwarded"
-    :class="cn('no-scrollbar max-h-[min(calc(--spacing(72)---spacing(9)),calc(var(--available-height)---spacing(9)))] scroll-py-1 overflow-y-auto p-1 data-empty:p-0', props.class)"
+    :class="cn('max-h-60 overflow-y-auto p-1 scrollbar-thin divide-y divide-border/20', props.class)"
   >
     <slot />
   </ComboboxViewport>

@@ -12,7 +12,6 @@ const props = defineProps({
 });
 
 const delegatedProps = reactiveOmit(props, "class");
-
 const forwarded = useForwardProps(delegatedProps);
 </script>
 
@@ -20,7 +19,7 @@ const forwarded = useForwardProps(delegatedProps);
   <ComboboxItemIndicator
     data-slot="combobox-item-indicator"
     v-bind="forwarded"
-    :class="cn('pointer-events-none absolute right-2 flex size-4 items-center justify-center', props.class)"
+    :class="cn('pointer-events-none flex size-3.5 items-center justify-center text-primary', props.class)"
   >
     <slot />
   </ComboboxItemIndicator>
