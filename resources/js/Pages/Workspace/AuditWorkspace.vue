@@ -17,7 +17,8 @@ import {
     Activity,
     Layers,
     Database,
-    ArrowRight
+    ArrowRight,
+    ChevronDown
 } from '@lucide/vue';
 import AfyaShell from '@/Layouts/AfyaShell.vue';
 import AfyaWorkspace from '@/Components/Workspace/AfyaWorkspace.vue';
@@ -163,16 +164,19 @@ const getCategoryColor = (cat) => {
                         <div class="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
                             Filter by Staff
                         </div>
-                        <select
-                            v-model="selectedUserId"
-                            class="w-full h-7 text-[11px] rounded border border-input bg-background px-2"
-                            @change="applyFilter"
-                        >
-                            <option value="">-- All Staff --</option>
-                            <option v-for="u in users" :key="u.id" :value="u.id">
-                                {{ u.first_name }} {{ u.last_name }}
-                            </option>
-                        </select>
+                        <div class="relative w-full">
+                            <select
+                                v-model="selectedUserId"
+                                class="w-full h-8 text-xs rounded-md border border-input bg-card pl-2.5 pr-8 text-foreground truncate cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary shadow-2xs appearance-none"
+                                @change="applyFilter"
+                            >
+                                <option value="">All Staff Members</option>
+                                <option v-for="u in users" :key="u.id" :value="u.id">
+                                    {{ u.first_name }} {{ u.last_name }}
+                                </option>
+                            </select>
+                            <ChevronDown class="w-3.5 h-3.5 absolute right-2.5 top-2.5 pointer-events-none text-muted-foreground opacity-70" />
+                        </div>
                     </div>
                 </AfyaSidebar>
             </template>
@@ -207,34 +211,67 @@ const getCategoryColor = (cat) => {
                     <div class="w-full space-y-3">
                         
                         <!-- Search & Filter Toolbar -->
-                        <div class="p-3 bg-card rounded-xl border border-border/60 shadow-2xs flex flex-wrap items-center gap-2">
+                        <div class="p-3 bg-card rounded-xl border border-border/60 shadow-2xs flex flex-wrap items-center gap-2.5">
                             <div class="relative flex-1 min-w-[200px]">
                                 <Search class="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-muted-foreground" />
                                 <Input
                                     v-model="searchInput"
                                     placeholder="Search entity ID, type, IP address..."
-                                    class="h-8 pl-8 text-xs font-mono"
+                                    class="h-8.5 pl-8 text-xs font-mono"
                                     @keyup.enter="applyFilter"
                                 />
                             </div>
 
-                            <div class="w-48">
+                            <!-- Domain Category Select -->
+                            <div class="w-44 min-w-[140px] relative">
+                                <select
+                                    v-model="activeCategory"
+                                    class="w-full h-8.5 text-xs rounded-md border border-input bg-card pl-2.5 pr-8 text-foreground truncate cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary shadow-2xs appearance-none"
+                                    @change="applyFilter"
+                                >
+                                    <option value="all">All Domains ({{ totalLogsCount }})</option>
+                                    <option v-for="cat in categories" :key="cat" :value="cat">
+                                        {{ cat }}
+                                    </option>
+                                </select>
+                                <ChevronDown class="w-3.5 h-3.5 absolute right-2.5 top-2.5 pointer-events-none text-muted-foreground opacity-70" />
+                            </div>
+
+                            <!-- Staff Select -->
+                            <div class="w-48 min-w-[150px] relative">
+                                <select
+                                    v-model="selectedUserId"
+                                    class="w-full h-8.5 text-xs rounded-md border border-input bg-card pl-2.5 pr-8 text-foreground truncate cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary shadow-2xs appearance-none"
+                                    @change="applyFilter"
+                                >
+                                    <option value="">All Staff Members</option>
+                                    <option v-for="u in users" :key="u.id" :value="u.id">
+                                        {{ u.first_name }} {{ u.last_name }}
+                                    </option>
+                                </select>
+                                <ChevronDown class="w-3.5 h-3.5 absolute right-2.5 top-2.5 pointer-events-none text-muted-foreground opacity-70" />
+                            </div>
+
+                            <!-- Action Keyword -->
+                            <div class="w-36 min-w-[120px]">
                                 <Input
                                     v-model="actionInput"
-                                    placeholder="Action keyword (e.g. create, update)..."
-                                    class="h-8 text-xs"
+                                    placeholder="Action keyword..."
+                                    class="h-8.5 text-xs uppercase"
                                     @keyup.enter="applyFilter"
                                 />
                             </div>
 
-                            <Button variant="default" size="sm" class="h-8 text-xs font-bold" @click="applyFilter">
-                                <Filter class="w-3 h-3 mr-1" />
-                                Filter
-                            </Button>
+                            <div class="flex items-center gap-1.5 ml-auto">
+                                <Button variant="default" size="sm" class="h-8.5 px-3 text-xs font-bold gap-1 shadow-2xs" @click="applyFilter">
+                                    <Filter class="w-3 h-3" />
+                                    <span>Filter</span>
+                                </Button>
 
-                            <Button variant="ghost" size="sm" class="h-8 text-xs" @click="resetFilter">
-                                Reset
-                            </Button>
+                                <Button variant="ghost" size="sm" class="h-8.5 px-2.5 text-xs text-muted-foreground hover:text-foreground" @click="resetFilter">
+                                    <span>Reset</span>
+                                </Button>
+                            </div>
                         </div>
 
                         <!-- Master Audit Log Table -->
