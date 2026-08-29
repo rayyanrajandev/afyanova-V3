@@ -221,128 +221,59 @@ const getCategoryColor = (cat) => {
 
                     <div class="w-full space-y-3">
                         
-                        <!-- Unified Search & Filter Toolbar -->
-                        <div class="bg-card rounded-xl border border-border/60 shadow-2xs p-3 space-y-3">
-                            <!-- Row 1: Search & Action Inputs + Staff Select + Buttons -->
-                            <div class="flex flex-wrap items-center gap-2.5">
-                                <!-- Main Search Input -->
-                                <div class="relative flex-1 min-w-[240px]">
-                                    <Search class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                                    <Input
-                                        v-model="searchInput"
-                                        placeholder="Search entity ID, model type, IP address, justification..."
-                                        class="h-9 pl-9 pr-8 text-xs font-mono bg-background border-border/80"
-                                        @keyup.enter="applyFilter"
-                                    />
-                                    <button
-                                        v-if="searchInput"
-                                        class="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                                        @click="searchInput = ''; applyFilter()"
-                                    >
-                                        <X class="w-3.5 h-3.5" />
-                                    </button>
-                                </div>
-
-                                <!-- Action Input -->
-                                <div class="w-48 min-w-[150px]">
-                                    <Input
-                                        v-model="actionInput"
-                                        placeholder="Action (e.g. RECORD_SAVED)..."
-                                        class="h-9 text-xs font-mono uppercase bg-background border-border/80"
-                                        @keyup.enter="applyFilter"
-                                    />
-                                </div>
-
-                                <!-- Staff Dropdown -->
-                                <div class="w-56 min-w-[180px] relative">
-                                    <select
-                                        v-model="selectedUserId"
-                                        class="w-full h-9 text-xs rounded-md border border-border/80 bg-background pl-3 pr-8 text-foreground truncate cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary shadow-2xs appearance-none font-medium"
-                                        @change="applyFilter"
-                                    >
-                                        <option value="">All Staff Members</option>
-                                        <option v-for="u in users" :key="u.id" :value="u.id">
-                                            {{ u.first_name }} {{ u.last_name }}
-                                        </option>
-                                    </select>
-                                    <ChevronDown class="w-4 h-4 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground opacity-70" />
-                                </div>
-
-                                <!-- Filter & Reset Buttons -->
-                                <div class="flex items-center gap-2">
-                                    <Button
-                                        variant="default"
-                                        size="sm"
-                                        class="h-9 px-3.5 text-xs font-bold gap-1.5 shadow-2xs bg-primary text-primary-foreground hover:bg-primary/90"
-                                        @click="applyFilter"
-                                    >
-                                        <Filter class="w-3.5 h-3.5" />
-                                        <span>Filter</span>
-                                    </Button>
-
-                                    <Button
-                                        v-if="hasActiveFilters"
-                                        variant="outline"
-                                        size="sm"
-                                        class="h-9 px-3 text-xs font-medium text-muted-foreground hover:text-foreground border-border/70"
-                                        @click="resetFilter"
-                                    >
-                                        <span>Reset</span>
-                                    </Button>
-                                </div>
+                        <!-- Filter & Search Strip (Seamless Compact Container) -->
+                        <div class="flex flex-wrap items-center justify-between gap-2 bg-card p-2 rounded-lg shadow-2xs">
+                            <div class="flex items-center gap-1.5 flex-1 max-w-md">
+                                <Search class="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                                <Input
+                                    v-model="searchInput"
+                                    type="text"
+                                    placeholder="Search entity, action, IP, or justification..."
+                                    class="h-7 text-xs w-full"
+                                    @keyup.enter="applyFilter"
+                                />
+                                <Button
+                                    size="sm"
+                                    variant="default"
+                                    class="h-7 px-2.5 text-xs font-semibold"
+                                    @click="applyFilter"
+                                >
+                                    <Filter class="w-3 h-3 mr-1" />
+                                    Filter
+                                </Button>
+                                <Button
+                                    v-if="hasActiveFilters"
+                                    size="sm"
+                                    variant="ghost"
+                                    class="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+                                    @click="resetFilter"
+                                >
+                                    Reset
+                                </Button>
                             </div>
 
-                            <!-- Row 2: Category Chips & Active Filter Badges -->
-                            <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-border/40 text-xs">
-                                <div class="flex items-center gap-1.5 overflow-x-auto py-0.5 max-w-full">
-                                    <span class="text-[10.5px] font-bold text-muted-foreground uppercase tracking-wider mr-1 flex items-center gap-1 flex-shrink-0">
-                                        <Layers class="w-3 h-3 text-primary" />
-                                        Domain:
-                                    </span>
-                                    <button
-                                        type="button"
-                                        class="px-2.5 py-1 rounded-md text-[11px] font-bold transition-all whitespace-nowrap flex-shrink-0"
-                                        :class="activeCategory === 'all' 
-                                            ? 'bg-primary text-primary-foreground shadow-2xs' 
-                                            : 'bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground border border-border/40'"
-                                        @click="activeCategory = 'all'; applyFilter()"
-                                    >
-                                        All ({{ totalLogsCount }})
-                                    </button>
-                                    <button
-                                        v-for="cat in categories"
-                                        :key="cat"
-                                        type="button"
-                                        class="px-2.5 py-1 rounded-md text-[11px] font-medium transition-all whitespace-nowrap flex-shrink-0"
-                                        :class="activeCategory === cat 
-                                            ? 'bg-primary text-primary-foreground font-bold shadow-2xs' 
-                                            : 'bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground border border-border/40'"
-                                        @click="activeCategory = cat; applyFilter()"
-                                    >
-                                        {{ cat }}
-                                    </button>
-                                </div>
-
-                                <!-- Active Filter Indicator Pills -->
-                                <div v-if="hasActiveFilters" class="flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
-                                    <span class="font-bold text-foreground">Active:</span>
-                                    <span v-if="activeCategory !== 'all'" class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-primary/10 text-primary font-medium">
-                                        {{ activeCategory }}
-                                        <X class="w-3 h-3 cursor-pointer hover:opacity-80" @click="activeCategory = 'all'; applyFilter()" />
-                                    </span>
-                                    <span v-if="selectedUserId" class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-primary/10 text-primary font-medium">
-                                        Staff: {{ selectedUserName }}
-                                        <X class="w-3 h-3 cursor-pointer hover:opacity-80" @click="selectedUserId = ''; applyFilter()" />
-                                    </span>
-                                    <span v-if="actionInput" class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-primary/10 text-primary font-medium">
-                                        Action: {{ actionInput }}
-                                        <X class="w-3 h-3 cursor-pointer hover:opacity-80" @click="actionInput = ''; applyFilter()" />
-                                    </span>
-                                    <span v-if="searchInput" class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-primary/10 text-primary font-medium">
-                                        Query: "{{ searchInput }}"
-                                        <X class="w-3 h-3 cursor-pointer hover:opacity-80" @click="searchInput = ''; applyFilter()" />
-                                    </span>
-                                </div>
+                            <!-- Compact Domain Category Pills -->
+                            <div class="flex items-center gap-1 overflow-x-auto">
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    class="h-6 px-2 text-[10.5px]"
+                                    :class="{ 'bg-primary text-primary-foreground font-semibold': activeCategory === 'all' }"
+                                    @click="activeCategory = 'all'; applyFilter()"
+                                >
+                                    All ({{ totalLogsCount }})
+                                </Button>
+                                <Button
+                                    v-for="cat in categories"
+                                    :key="cat"
+                                    size="sm"
+                                    variant="outline"
+                                    class="h-6 px-2 text-[10.5px]"
+                                    :class="{ 'bg-primary text-primary-foreground font-semibold': activeCategory === cat }"
+                                    @click="activeCategory = cat; applyFilter()"
+                                >
+                                    {{ cat }}
+                                </Button>
                             </div>
                         </div>
 
