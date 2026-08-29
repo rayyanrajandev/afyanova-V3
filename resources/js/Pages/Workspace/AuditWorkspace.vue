@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { Head, router } from '@inertiajs/vue3';
 import {
     ShieldCheck,
@@ -82,6 +82,14 @@ const applyFilter = () => {
         preserveScroll: true,
     });
 };
+
+let searchDebounce = null;
+watch(searchInput, () => {
+    clearTimeout(searchDebounce);
+    searchDebounce = setTimeout(() => {
+        applyFilter();
+    }, 300);
+});
 
 const resetFilter = () => {
     activeCategory.value = 'all';
@@ -223,29 +231,29 @@ const getCategoryColor = (cat) => {
                         
                         <!-- Filter & Search Strip (Seamless Compact Container) -->
                         <div class="flex flex-wrap items-center justify-between gap-2 bg-card p-2 rounded-lg shadow-2xs">
-                            <div class="flex items-center gap-1.5 flex-1 max-w-md">
+                            <div class="flex items-center gap-1.5 flex-1 max-w-sm">
                                 <Search class="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-                                <Input
-                                    v-model="searchInput"
-                                    type="text"
-                                    placeholder="Search entity, action, IP, or justification..."
-                                    class="h-7 text-xs w-full"
-                                    @keyup.enter="applyFilter"
-                                />
-                                <Button
-                                    size="sm"
-                                    variant="default"
-                                    class="h-7 px-2.5 text-xs font-semibold"
-                                    @click="applyFilter"
-                                >
-                                    <Filter class="w-3 h-3 mr-1" />
-                                    Filter
-                                </Button>
+                                <div class="relative w-full">
+                                    <Input
+                                        v-model="searchInput"
+                                        type="text"
+                                        placeholder="Search entity, action, IP, or justification..."
+                                        class="h-7 text-xs w-full pr-6"
+                                    />
+                                    <button
+                                        v-if="searchInput"
+                                        type="button"
+                                        class="absolute right-1.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                        @click="searchInput = ''"
+                                    >
+                                        <X class="w-3 h-3" />
+                                    </button>
+                                </div>
                                 <Button
                                     v-if="hasActiveFilters"
                                     size="sm"
                                     variant="ghost"
-                                    class="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+                                    class="h-7 px-2 text-xs text-muted-foreground hover:text-foreground flex-shrink-0"
                                     @click="resetFilter"
                                 >
                                     Reset
