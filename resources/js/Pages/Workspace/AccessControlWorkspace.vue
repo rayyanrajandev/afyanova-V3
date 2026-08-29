@@ -418,6 +418,15 @@ const selectUserForInspector = (user) => {
     openContext();
 };
 
+const toggleRoleInForm = (roleId) => {
+    const idx = assignRoleForm.role_ids.indexOf(roleId);
+    if (idx > -1) {
+        assignRoleForm.role_ids.splice(idx, 1);
+    } else {
+        assignRoleForm.role_ids.push(roleId);
+    }
+};
+
 const openAssignRoleModal = (user = null) => {
     assignRoleForm.reset();
     assignRoleForm.user_id = user ? user.id : (selectedUser.value?.id || props.users[0]?.id || '');
@@ -1200,22 +1209,19 @@ const breadcrumbLabel = computed(() => {
             </div>
         </div>
 
-        <!-- MODAL: MANAGE STAFF ROLES & FACILITY SCOPES -->
+        <!-- MODAL: MANAGE STAFF ROLES & FACILITY SCOPES (Compact, Fits Content) -->
         <div v-if="showAssignRoleModal" class="fixed inset-0 bg-background/80 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-            <div class="bg-card border border-border/60 rounded-xl shadow-xl w-full max-w-xl max-h-[85vh] flex flex-col p-5 space-y-4">
+            <div class="bg-card border border-border/60 rounded-xl shadow-xl w-full max-w-lg p-5 space-y-3.5">
                 <!-- Header -->
-                <div class="flex items-center justify-between border-b border-border/50 pb-3 shrink-0">
+                <div class="flex items-center justify-between border-b border-border/50 pb-2.5">
                     <div class="flex items-center gap-2">
-                        <div class="p-1.5 rounded-lg bg-primary/10 text-primary">
-                            <ShieldCheck class="w-5 h-5" />
+                        <div class="p-1 rounded-md bg-primary/10 text-primary">
+                            <ShieldCheck class="w-4 h-4" />
                         </div>
                         <div>
-                            <h3 class="font-bold text-foreground text-sm">
+                            <h3 class="font-bold text-foreground text-xs">
                                 Manage Staff Roles & Facility Scopes
                             </h3>
-                            <p class="text-[11px] text-muted-foreground">
-                                Assign, review, or revoke branch roles and department scopes
-                            </p>
                         </div>
                     </div>
                     <button @click="showAssignRoleModal = false" class="text-muted-foreground hover:text-foreground">
@@ -1223,158 +1229,126 @@ const breadcrumbLabel = computed(() => {
                     </button>
                 </div>
 
-                <div class="flex-1 overflow-y-auto space-y-4 text-xs pr-1">
-                    <!-- Staff Selector & Profile Badge -->
-                    <div class="p-3 bg-muted/20 rounded-lg border border-border/40 space-y-2">
-                        <label class="font-bold text-muted-foreground text-[10px] uppercase">Staff Member</label>
-                        <Combobox
-                            v-model="assignRoleForm.user_id"
-                            :options="staffOptions"
-                            placeholder="Select staff member..."
-                            search-placeholder="Search staff by name or email..."
-                            size="default"
-                        />
-                        <InputError :message="assignRoleForm.errors.user_id" class="mt-1" />
-
-                        <!-- Target staff details -->
-                        <div v-if="targetStaffForScope" class="flex items-center justify-between pt-1 text-[11px]">
-                            <div class="text-muted-foreground">
-                                Email: <span class="font-mono text-foreground font-semibold">{{ targetStaffForScope.email }}</span>
-                                <span v-if="targetStaffForScope.professional_registration_no" class="ml-2">
-                                    • Lic: <span class="font-mono text-emerald-600 dark:text-emerald-400 font-bold">{{ targetStaffForScope.professional_registration_no }}</span>
-                                </span>
-                            </div>
-                            <AfyaStatusBadge 
-                                :status="targetStaffForScope.status === 'Active' ? 'active' : (targetStaffForScope.status === 'Suspended' ? 'warning' : 'inactive')" 
-                                :label="targetStaffForScope.status || 'Active'" 
-                            />
+                <!-- Staff Info Strip -->
+                <div class="flex items-center justify-between p-2 rounded-md bg-muted/30 border border-border/40 text-xs">
+                    <div class="min-w-0 flex items-center gap-2">
+                        <div class="w-6 h-6 rounded-full bg-primary/10 text-primary font-bold text-[10px] flex items-center justify-center shrink-0">
+                            {{ (targetStaffForScope?.first_name || 'U')[0] }}
+                        </div>
+                        <div class="truncate">
+                            <span class="font-bold text-foreground">{{ targetStaffForScope?.first_name }} {{ targetStaffForScope?.last_name }}</span>
+                            <span class="text-muted-foreground font-mono text-[10.5px] ml-1.5">({{ targetStaffForScope?.email }})</span>
+                            <span v-if="targetStaffForScope?.professional_registration_no" class="text-emerald-600 dark:text-emerald-400 font-mono text-[10px] ml-1.5 font-semibold">
+                                Lic: {{ targetStaffForScope.professional_registration_no }}
+                            </span>
                         </div>
                     </div>
+                    <AfyaStatusBadge 
+                        v-if="targetStaffForScope"
+                        :status="targetStaffForScope.status === 'Active' ? 'active' : (targetStaffForScope.status === 'Suspended' ? 'warning' : 'inactive')" 
+                        :label="targetStaffForScope.status || 'Active'" 
+                    />
+                </div>
 
-                    <!-- SECTION 1: Active Role Assignments (Unassign / Revoke) -->
-                    <div class="space-y-2">
-                        <div class="flex items-center justify-between">
-                            <h4 class="font-bold text-foreground text-xs flex items-center gap-1.5">
-                                <KeyRound class="w-3.5 h-3.5 text-primary" />
-                                <span>Active Role Scopes ({{ currentStaffAssignments.length }})</span>
-                            </h4>
-                        </div>
-
-                        <div v-if="currentStaffAssignments.length" class="space-y-1.5">
-                            <div 
-                                v-for="ra in currentStaffAssignments" 
-                                :key="ra.id" 
-                                class="p-2.5 rounded-lg border border-border/50 bg-card hover:bg-muted/20 flex items-center justify-between gap-2 transition-colors"
-                            >
-                                <div class="space-y-0.5 min-w-0">
-                                    <div class="flex items-center gap-1.5">
-                                        <span class="font-bold text-foreground text-xs">{{ ra.role?.name }}</span>
-                                        <span class="text-[9.5px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-semibold">
-                                            {{ ra.facility ? ra.facility.name : 'All Facilities (Tenant Wide)' }}
-                                        </span>
-                                    </div>
-                                    <div class="text-[10px] text-muted-foreground flex items-center gap-2">
-                                        <span v-if="ra.department">Dept: <strong class="text-foreground">{{ ra.department.name }}</strong></span>
-                                        <span v-else>All Departments</span>
-                                        <span>•</span>
-                                        <span>Assigned {{ formatDate(ra.created_at) }}</span>
-                                    </div>
-                                </div>
-                                <Button
-                                    v-if="can.assignRole"
-                                    variant="outline"
-                                    size="xs"
-                                    class="h-6 px-2 text-[10.5px] font-semibold text-rose-600 border-rose-200 dark:border-rose-900/40 hover:bg-rose-50 dark:hover:bg-rose-950/30 shrink-0"
-                                    @click="unassignRole(ra.id)"
-                                    :disabled="isUnassigning === ra.id"
-                                >
-                                    <Loader2 v-if="isUnassigning === ra.id" class="w-3 h-3 animate-spin mr-1" />
-                                    <Trash2 v-else class="w-3 h-3 mr-1" />
-                                    Remove Scope
-                                </Button>
-                            </div>
-                        </div>
-                        <div v-else class="p-3 text-center rounded-lg border border-dashed border-border/60 text-muted-foreground text-xs">
-                            No branch-specific roles assigned yet. User operates with tenant-level baseline staff permissions.
-                        </div>
+                <!-- Current Active Scopes (Horizontal Tag Chips) -->
+                <div class="space-y-1">
+                    <div class="text-[10px] font-bold uppercase text-muted-foreground tracking-wider flex items-center justify-between">
+                        <span>Current Active Scopes ({{ currentStaffAssignments.length }})</span>
+                        <span v-if="!currentStaffAssignments.length" class="text-muted-foreground font-normal normal-case italic text-[10.5px]">Global Tenant Baseline</span>
                     </div>
-
-                    <!-- SECTION 2: Assign New Roles & Scopes (Multi-Role Support) -->
-                    <div class="p-3.5 bg-muted/20 rounded-lg border border-border/50 space-y-3">
-                        <h4 class="font-bold text-foreground text-xs flex items-center gap-1.5">
-                            <Plus class="w-3.5 h-3.5 text-primary" />
-                            <span>Assign New Role(s) & Branch Scope</span>
-                        </h4>
-
-                        <!-- Multi-Role Selection Grid -->
-                        <div class="space-y-1.5">
-                            <label class="font-bold text-muted-foreground text-[10px] uppercase">
-                                Select System Role(s) <span class="text-primary font-normal">({{ assignRoleForm.role_ids.length }} selected)</span>
-                            </label>
-                            <div class="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-36 overflow-y-auto p-1 border border-border/40 rounded-lg bg-card">
-                                <label
-                                    v-for="r in roles"
-                                    :key="r.id"
-                                    class="flex items-center gap-2 p-1.5 rounded text-xs cursor-pointer transition-colors border"
-                                    :class="assignRoleForm.role_ids.includes(r.id) ? 'bg-primary/10 border-primary/40 text-foreground font-semibold' : 'border-transparent hover:bg-muted/40 text-muted-foreground'"
-                                >
-                                    <input
-                                        type="checkbox"
-                                        :value="r.id"
-                                        v-model="assignRoleForm.role_ids"
-                                        class="rounded border-border text-primary focus:ring-primary h-3.5 w-3.5"
-                                    />
-                                    <span class="truncate text-[11px]">{{ r.name }}</span>
-                                </label>
-                            </div>
-                            <InputError :message="assignRoleForm.errors.role_ids || assignRoleForm.errors.role_id" class="mt-1" />
-                        </div>
-
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                            <!-- Facility Scope Selector -->
-                            <div>
-                                <label class="font-bold text-muted-foreground text-[10px] uppercase">Facility Branch Scope</label>
-                                <Combobox
-                                    v-model="assignRoleForm.facility_id"
-                                    :options="facilityBranchOptions"
-                                    placeholder="All Facilities (Tenant Wide)"
-                                    search-placeholder="Search facilities..."
-                                    size="default"
-                                />
-                                <InputError :message="assignRoleForm.errors.facility_id" class="mt-1" />
-                            </div>
-
-                            <!-- Department Scope Selector -->
-                            <div>
-                                <label class="font-bold text-muted-foreground text-[10px] uppercase">Department Scope (Optional)</label>
-                                <Select v-model="assignRoleForm.department_id" class="w-full">
-                                    <option value="">All Departments (Facility Wide)</option>
-                                    <option v-for="dept in availableDepartmentsForScope" :key="dept.id" :value="dept.id">
-                                        {{ dept.name }}
-                                    </option>
-                                </Select>
-                                <InputError :message="assignRoleForm.errors.department_id" class="mt-1" />
-                            </div>
-                        </div>
-
-                        <!-- Action Button inside section -->
-                        <div class="flex justify-end pt-1">
-                            <Button 
-                                variant="default" 
-                                size="sm" 
-                                :disabled="assignRoleForm.processing || !assignRoleForm.role_ids.length" 
-                                @click="submitAssignRole"
+                    <div v-if="currentStaffAssignments.length" class="flex flex-wrap gap-1.5 p-1.5 rounded-md border border-border/40 bg-muted/10 items-center">
+                        <div 
+                            v-for="ra in currentStaffAssignments" 
+                            :key="ra.id" 
+                            class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-card border border-border/60 text-[10.5px] shadow-2xs group"
+                        >
+                            <span class="font-bold text-foreground">{{ ra.role?.name }}</span>
+                            <span v-if="ra.facility" class="text-primary font-mono text-[9.5px]">@{{ ra.facility.name }}</span>
+                            <span v-else class="text-muted-foreground text-[9.5px]">(All Branches)</span>
+                            <span v-if="ra.department" class="text-muted-foreground text-[9px]">[{{ ra.department.name }}]</span>
+                            <button
+                                v-if="can.assignRole"
+                                @click="unassignRole(ra.id)"
+                                :disabled="isUnassigning === ra.id"
+                                class="text-muted-foreground hover:text-rose-600 ml-0.5 p-0.5 rounded hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors"
+                                :title="`Revoke ${ra.role?.name} scope`"
                             >
-                                <Plus class="w-3.5 h-3.5 mr-1" />
-                                Assign {{ assignRoleForm.role_ids.length > 1 ? `${assignRoleForm.role_ids.length} Roles` : 'Role Scope' }}
-                            </Button>
+                                <Loader2 v-if="isUnassigning === ra.id" class="w-2.5 h-2.5 animate-spin text-primary" />
+                                <X v-else class="w-2.5 h-2.5" />
+                            </button>
                         </div>
                     </div>
                 </div>
 
-                <!-- Footer -->
-                <div class="flex justify-end border-t border-border/50 pt-3 shrink-0">
-                    <Button variant="outline" size="sm" @click="showAssignRoleModal = false">Done / Close</Button>
+                <!-- Assign New Scope Form -->
+                <div class="space-y-2 pt-1 border-t border-border/40 text-xs">
+                    <div class="text-[10px] font-bold uppercase text-primary tracking-wider flex items-center justify-between">
+                        <span>Assign New Role Scope</span>
+                        <span v-if="assignRoleForm.role_ids.length" class="text-primary font-semibold font-mono">{{ assignRoleForm.role_ids.length }} selected</span>
+                    </div>
+
+                    <!-- Role Selection (Compact Pill Buttons / Badges) -->
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-bold uppercase text-muted-foreground">Select Role(s)</label>
+                        <div class="grid grid-cols-3 gap-1">
+                            <button
+                                v-for="r in roles"
+                                :key="r.id"
+                                type="button"
+                                @click="toggleRoleInForm(r.id)"
+                                class="flex items-center gap-1.5 px-2 py-1 rounded border text-[11px] text-left transition-all truncate"
+                                :class="assignRoleForm.role_ids.includes(r.id) 
+                                    ? 'bg-primary/10 border-primary text-primary font-bold shadow-2xs' 
+                                    : 'border-border/60 hover:bg-muted/40 text-muted-foreground'"
+                            >
+                                <Check v-if="assignRoleForm.role_ids.includes(r.id)" class="w-3 h-3 text-primary shrink-0" />
+                                <span class="truncate">{{ r.name }}</span>
+                            </button>
+                        </div>
+                        <InputError :message="assignRoleForm.errors.role_ids || assignRoleForm.errors.role_id" class="mt-0.5" />
+                    </div>
+
+                    <!-- 2-Column Scope Selectors (Facility & Department) -->
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-[10px] font-bold uppercase text-muted-foreground">Facility Scope</label>
+                            <Combobox
+                                v-model="assignRoleForm.facility_id"
+                                :options="facilityBranchOptions"
+                                placeholder="All Facilities (Tenant Wide)"
+                                search-placeholder="Search facilities..."
+                                size="default"
+                            />
+                            <InputError :message="assignRoleForm.errors.facility_id" class="mt-0.5" />
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold uppercase text-muted-foreground">Department (Optional)</label>
+                            <Select v-model="assignRoleForm.department_id" class="w-full">
+                                <option value="">All Departments</option>
+                                <option v-for="dept in availableDepartmentsForScope" :key="dept.id" :value="dept.id">
+                                    {{ dept.name }}
+                                </option>
+                            </Select>
+                            <InputError :message="assignRoleForm.errors.department_id" class="mt-0.5" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer Actions -->
+                <div class="flex justify-end gap-2 border-t border-border/50 pt-3">
+                    <Button variant="outline" size="sm" @click="showAssignRoleModal = false">
+                        Close
+                    </Button>
+                    <Button 
+                        variant="default" 
+                        size="sm" 
+                        :disabled="assignRoleForm.processing || !assignRoleForm.role_ids.length" 
+                        @click="submitAssignRole"
+                        class="font-semibold"
+                    >
+                        <Plus class="w-3.5 h-3.5 mr-1" />
+                        <span>Assign {{ assignRoleForm.role_ids.length > 1 ? `${assignRoleForm.role_ids.length} Roles` : 'Scope' }}</span>
+                    </Button>
                 </div>
             </div>
         </div>
