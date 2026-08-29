@@ -396,6 +396,19 @@ const paginatedUsers = computed(() => {
     return (filteredUsers.value || []).slice(start, start + perPage.value);
 });
 
+const formatDate = (dateStr) => {
+    if (!dateStr) return '—';
+    try {
+        return new Date(dateStr).toLocaleDateString('en-GB', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric'
+        });
+    } catch {
+        return dateStr;
+    }
+};
+
 const selectUserForInspector = (user) => {
     selectedUser.value = user;
     router.get(route('access-control.workspace'), { user_id: user.id }, {
