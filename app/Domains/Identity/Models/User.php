@@ -110,6 +110,16 @@ class User extends Authenticatable
         return trim("{$this->first_name} {$this->last_name}");
     }
 
+    public function scopeActive($query)
+    {
+        return $query->whereIn('status', ['active', 'Active', 'ACTIVE']);
+    }
+
+    public function isActive(): bool
+    {
+        return strtolower($this->status ?? 'active') === 'active';
+    }
+
     /**
      * @return BelongsToMany<Role, $this>
      */

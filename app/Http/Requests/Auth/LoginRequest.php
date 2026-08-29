@@ -58,23 +58,25 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        // 'status' => 'active' becomes an extra WHERE clause in Laravel's
-        // default EloquentUserProvider — a deactivated or suspended
-        // account simply won't be found, and this fails exactly as it
-        // would for a wrong password. See ProfileController::destroy()
-        // for why accounts are deactivated rather than deleted.
-        $credentials = array_merge($this->only('email', 'password'), ['status' => 'active']);
-
         $provider = Auth::guard('web')->getProvider();
-        $user = $provider->retrieveByCredentials($credentials);
+        $user = $provider->retrieveByCredentials($this->only('email'));
 
-        if (! $user || ! $provider->validateCredentials($user, $credentials)) {
+        if (! $user || ! $provider->validateCredentials($user, $this->only('email', 'password'))) {
             RateLimiter::hit($this->throttleKey());
 
             event(new Failed('web', $user, $this->only('email', 'password')));
 
             throw ValidationException::withMessages([
                 'email' => trans('auth.failed'),
+            ]);
+        }
+
+        // Case-insensitive status check to support 'active', 'Active', 'ACTIVE' across all DB engines (PostgreSQL, SQLite, MySQL)
+        if (strtolower($user->status ?? 'active') !== 'active') {
+            RateLimiter::hit($this->throttleKey());
+
+            throw ValidationException::withMessages([
+                'email' => 'This user account has been suspended or deactivated. Please contact your hospital administrator.',
             ]);
         }
 

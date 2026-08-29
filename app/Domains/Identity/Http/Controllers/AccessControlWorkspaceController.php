@@ -137,7 +137,7 @@ class AccessControlWorkspaceController extends Controller
             'department_id' => 'nullable|string',
         ]);
 
-        $user = User::findOrFail((string) $validated['user_id']);
+        $user = User::withoutGlobalScopes()->findOrFail((string) $validated['user_id']);
         $hasAccess = $authService->hasPermission(
             $user,
             $validated['permission_slug'],
@@ -202,10 +202,12 @@ class AccessControlWorkspaceController extends Controller
             'last_name' => 'required|string|max:100',
             'phone' => 'nullable|string|max:30',
             'professional_registration_no' => 'nullable|string|max:50',
-            'status' => 'required|in:Active,Suspended,Inactive',
+            'status' => 'required|in:Active,Suspended,Inactive,active,suspended,inactive',
         ]);
 
+        $validated['status'] = ucfirst(strtolower($validated['status']));
         $user->update($validated);
+        $authService->clearUserCache($user);
 
         return back()->with('success', "Staff profile for {$user->name} updated successfully.");
     }
@@ -214,8 +216,10 @@ class AccessControlWorkspaceController extends Controller
     {
         abort_unless($authService->hasPermission($request->user(), 'identity.user.manage') || $authService->isTenantAdmin($request->user()), 403);
 
-        $newStatus = $user->status === 'Active' ? 'Suspended' : 'Active';
+        $isCurrentlyActive = strtolower($user->status ?? 'active') === 'active';
+        $newStatus = $isCurrentlyActive ? 'Suspended' : 'Active';
         $user->update(['status' => $newStatus]);
+        $authService->clearUserCache($user);
 
         return back()->with('success', "User account {$user->name} status changed to {$newStatus}.");
     }

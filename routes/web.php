@@ -251,6 +251,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/access-control/facilities', [AccessControlWorkspaceController::class, 'storeFacility'])->name('access-control.facilities.store');
     Route::put('/access-control/facilities/{facility}', [AccessControlWorkspaceController::class, 'updateFacility'])->name('access-control.facilities.update');
     Route::post('/access-control/departments', [AccessControlWorkspaceController::class, 'storeDepartment'])->name('access-control.departments.store');
+    Route::post('/access-control/test', [AccessControlWorkspaceController::class, 'testPermission'])->name('access-control.test');
 });
 
 use App\Domains\Audit\Http\Controllers\AuditWorkspaceController;

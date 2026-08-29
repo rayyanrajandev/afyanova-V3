@@ -48,17 +48,15 @@ class AuthorizationService
 
         return Cache::remember($cacheKey, 3600, function () use ($user) {
             return $user->roleAssignments()
+                ->withoutGlobalScopes()
                 ->whereNull('facility_id')
-                ->whereHas('role', fn ($query) => $query->whereIn('slug', ['super-admin', 'platform-admin']))
+                ->whereHas('role', fn ($query) => $query->withoutGlobalScopes()->whereIn('slug', ['super-admin', 'platform-admin']))
                 ->exists();
         });
     }
 
     /**
-     * Whether the user holds a global-scope assignment to the 'tenant-admin'
-     * role. Replaces a prior check against a `users.role` column that never
-     * existed (Laravel's schema-aware attribute guarding silently dropped
-     * any assignment to it, so the old check was permanently false).
+     * Whether the user holds a global-scope assignment to the 'tenant-admin' role.
      */
     public function isTenantAdmin(User $user): bool
     {
@@ -66,8 +64,9 @@ class AuthorizationService
 
         return Cache::remember($cacheKey, 3600, function () use ($user) {
             return $user->roleAssignments()
+                ->withoutGlobalScopes()
                 ->whereNull('facility_id')
-                ->whereHas('role', fn ($query) => $query->where('slug', 'tenant-admin'))
+                ->whereHas('role', fn ($query) => $query->withoutGlobalScopes()->where('slug', 'tenant-admin'))
                 ->exists();
         });
     }
@@ -80,18 +79,20 @@ class AuthorizationService
         $map = $this->getPermissionsMap($user);
         $permissions = [];
 
-        // Global scope
-        $globalKey = $this->buildScopeKey(null, null);
-        $permissions = array_merge($permissions, $map[$globalKey] ?? []);
-
-        // Facility scope
-        if ($facilityId) {
+        if ($facilityId !== null) {
+            // Specific facility scope
+            $globalKey = $this->buildScopeKey(null, null);
             $facilityKey = $this->buildScopeKey($facilityId, null);
-            $permissions = array_merge($permissions, $map[$facilityKey] ?? []);
+            $permissions = array_merge($permissions, $map[$globalKey] ?? [], $map[$facilityKey] ?? []);
 
-            if ($departmentId) {
+            if ($departmentId !== null) {
                 $deptKey = $this->buildScopeKey($facilityId, $departmentId);
                 $permissions = array_merge($permissions, $map[$deptKey] ?? []);
+            }
+        } else {
+            // Aggregate all permissions across all assigned scopes
+            foreach ($map as $scopePerms) {
+                $permissions = array_merge($permissions, $scopePerms);
             }
         }
 
@@ -117,6 +118,7 @@ class AuthorizationService
     {
         Cache::forget("tenant:{$user->tenant_id}:user:{$user->id}:permissions");
         Cache::forget("tenant:{$user->tenant_id}:user:{$user->id}:is-tenant-admin");
+        Cache::forget("user:{$user->id}:is-super-admin");
     }
 
     private function evaluateAssignments(User $user, string $permissionSlug, ?string $facilityId = null, ?string $departmentId = null): bool
@@ -153,7 +155,7 @@ class AuthorizationService
         $cacheKey = "tenant:{$user->tenant_id}:user:{$user->id}:permissions";
 
         return Cache::remember($cacheKey, 3600, function () use ($user) {
-            $assignments = $user->roleAssignments()->with('role.permissions')->get();
+            $assignments = $user->roleAssignments()->withoutGlobalScopes()->with(['role' => fn ($q) => $q->withoutGlobalScopes()->with('permissions')])->get();
             $map = [];
 
             foreach ($assignments as $assignment) {

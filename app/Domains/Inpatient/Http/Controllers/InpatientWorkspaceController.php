@@ -95,10 +95,10 @@ class InpatientWorkspaceController extends Controller
             ->take(50)
             ->get();
 
-        $doctors = User::where('status', 'active')
+        $doctors = User::whereIn('status', ['active', 'Active'])
             ->whereHas('roles', fn ($q) => $q->where('slug', 'doctor'))
             ->get();
-        $nurses = User::where('status', 'active')
+        $nurses = User::whereIn('status', ['active', 'Active'])
             ->whereHas('roles', fn ($q) => $q->where('slug', 'nurse'))
             ->get();
 

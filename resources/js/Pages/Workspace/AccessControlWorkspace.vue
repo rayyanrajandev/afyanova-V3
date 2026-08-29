@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { Head, router, useForm } from '@inertiajs/vue3';
 import {
     Shield,
@@ -44,7 +44,7 @@ import InputError from '@/Components/InputError.vue';
 import { useWorkspacePreferences } from '@/Composables/useWorkspacePreferences';
 
 const props = defineProps({
-    can: { type: Object, default: () => ({}) },
+    can: { type: Object, required: true },
     users: { type: Array, default: () => [] },
     roles: { type: Array, default: () => [] },
     permissionsByDomain: { type: Object, default: () => ({}) },
@@ -61,6 +61,15 @@ const activeSection = ref(
     props.can.users ? 'users' : (Object.keys(props.can).find(k => props.can[k]) ?? null)
 );
 const selectedUser = ref(props.users.find(u => u.id === props.selectedUserId) || props.users[0] || null);
+
+watch(() => [props.selectedUserId, props.users], ([newId, newUsers]) => {
+    if (newId && newUsers?.length) {
+        const found = newUsers.find(u => u.id === newId);
+        if (found) {
+            selectedUser.value = found;
+        }
+    }
+}, { immediate: true });
 const selectedRole = ref(props.roles[0] || null);
 const searchQuery = ref('');
 
@@ -346,7 +355,7 @@ const runLivePermissionTest = async () => {
     if (!selectedUser.value || !testPermissionSlug.value) return;
     isTesting.value = true;
     try {
-        const res = await axios.post('/api/access-control/test', {
+        const res = await axios.post('/access-control/test', {
             user_id: selectedUser.value.id,
             permission_slug: testPermissionSlug.value,
             facility_id: testFacilityId.value || null,
