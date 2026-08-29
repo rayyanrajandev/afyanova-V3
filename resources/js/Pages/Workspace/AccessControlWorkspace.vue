@@ -20,7 +20,11 @@ import {
     Stethoscope,
     ShieldAlert,
     Check,
-    ChevronsUpDown
+    ChevronsUpDown,
+    AlertTriangle,
+    Trash2,
+    ChevronLeft,
+    ChevronRight
 } from '@lucide/vue';
 import AfyaShell from '@/Layouts/AfyaShell.vue';
 import AfyaWorkspace from '@/Components/Workspace/AfyaWorkspace.vue';
@@ -166,9 +170,37 @@ const submitEditUser = () => {
     });
 };
 
-const toggleUserStatus = (user) => {
-    if (!confirm(`Are you sure you want to change account status for ${user.first_name} ${user.last_name}?`)) return;
-    router.post(route('access-control.users.toggle-status', user.id));
+const showToggleStatusModal = ref(false);
+const targetUserForStatus = ref(null);
+const isTogglingStatus = ref(false);
+
+const openToggleStatusModal = (user) => {
+    targetUserForStatus.value = user;
+    showToggleStatusModal.value = true;
+};
+
+const confirmToggleStatus = () => {
+    if (!targetUserForStatus.value) return;
+    isTogglingStatus.value = true;
+    router.post(route('access-control.users.toggle-status', targetUserForStatus.value.id), {}, {
+        preserveScroll: true,
+        onFinish: () => {
+            isTogglingStatus.value = false;
+            showToggleStatusModal.value = false;
+            targetUserForStatus.value = null;
+        }
+    });
+};
+
+const isUnassigning = ref(null);
+const unassignRole = (assignmentId) => {
+    isUnassigning.value = assignmentId;
+    router.delete(route('access-control.roles.unassign', assignmentId), {
+        preserveScroll: true,
+        onFinish: () => {
+            isUnassigning.value = null;
+        }
+    });
 };
 
 const openResetPasswordModal = (user) => {
@@ -313,13 +345,19 @@ const staffOptions = computed(() => (props.users || []).map(u => ({
     badge: getUserPrimaryRole(u)
 })));
 
+const currentPage = ref(1);
+const perPage = ref(25);
+const perPageOptions = [10, 25, 50, 100];
+
 const filteredUsers = computed(() => {
-    if (!searchQuery.value) return props.users;
-    const q = searchQuery.value.toLowerCase();
-    return props.users.filter(u => 
+    if (!searchQuery.value) return props.users || [];
+    const q = searchQuery.value.toLowerCase().trim();
+    return (props.users || []).filter(u => 
         u.first_name?.toLowerCase().includes(q) ||
         u.last_name?.toLowerCase().includes(q) ||
         u.email?.toLowerCase().includes(q) ||
+        (u.phone || '').toLowerCase().includes(q) ||
+        (u.professional_registration_no || '').toLowerCase().includes(q) ||
         getUserPrimaryRole(u).toLowerCase().includes(q) ||
         u.role_assignments?.some(ra => 
             ra.role?.name?.toLowerCase().includes(q) || 
@@ -327,6 +365,17 @@ const filteredUsers = computed(() => {
             ra.facility?.name?.toLowerCase().includes(q)
         )
     );
+});
+
+watch(searchQuery, () => {
+    currentPage.value = 1;
+});
+
+const totalPages = computed(() => Math.ceil((filteredUsers.value?.length || 0) / perPage.value) || 1);
+
+const paginatedUsers = computed(() => {
+    const start = (currentPage.value - 1) * perPage.value;
+    return (filteredUsers.value || []).slice(start, start + perPage.value);
 });
 
 const selectUserForInspector = (user) => {
@@ -339,9 +388,11 @@ const selectUserForInspector = (user) => {
 };
 
 const openAssignRoleModal = (user = null) => {
-    assignRoleForm.user_id = user ? user.id : (props.users[0]?.id || '');
+    assignRoleForm.reset();
+    assignRoleForm.user_id = user ? user.id : (selectedUser.value?.id || props.users[0]?.id || '');
     assignRoleForm.role_id = props.roles[0]?.id || '';
     assignRoleForm.facility_id = '';
+    assignRoleForm.department_id = '';
     showAssignRoleModal.value = true;
 };
 
@@ -600,101 +651,158 @@ const breadcrumbLabel = computed(() => {
                                 />
                             </div>
 
-                            <div class="bg-card rounded-lg border border-border/60 shadow-2xs overflow-hidden">
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow class="bg-muted/40 text-[10px] uppercase tracking-wider font-bold">
-                                            <TableHead class="py-2 px-3">Staff Member & Credential</TableHead>
-                                            <TableHead class="py-2 px-3">Contact Email & Phone</TableHead>
-                                            <TableHead class="py-2 px-3">Primary Role</TableHead>
-                                            <TableHead class="py-2 px-3">Assigned Scopes (Facility / Dept)</TableHead>
-                                            <TableHead class="py-2 px-3">Account Status</TableHead>
-                                            <TableHead class="py-2 px-3 text-right">Actions</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        <TableRow 
-                                            v-for="u in filteredUsers" 
-                                            :key="u.id"
-                                            @click="selectUserForInspector(u)"
-                                            :class="selectedUser?.id === u.id ? 'bg-primary/5 font-semibold' : ''"
-                                            class="hover:bg-muted/20 cursor-pointer border-b border-border/30"
-                                        >
-                                            <TableCell class="py-2 px-3">
-                                                <div class="font-bold text-foreground">{{ u.first_name }} {{ u.last_name }}</div>
-                                                <div v-if="u.professional_registration_no" class="text-[10px] font-mono text-emerald-600 dark:text-emerald-400">
-                                                    MCT / Lic: {{ u.professional_registration_no }}
-                                                </div>
-                                            </TableCell>
-                                            <TableCell class="py-2 px-3 font-mono text-xs text-muted-foreground">
-                                                <div>{{ u.email }}</div>
-                                                <div v-if="u.phone" class="text-[10px] text-muted-foreground">{{ u.phone }}</div>
-                                            </TableCell>
-                                            <TableCell class="py-2 px-3">
-                                                <AfyaStatusBadge status="active" :label="getUserPrimaryRole(u)" />
-                                            </TableCell>
-                                            <TableCell class="py-2 px-3 text-xs">
-                                                <div v-if="u.role_assignments?.length" class="space-y-1">
-                                                    <div v-for="ra in u.role_assignments" :key="ra.id" class="text-[11px] text-muted-foreground">
-                                                        <span class="font-bold text-foreground">{{ ra.role?.name }}</span>
-                                                        <span v-if="ra.facility" class="text-primary font-mono ml-1">@ {{ ra.facility.name }}</span>
-                                                        <span v-else class="text-muted-foreground ml-1">(All Facilities)</span>
+                            <div class="bg-card rounded-lg border border-border/60 shadow-2xs overflow-hidden flex flex-col">
+                                <div class="max-h-[580px] overflow-y-auto">
+                                    <Table>
+                                        <TableHeader class="sticky top-0 bg-muted/95 backdrop-blur-xs z-10">
+                                            <TableRow class="text-[10px] uppercase tracking-wider font-bold">
+                                                <TableHead class="py-2 px-3">Staff Member & Credential</TableHead>
+                                                <TableHead class="py-2 px-3">Contact Email & Phone</TableHead>
+                                                <TableHead class="py-2 px-3">Primary Role</TableHead>
+                                                <TableHead class="py-2 px-3">Assigned Scopes (Facility / Dept)</TableHead>
+                                                <TableHead class="py-2 px-3">Account Status</TableHead>
+                                                <TableHead class="py-2 px-3 text-right">Actions</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            <TableRow 
+                                                v-for="u in paginatedUsers" 
+                                                :key="u.id"
+                                                @click="selectUserForInspector(u)"
+                                                :class="selectedUser?.id === u.id ? 'bg-primary/5 font-semibold' : ''"
+                                                class="hover:bg-muted/20 cursor-pointer border-b border-border/30 transition-colors"
+                                            >
+                                                <TableCell class="py-2 px-3">
+                                                    <div class="font-bold text-foreground">{{ u.first_name }} {{ u.last_name }}</div>
+                                                    <div v-if="u.professional_registration_no" class="text-[10px] font-mono text-emerald-600 dark:text-emerald-400">
+                                                        MCT / Lic: {{ u.professional_registration_no }}
                                                     </div>
-                                                </div>
-                                                <span v-else class="text-muted-foreground italic">Global Tenant Scope</span>
-                                            </TableCell>
-                                            <TableCell class="py-2 px-3">
-                                                <AfyaStatusBadge 
-                                                    :status="u.status === 'Active' ? 'active' : (u.status === 'Suspended' ? 'warning' : 'inactive')" 
-                                                    :label="u.status || 'Active'" 
-                                                />
-                                            </TableCell>
-                                            <TableCell class="py-2 px-3 text-right">
-                                                <div class="flex items-center justify-end gap-1.5" @click.stop>
-                                                    <Button
-                                                        v-if="can.users"
-                                                        variant="outline"
-                                                        size="sm"
-                                                        class="h-6 px-2 text-[10px] font-semibold text-muted-foreground hover:text-foreground"
-                                                        @click="openEditUserModal(u)"
-                                                        title="Edit staff details and MCT credentials"
-                                                    >
-                                                        Edit
-                                                    </Button>
-                                                    <Button
-                                                        v-if="can.assignRole"
-                                                        variant="outline"
-                                                        size="sm"
-                                                        class="h-6 px-2 text-[10px] font-bold text-primary"
-                                                        @click="openAssignRoleModal(u)"
-                                                    >
-                                                        Scope
-                                                    </Button>
-                                                    <Button
-                                                        v-if="can.users"
-                                                        variant="outline"
-                                                        size="sm"
-                                                        class="h-6 px-2 text-[10px] font-semibold"
-                                                        :class="u.status === 'Active' ? 'text-amber-600 hover:bg-amber-50' : 'text-emerald-600 hover:bg-emerald-50'"
-                                                        @click="toggleUserStatus(u)"
-                                                    >
-                                                        {{ u.status === 'Active' ? 'Suspend' : 'Activate' }}
-                                                    </Button>
-                                                    <Button
-                                                        v-if="can.users"
-                                                        variant="outline"
-                                                        size="sm"
-                                                        class="h-6 px-2 text-[10px] font-semibold text-rose-600 hover:bg-rose-50"
-                                                        @click="openResetPasswordModal(u)"
-                                                        title="Reset staff password"
-                                                    >
-                                                        PW
-                                                    </Button>
-                                                </div>
-                                            </TableCell>
-                                        </TableRow>
-                                    </TableBody>
-                                </Table>
+                                                </TableCell>
+                                                <TableCell class="py-2 px-3 font-mono text-xs text-muted-foreground">
+                                                    <div>{{ u.email }}</div>
+                                                    <div v-if="u.phone" class="text-[10px] text-muted-foreground">{{ u.phone }}</div>
+                                                </TableCell>
+                                                <TableCell class="py-2 px-3">
+                                                    <AfyaStatusBadge status="active" :label="getUserPrimaryRole(u)" />
+                                                </TableCell>
+                                                <TableCell class="py-2 px-3 text-xs">
+                                                    <div v-if="u.role_assignments?.length" class="space-y-1">
+                                                        <div v-for="ra in u.role_assignments" :key="ra.id" class="text-[11px] text-muted-foreground">
+                                                            <span class="font-bold text-foreground">{{ ra.role?.name }}</span>
+                                                            <span v-if="ra.facility" class="text-primary font-mono ml-1">@ {{ ra.facility.name }}</span>
+                                                            <span v-else class="text-muted-foreground ml-1">(All Facilities)</span>
+                                                        </div>
+                                                    </div>
+                                                    <span v-else class="text-muted-foreground italic">Global Tenant Scope</span>
+                                                </TableCell>
+                                                <TableCell class="py-2 px-3">
+                                                    <AfyaStatusBadge 
+                                                        :status="u.status === 'Active' ? 'active' : (u.status === 'Suspended' ? 'warning' : 'inactive')" 
+                                                        :label="u.status || 'Active'" 
+                                                    />
+                                                </TableCell>
+                                                <TableCell class="py-2 px-3 text-right">
+                                                    <div class="flex items-center justify-end gap-1.5" @click.stop>
+                                                        <Button
+                                                            v-if="can.users"
+                                                            variant="outline"
+                                                            size="sm"
+                                                            class="h-6 px-2 text-[10px] font-semibold text-muted-foreground hover:text-foreground"
+                                                            @click="openEditUserModal(u)"
+                                                            title="Edit staff details and MCT credentials"
+                                                        >
+                                                            Edit
+                                                        </Button>
+                                                        <Button
+                                                            v-if="can.assignRole"
+                                                            variant="outline"
+                                                            size="sm"
+                                                            class="h-6 px-2 text-[10px] font-bold text-primary"
+                                                            @click="openAssignRoleModal(u)"
+                                                            title="Assign branch role scope"
+                                                        >
+                                                            + Scope
+                                                        </Button>
+                                                        <Button
+                                                            v-if="can.users"
+                                                            variant="outline"
+                                                            size="sm"
+                                                            class="h-6 px-2 text-[10px] font-semibold"
+                                                            :class="u.status === 'Active' ? 'text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/20' : 'text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/20'"
+                                                            @click="openToggleStatusModal(u)"
+                                                            title="Change account active/suspended status"
+                                                        >
+                                                            {{ u.status === 'Active' ? 'Suspend' : 'Activate' }}
+                                                        </Button>
+                                                        <Button
+                                                            v-if="can.users"
+                                                            variant="outline"
+                                                            size="sm"
+                                                            class="h-6 px-2 text-[10px] font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20"
+                                                            @click="openResetPasswordModal(u)"
+                                                            title="Reset staff password"
+                                                        >
+                                                            PW
+                                                        </Button>
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                            <TableRow v-if="!filteredUsers.length">
+                                                <TableCell colspan="6" class="py-8 text-center text-xs text-muted-foreground">
+                                                    No staff members found matching "{{ searchQuery }}".
+                                                </TableCell>
+                                            </TableRow>
+                                        </TableBody>
+                                    </Table>
+                                </div>
+
+                                <!-- Pagination Controls Footer -->
+                                <div class="px-3 py-2 border-t border-border/50 bg-muted/20 flex flex-wrap items-center justify-between gap-2 text-xs">
+                                    <div class="text-muted-foreground text-[11px]">
+                                        Showing <span class="font-bold text-foreground">{{ filteredUsers.length === 0 ? 0 : (currentPage - 1) * perPage + 1 }}</span>
+                                        to <span class="font-bold text-foreground">{{ Math.min(currentPage * perPage, filteredUsers.length) }}</span>
+                                        of <span class="font-bold text-foreground">{{ filteredUsers.length }}</span> staff members
+                                    </div>
+
+                                    <div class="flex items-center gap-3">
+                                        <div class="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                                            <span>Per page:</span>
+                                            <select 
+                                                v-model="perPage" 
+                                                @change="currentPage = 1"
+                                                class="h-6 text-xs bg-background border border-border rounded px-1.5 py-0 focus:outline-none focus:border-primary text-foreground"
+                                            >
+                                                <option v-for="size in perPageOptions" :key="size" :value="size">{{ size }}</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="flex items-center gap-1">
+                                            <Button 
+                                                variant="outline" 
+                                                size="sm" 
+                                                class="h-6 w-6 p-0" 
+                                                :disabled="currentPage <= 1"
+                                                @click="currentPage--"
+                                                title="Previous page"
+                                            >
+                                                <ChevronLeft class="w-3.5 h-3.5" />
+                                            </Button>
+                                            <span class="text-[11px] font-mono text-muted-foreground px-1.5">
+                                                {{ currentPage }} / {{ totalPages }}
+                                            </span>
+                                            <Button 
+                                                variant="outline" 
+                                                size="sm" 
+                                                class="h-6 w-6 p-0" 
+                                                :disabled="currentPage >= totalPages"
+                                                @click="currentPage++"
+                                                title="Next page"
+                                            >
+                                                <ChevronRight class="w-3.5 h-3.5" />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -852,9 +960,75 @@ const breadcrumbLabel = computed(() => {
                 >
                     <div v-if="selectedUser" class="space-y-3.5 text-xs">
                         <div class="p-3 bg-card rounded-lg border border-border/60 shadow-2xs space-y-1">
-                            <div class="font-bold text-foreground text-sm">{{ selectedUser.first_name }} {{ selectedUser.last_name }}</div>
-                            <div class="font-mono text-primary text-[11px]">{{ selectedUser.email }}</div>
+                            <div class="flex items-start justify-between">
+                                <div>
+                                    <div class="font-bold text-foreground text-sm">{{ selectedUser.first_name }} {{ selectedUser.last_name }}</div>
+                                    <div class="font-mono text-primary text-[11px]">{{ selectedUser.email }}</div>
+                                </div>
+                                <AfyaStatusBadge 
+                                    :status="selectedUser.status === 'Active' ? 'active' : (selectedUser.status === 'Suspended' ? 'warning' : 'inactive')" 
+                                    :label="selectedUser.status || 'Active'" 
+                                />
+                            </div>
+                            <div v-if="selectedUser.professional_registration_no" class="text-[10px] font-mono text-emerald-600 dark:text-emerald-400">
+                                MCT / Lic: {{ selectedUser.professional_registration_no }}
+                            </div>
                             <div class="text-[11px] text-muted-foreground">Primary Role: {{ getUserPrimaryRole(selectedUser) }}</div>
+                        </div>
+
+                        <!-- Assigned Role Scopes -->
+                        <div class="p-3 bg-card rounded-lg border border-border/60 shadow-2xs space-y-2">
+                            <div class="text-[10px] font-bold uppercase text-muted-foreground tracking-wider flex items-center justify-between">
+                                <span>Assigned Role Scopes</span>
+                                <span class="font-mono text-primary font-bold">{{ selectedUser.role_assignments?.length || 0 }} scopes</span>
+                            </div>
+                            <div class="space-y-1.5 max-h-48 overflow-y-auto pr-0.5">
+                                <div 
+                                    v-for="ra in selectedUser.role_assignments" 
+                                    :key="ra.id" 
+                                    class="p-2 rounded border border-border/40 bg-muted/20 flex items-center justify-between gap-2"
+                                >
+                                    <div class="min-w-0 space-y-0.5">
+                                        <div class="font-bold text-foreground text-xs truncate">
+                                            {{ ra.role?.name || ra.role?.slug }}
+                                        </div>
+                                        <div class="text-[10px] text-muted-foreground flex items-center gap-1 font-mono truncate">
+                                            <Building2 class="w-3 h-3 text-primary shrink-0" />
+                                            <span v-if="ra.facility" class="truncate">{{ ra.facility.name }}</span>
+                                            <span v-else class="text-muted-foreground">All Facilities (Tenant Wide)</span>
+                                            <span v-if="ra.department" class="text-muted-foreground">({{ ra.department.name }})</span>
+                                        </div>
+                                    </div>
+
+                                    <Button
+                                        v-if="can.assignRole"
+                                        variant="outline"
+                                        size="sm"
+                                        class="h-6 w-6 p-0 text-muted-foreground hover:text-rose-600 hover:border-rose-300 shrink-0"
+                                        :disabled="isUnassigning === ra.id"
+                                        @click="unassignRole(ra.id)"
+                                        title="Remove this role scope assignment"
+                                    >
+                                        <RefreshCw v-if="isUnassigning === ra.id" class="w-3 h-3 animate-spin" />
+                                        <X v-else class="w-3 h-3" />
+                                    </Button>
+                                </div>
+
+                                <div v-if="!selectedUser.role_assignments?.length" class="text-[11px] text-muted-foreground italic text-center py-2">
+                                    No specific branch scopes assigned. User holds default tenant-wide staff access.
+                                </div>
+                            </div>
+
+                            <Button
+                                v-if="can.assignRole"
+                                variant="outline"
+                                size="sm"
+                                class="w-full h-7 text-xs font-semibold gap-1"
+                                @click="openAssignRoleModal(selectedUser)"
+                            >
+                                <Plus class="w-3.5 h-3.5 text-primary" />
+                                <span>Add Role Scope</span>
+                            </Button>
                         </div>
 
                         <!-- Effective Permissions Count -->
@@ -936,6 +1110,63 @@ const breadcrumbLabel = computed(() => {
                 </AfyaContextPanel>
             </template>
         </AfyaWorkspace>
+
+        <!-- MODAL: CONFIRM TOGGLE USER STATUS (SUSPEND / ACTIVATE) -->
+        <div v-if="showToggleStatusModal && targetUserForStatus" class="fixed inset-0 bg-background/80 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+            <div class="bg-card border border-border/60 rounded-xl shadow-xl w-full max-w-md p-5 space-y-4">
+                <div class="flex items-center gap-3 border-b border-border/50 pb-3">
+                    <div 
+                        class="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+                        :class="targetUserForStatus.status === 'Active' ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400' : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'"
+                    >
+                        <AlertTriangle v-if="targetUserForStatus.status === 'Active'" class="w-5 h-5" />
+                        <CheckCircle2 v-else class="w-5 h-5" />
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-foreground text-sm">
+                            {{ targetUserForStatus.status === 'Active' ? 'Suspend Staff Account' : 'Reactivate Staff Account' }}
+                        </h3>
+                        <p class="text-[11px] text-muted-foreground">
+                            {{ targetUserForStatus.status === 'Active' ? 'Temporary access restriction' : 'Restore full workspace access' }}
+                        </p>
+                    </div>
+                </div>
+
+                <div class="space-y-2 text-xs">
+                    <p class="text-foreground">
+                        Are you sure you want to {{ targetUserForStatus.status === 'Active' ? 'suspend' : 'reactivate' }} 
+                        <strong class="font-bold">{{ targetUserForStatus.first_name }} {{ targetUserForStatus.last_name }}</strong> 
+                        <span class="font-mono text-muted-foreground">({{ targetUserForStatus.email }})</span>?
+                    </p>
+                    <div 
+                        class="p-2.5 rounded-lg border text-[11px] leading-relaxed"
+                        :class="targetUserForStatus.status === 'Active' ? 'bg-amber-500/5 border-amber-500/20 text-amber-700 dark:text-amber-300' : 'bg-emerald-500/5 border-emerald-500/20 text-emerald-700 dark:text-emerald-300'"
+                    >
+                        <span v-if="targetUserForStatus.status === 'Active'">
+                            Suspended staff cannot log in, access patient charts, or prescribe medications until an administrator reactivates their account.
+                        </span>
+                        <span v-else>
+                            Reactivating will restore login access and all previously configured role scopes and permissions immediately.
+                        </span>
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-2 border-t border-border/50 pt-3">
+                    <Button variant="outline" size="sm" :disabled="isTogglingStatus" @click="showToggleStatusModal = false">
+                        Cancel
+                    </Button>
+                    <Button 
+                        :variant="targetUserForStatus.status === 'Active' ? 'destructive' : 'default'" 
+                        size="sm" 
+                        :disabled="isTogglingStatus" 
+                        @click="confirmToggleStatus"
+                        class="font-bold"
+                    >
+                        <span>{{ targetUserForStatus.status === 'Active' ? 'Suspend Account' : 'Reactivate Account' }}</span>
+                    </Button>
+                </div>
+            </div>
+        </div>
 
         <!-- MODAL: ASSIGN ROLE -->
         <div v-if="showAssignRoleModal" class="fixed inset-0 bg-background/80 backdrop-blur-xs z-50 flex items-center justify-center p-4">

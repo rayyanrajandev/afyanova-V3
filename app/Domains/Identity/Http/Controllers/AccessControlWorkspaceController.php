@@ -4,6 +4,7 @@ namespace App\Domains\Identity\Http\Controllers;
 
 use App\Core\Traits\AuthorizesWorkspaceAccess;
 use App\Domains\Identity\Actions\AssignUserRoleAction;
+use App\Domains\Identity\Actions\UnassignUserRoleAction;
 use App\Domains\Identity\Actions\UpdateRolePermissionsAction;
 use App\Domains\Identity\Models\Permission;
 use App\Domains\Identity\Models\Role;
@@ -109,6 +110,19 @@ class AccessControlWorkspaceController extends Controller
         );
 
         return back()->with('success', 'Role assigned successfully.');
+    }
+
+    public function unassignRole(Request $request, string $assignmentId, UnassignUserRoleAction $action, AuthorizationService $authService): RedirectResponse
+    {
+        abort_unless(
+            $authService->hasPermission($request->user(), 'identity.roles.assign'),
+            403,
+            'You are not permitted to unassign roles.'
+        );
+
+        $action->execute($assignmentId);
+
+        return back()->with('success', 'Role scope removed successfully.');
     }
 
     public function updatePermissions(Request $request, string $roleId, UpdateRolePermissionsAction $action, AuthorizationService $authService): RedirectResponse

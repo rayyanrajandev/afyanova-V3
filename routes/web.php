@@ -247,6 +247,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/access-control/users/{user}/toggle-status', [AccessControlWorkspaceController::class, 'toggleUserStatus'])->name('access-control.users.toggle-status');
     Route::post('/access-control/users/{user}/reset-password', [AccessControlWorkspaceController::class, 'resetPassword'])->name('access-control.users.reset-password');
     Route::post('/access-control/roles/assign', [AccessControlWorkspaceController::class, 'assignRole'])->name('access-control.roles.assign');
+    Route::delete('/access-control/roles/assignment/{assignment}', [AccessControlWorkspaceController::class, 'unassignRole'])->name('access-control.roles.unassign');
     Route::post('/access-control/roles/{role}/permissions', [AccessControlWorkspaceController::class, 'updatePermissions'])->name('access-control.roles.permissions');
     Route::post('/access-control/facilities', [AccessControlWorkspaceController::class, 'storeFacility'])->name('access-control.facilities.store');
     Route::put('/access-control/facilities/{facility}', [AccessControlWorkspaceController::class, 'updateFacility'])->name('access-control.facilities.update');
