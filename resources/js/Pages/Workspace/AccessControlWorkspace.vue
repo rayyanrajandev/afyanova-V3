@@ -220,6 +220,18 @@ const testFacilityId = ref('');
 const testResult = ref(null);
 const isTesting = ref(false);
 
+// Helper to extract the primary display role for a staff member
+const getUserPrimaryRole = (user) => {
+    if (!user) return 'Staff';
+    if (user.role_assignments?.length && user.role_assignments[0].role) {
+        return user.role_assignments[0].role.name || user.role_assignments[0].role.slug;
+    }
+    if (user.roles?.length) {
+        return user.roles[0].name || user.roles[0].slug;
+    }
+    return user.role || 'Staff';
+};
+
 const filteredUsers = computed(() => {
     if (!searchQuery.value) return props.users;
     const q = searchQuery.value.toLowerCase();
@@ -227,7 +239,12 @@ const filteredUsers = computed(() => {
         u.first_name?.toLowerCase().includes(q) ||
         u.last_name?.toLowerCase().includes(q) ||
         u.email?.toLowerCase().includes(q) ||
-        u.role?.toLowerCase().includes(q)
+        getUserPrimaryRole(u).toLowerCase().includes(q) ||
+        u.role_assignments?.some(ra => 
+            ra.role?.name?.toLowerCase().includes(q) || 
+            ra.role?.slug?.toLowerCase().includes(q) ||
+            ra.facility?.name?.toLowerCase().includes(q)
+        )
     );
 });
 
@@ -532,7 +549,7 @@ const breadcrumbLabel = computed(() => {
                                                 <div v-if="u.phone" class="text-[10px] text-muted-foreground">{{ u.phone }}</div>
                                             </TableCell>
                                             <TableCell class="py-2 px-3">
-                                                <AfyaStatusBadge status="active" :label="u.role || 'Staff'" />
+                                                <AfyaStatusBadge status="active" :label="getUserPrimaryRole(u)" />
                                             </TableCell>
                                             <TableCell class="py-2 px-3 text-xs">
                                                 <div v-if="u.role_assignments?.length" class="space-y-1">
@@ -755,7 +772,7 @@ const breadcrumbLabel = computed(() => {
                         <div class="p-3 bg-card rounded-lg border border-border/60 shadow-2xs space-y-1">
                             <div class="font-bold text-foreground text-sm">{{ selectedUser.first_name }} {{ selectedUser.last_name }}</div>
                             <div class="font-mono text-primary text-[11px]">{{ selectedUser.email }}</div>
-                            <div class="text-[11px] text-muted-foreground">Primary Role: {{ selectedUser.role }}</div>
+                            <div class="text-[11px] text-muted-foreground">Primary Role: {{ getUserPrimaryRole(selectedUser) }}</div>
                         </div>
 
                         <!-- Effective Permissions Count -->

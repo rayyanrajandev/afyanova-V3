@@ -45,16 +45,14 @@ class AccessControlWorkspaceController extends Controller
         $tenantId = auth()->user()?->tenant_id;
 
         $users = $can['users']
-            ? User::with(['roleAssignments.role', 'roleAssignments.facility', 'roleAssignments.department'])
+            ? User::with(['roleAssignments.role', 'roleAssignments.facility', 'roleAssignments.department', 'roles'])
                 ->where('tenant_id', $tenantId)
                 ->get()
             : collect();
 
-        $roles = ($can['roles'] || $can['permissions'])
-            ? Role::with('permissions')
-                ->where('tenant_id', $tenantId)
-                ->get()
-            : collect();
+        $roles = Role::with('permissions')
+            ->where('tenant_id', $tenantId)
+            ->get();
 
         $permissions = $can['permissions'] ? Permission::all()->groupBy('domain') : collect();
         $facilities = Facility::with('departments')->where('tenant_id', $tenantId)->get();
@@ -73,7 +71,7 @@ class AccessControlWorkspaceController extends Controller
             'effectivePermissions' => $effectivePermissions,
             'metrics' => [
                 'total_users' => $can['users'] ? $users->count() : null,
-                'total_roles' => ($can['roles'] || $can['permissions']) ? $roles->count() : null,
+                'total_roles' => $roles->count(),
                 'total_permissions' => $can['permissions'] ? Permission::count() : null,
                 'multi_facility_assignments' => $can['users'] ? RoleAssignment::whereNotNull('facility_id')->count() : null,
                 'total_facilities' => $facilities->count(),
