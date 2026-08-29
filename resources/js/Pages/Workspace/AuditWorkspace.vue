@@ -217,7 +217,7 @@ const getCategoryColor = (cat) => {
                             <Button
                                 variant="outline"
                                 size="sm"
-                                class="h-7.5 px-3 text-xs font-bold gap-1.5 text-primary border-primary/30 hover:bg-primary/5 shadow-2xs"
+                                class="font-semibold text-primary border-primary/30 hover:bg-primary/5 shadow-2xs"
                                 :disabled="isVerifying"
                                 @click="verifyIntegrity"
                             >
@@ -263,9 +263,8 @@ const getCategoryColor = (cat) => {
                             <!-- Compact Domain Category Pills -->
                             <div class="flex items-center gap-1 overflow-x-auto">
                                 <Button
-                                    size="sm"
+                                    size="xs"
                                     variant="outline"
-                                    class="h-6 px-2 text-[10.5px]"
                                     :class="{ 'bg-primary text-primary-foreground font-semibold': activeCategory === 'all' }"
                                     @click="activeCategory = 'all'; applyFilter()"
                                 >
@@ -274,9 +273,8 @@ const getCategoryColor = (cat) => {
                                 <Button
                                     v-for="cat in categories"
                                     :key="cat"
-                                    size="sm"
+                                    size="xs"
                                     variant="outline"
-                                    class="h-6 px-2 text-[10.5px]"
                                     :class="{ 'bg-primary text-primary-foreground font-semibold': activeCategory === cat }"
                                     @click="activeCategory = cat; applyFilter()"
                                 >
@@ -339,8 +337,8 @@ const getCategoryColor = (cat) => {
                                         <TableCell class="py-1 px-3 text-right">
                                             <Button
                                                 variant="outline"
-                                                size="sm"
-                                                class="h-5 px-2 text-[10px] font-semibold text-primary border-primary/30 hover:bg-primary/5"
+                                                size="xs"
+                                                class="font-semibold text-primary border-primary/30 hover:bg-primary/5"
                                                 @click.stop="inspectLog(log)"
                                             >
                                                 Diff

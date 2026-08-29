@@ -18,11 +18,13 @@ const buttonVariants = cva(
             },
             size: {
                 /* Compact Density Defaults */
-                sm: 'h-7 px-2 text-[11px] rounded',
-                default: 'h-8 px-2.5 text-xs rounded-md',
-                lg: 'h-9 px-3.5 text-xs rounded-md',
-                icon: 'h-8 w-8 rounded-md',
-                'icon-sm': 'h-7 w-7 rounded',
+                xs: 'h-6 px-2 text-[10.5px] rounded gap-1',
+                sm: 'h-7 px-2.5 text-xs rounded-md gap-1.5',
+                default: 'h-8 px-3 text-xs rounded-md gap-1.5',
+                lg: 'h-9 px-3.5 text-sm rounded-md gap-2',
+                icon: 'h-8 w-8 rounded-md p-0',
+                'icon-sm': 'h-7 w-7 rounded-md p-0',
+                'icon-xs': 'h-6 w-6 rounded p-0',
             },
         },
         defaultVariants: {
