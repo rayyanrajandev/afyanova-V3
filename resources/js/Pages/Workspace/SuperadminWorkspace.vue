@@ -845,9 +845,8 @@ const formatDate = (iso) => {
 
                             <!-- Master High-Density Tenants Table -->
                             <div class="w-full bg-card rounded-lg overflow-hidden shadow-2xs border border-border/60 flex flex-col">
-                                <div class="max-h-[580px] overflow-y-auto">
-                                    <Table class="w-full text-xs">
-                                        <TableHeader class="sticky top-0 bg-muted/95 backdrop-blur-xs z-10">
+                                <Table wrapper-class="max-h-[580px] overflow-auto" class="w-full text-xs">
+                                    <TableHeader>
                                             <TableRow class="h-7 text-[9.5px] uppercase font-bold text-muted-foreground border-b border-border/40">
                                                 <TableHead class="py-1 px-3">Hospital Organization</TableHead>
                                                 <TableHead class="py-1 px-2.5">Plan Tier</TableHead>
@@ -981,9 +980,8 @@ const formatDate = (iso) => {
                                             </TableRow>
                                         </TableBody>
                                     </Table>
-                                </div>
 
-                                <!-- Pagination Footer -->
+                                    <!-- Pagination Footer -->
                                 <AfyaTablePagination
                                     v-model:currentPage="tenantsCurrentPage"
                                     v-model:perPage="tenantsPerPage"

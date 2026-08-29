@@ -298,76 +298,74 @@ const getCategoryColor = (cat) => {
 
                         <!-- Master Audit Log Table -->
                         <div class="w-full bg-card rounded-lg overflow-hidden shadow-2xs border border-border/60 flex flex-col">
-                            <div class="max-h-[580px] overflow-y-auto">
-                                <Table class="w-full text-xs">
-                                    <TableHeader class="sticky top-0 bg-muted/95 backdrop-blur-xs z-10">
-                                        <TableRow class="h-7 text-[9.5px] uppercase font-bold text-muted-foreground border-b border-border/40">
-                                            <TableHead class="py-1 px-3">Timestamp (EAT)</TableHead>
-                                            <TableHead class="py-1 px-3">Category</TableHead>
-                                            <TableHead class="py-1 px-3">Action</TableHead>
-                                            <TableHead class="py-1 px-3">Staff / Actor</TableHead>
-                                            <TableHead class="py-1 px-3">Entity</TableHead>
-                                            <TableHead class="py-1 px-3">IP Address</TableHead>
-                                            <TableHead class="py-1 px-3">Cryptographic Hash</TableHead>
-                                            <TableHead class="py-1 px-3 text-right">Inspect</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        <TableRow
-                                            v-for="log in logs.data"
-                                            :key="log.id"
-                                            class="h-8.5 border-b border-border/30 hover:bg-muted/20 cursor-pointer"
-                                            :class="selectedLog?.id === log.id ? 'bg-primary/5' : ''"
-                                            @click="inspectLog(log)"
-                                        >
-                                            <TableCell class="py-1 px-3 font-mono text-[10.5px] text-muted-foreground whitespace-nowrap">
-                                                {{ formatDate(log.created_at) }}
-                                            </TableCell>
-                                            <TableCell class="py-1 px-3">
-                                                <span class="px-1.5 py-0.5 rounded text-[9.5px] font-bold" :class="getCategoryColor(log.event_category)">
-                                                    {{ log.event_category }}
-                                                </span>
-                                            </TableCell>
-                                            <TableCell class="py-1 px-3 font-mono font-bold text-foreground text-[11px]">
-                                                {{ log.action }}
-                                            </TableCell>
-                                            <TableCell class="py-1 px-3 text-foreground text-xs">
-                                                <div v-if="log.user" class="font-medium">
-                                                    {{ log.user.first_name }} {{ log.user.last_name }}
-                                                </div>
-                                                <div v-else class="text-muted-foreground italic text-[10.5px]">System Automation</div>
-                                            </TableCell>
-                                            <TableCell class="py-1 px-3 text-xs">
-                                                <div class="font-mono text-[10px] text-primary truncate max-w-[140px]">
-                                                    {{ (log.entity_type || '').split('\\').pop() }}
-                                                </div>
-                                            </TableCell>
-                                            <TableCell class="py-1 px-3 font-mono text-[10px] text-muted-foreground">
-                                                {{ log.ip_address || '127.0.0.1' }}
-                                            </TableCell>
-                                            <TableCell class="py-1 px-3 font-mono text-[9.5px] text-muted-foreground truncate max-w-[120px]">
-                                                {{ log.hash_signature ? log.hash_signature.substring(0, 16) + '...' : '—' }}
-                                            </TableCell>
-                                            <TableCell class="py-1 px-3 text-right">
-                                                <Button
-                                                    variant="outline"
-                                                    size="xs"
-                                                    class="font-semibold text-primary border-primary/30 hover:bg-primary/5"
-                                                    @click.stop="inspectLog(log)"
-                                                >
-                                                    Diff
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
+                            <Table wrapper-class="max-h-[580px] overflow-auto" class="w-full text-xs">
+                                <TableHeader>
+                                    <TableRow class="h-7 text-[9.5px] uppercase font-bold text-muted-foreground border-b border-border/40">
+                                        <TableHead class="py-1 px-3">Timestamp (EAT)</TableHead>
+                                        <TableHead class="py-1 px-3">Category</TableHead>
+                                        <TableHead class="py-1 px-3">Action</TableHead>
+                                        <TableHead class="py-1 px-3">Staff / Actor</TableHead>
+                                        <TableHead class="py-1 px-3">Entity</TableHead>
+                                        <TableHead class="py-1 px-3">IP Address</TableHead>
+                                        <TableHead class="py-1 px-3">Cryptographic Hash</TableHead>
+                                        <TableHead class="py-1 px-3 text-right">Inspect</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    <TableRow
+                                        v-for="log in logs.data"
+                                        :key="log.id"
+                                        class="h-8.5 border-b border-border/30 hover:bg-muted/20 cursor-pointer"
+                                        :class="selectedLog?.id === log.id ? 'bg-primary/5' : ''"
+                                        @click="inspectLog(log)"
+                                    >
+                                        <TableCell class="py-1 px-3 font-mono text-[10.5px] text-muted-foreground whitespace-nowrap">
+                                            {{ formatDate(log.created_at) }}
+                                        </TableCell>
+                                        <TableCell class="py-1 px-3">
+                                            <span class="px-1.5 py-0.5 rounded text-[9.5px] font-bold" :class="getCategoryColor(log.event_category)">
+                                                {{ log.event_category }}
+                                            </span>
+                                        </TableCell>
+                                        <TableCell class="py-1 px-3 font-mono font-bold text-foreground text-[11px]">
+                                            {{ log.action }}
+                                        </TableCell>
+                                        <TableCell class="py-1 px-3 text-foreground text-xs">
+                                            <div v-if="log.user" class="font-medium">
+                                                {{ log.user.first_name }} {{ log.user.last_name }}
+                                            </div>
+                                            <div v-else class="text-muted-foreground italic text-[10.5px]">System Automation</div>
+                                        </TableCell>
+                                        <TableCell class="py-1 px-3 text-xs">
+                                            <div class="font-mono text-[10px] text-primary truncate max-w-[140px]">
+                                                {{ (log.entity_type || '').split('\\').pop() }}
+                                            </div>
+                                        </TableCell>
+                                        <TableCell class="py-1 px-3 font-mono text-[10px] text-muted-foreground">
+                                            {{ log.ip_address || '127.0.0.1' }}
+                                        </TableCell>
+                                        <TableCell class="py-1 px-3 font-mono text-[9.5px] text-muted-foreground truncate max-w-[120px]">
+                                            {{ log.hash_signature ? log.hash_signature.substring(0, 16) + '...' : '—' }}
+                                        </TableCell>
+                                        <TableCell class="py-1 px-3 text-right">
+                                            <Button
+                                                variant="outline"
+                                                size="xs"
+                                                class="font-semibold text-primary border-primary/30 hover:bg-primary/5"
+                                                @click.stop="inspectLog(log)"
+                                            >
+                                                Diff
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
 
-                                        <TableRow v-if="logs.data.length === 0">
-                                            <TableCell colspan="8" class="text-center py-8 text-muted-foreground text-xs">
-                                                No audit log records match the search filter.
-                                            </TableCell>
-                                        </TableRow>
-                                    </TableBody>
-                                </Table>
-                            </div>
+                                    <TableRow v-if="logs.data.length === 0">
+                                        <TableCell colspan="8" class="text-center py-8 text-muted-foreground text-xs">
+                                            No audit log records match the search filter.
+                                        </TableCell>
+                                    </TableRow>
+                                </TableBody>
+                            </Table>
 
                             <!-- Server-side Pagination Footer -->
                             <AfyaTablePagination

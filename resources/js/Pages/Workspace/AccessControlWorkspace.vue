@@ -653,109 +653,107 @@ const breadcrumbLabel = computed(() => {
                             </div>
 
                             <div class="bg-card rounded-lg border border-border/60 shadow-2xs overflow-hidden flex flex-col">
-                                <div class="max-h-[580px] overflow-y-auto">
-                                    <Table>
-                                        <TableHeader class="sticky top-0 bg-muted/95 backdrop-blur-xs z-10">
-                                            <TableRow class="text-[10px] uppercase tracking-wider font-bold">
-                                                <TableHead class="py-2 px-3">Staff Member & Credential</TableHead>
-                                                <TableHead class="py-2 px-3">Contact Email & Phone</TableHead>
-                                                <TableHead class="py-2 px-3">Primary Role</TableHead>
-                                                <TableHead class="py-2 px-3">Assigned Scopes (Facility / Dept)</TableHead>
-                                                <TableHead class="py-2 px-3">Account Status</TableHead>
-                                                <TableHead class="py-2 px-3 text-right">Actions</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            <TableRow 
-                                                v-for="u in paginatedUsers" 
-                                                :key="u.id"
-                                                @click="selectUserForInspector(u)"
-                                                :class="selectedUser?.id === u.id ? 'bg-primary/5 font-semibold' : ''"
-                                                class="hover:bg-muted/20 cursor-pointer border-b border-border/30 transition-colors"
-                                            >
-                                                <TableCell class="py-2 px-3">
-                                                    <div class="font-bold text-foreground">{{ u.first_name }} {{ u.last_name }}</div>
-                                                    <div v-if="u.professional_registration_no" class="text-[10px] font-mono text-emerald-600 dark:text-emerald-400">
-                                                        MCT / Lic: {{ u.professional_registration_no }}
+                                <Table wrapper-class="max-h-[580px] overflow-auto">
+                                    <TableHeader>
+                                        <TableRow class="text-[10px] uppercase tracking-wider font-bold">
+                                            <TableHead class="py-2 px-3">Staff Member & Credential</TableHead>
+                                            <TableHead class="py-2 px-3">Contact Email & Phone</TableHead>
+                                            <TableHead class="py-2 px-3">Primary Role</TableHead>
+                                            <TableHead class="py-2 px-3">Assigned Scopes (Facility / Dept)</TableHead>
+                                            <TableHead class="py-2 px-3">Account Status</TableHead>
+                                            <TableHead class="py-2 px-3 text-right">Actions</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        <TableRow 
+                                            v-for="u in paginatedUsers" 
+                                            :key="u.id"
+                                            @click="selectUserForInspector(u)"
+                                            :class="selectedUser?.id === u.id ? 'bg-primary/5 font-semibold' : ''"
+                                            class="hover:bg-muted/20 cursor-pointer border-b border-border/30 transition-colors"
+                                        >
+                                            <TableCell class="py-2 px-3">
+                                                <div class="font-bold text-foreground">{{ u.first_name }} {{ u.last_name }}</div>
+                                                <div v-if="u.professional_registration_no" class="text-[10px] font-mono text-emerald-600 dark:text-emerald-400">
+                                                    MCT / Lic: {{ u.professional_registration_no }}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell class="py-2 px-3 font-mono text-xs text-muted-foreground">
+                                                <div>{{ u.email }}</div>
+                                                <div v-if="u.phone" class="text-[10px] text-muted-foreground">{{ u.phone }}</div>
+                                            </TableCell>
+                                            <TableCell class="py-2 px-3">
+                                                <AfyaStatusBadge status="active" :label="getUserPrimaryRole(u)" />
+                                            </TableCell>
+                                            <TableCell class="py-2 px-3 text-xs">
+                                                <div v-if="u.role_assignments?.length" class="space-y-1">
+                                                    <div v-for="ra in u.role_assignments" :key="ra.id" class="text-[11px] text-muted-foreground">
+                                                        <span class="font-bold text-foreground">{{ ra.role?.name }}</span>
+                                                        <span v-if="ra.facility" class="text-primary font-mono ml-1">@ {{ ra.facility.name }}</span>
+                                                        <span v-else class="text-muted-foreground ml-1">(All Facilities)</span>
                                                     </div>
-                                                </TableCell>
-                                                <TableCell class="py-2 px-3 font-mono text-xs text-muted-foreground">
-                                                    <div>{{ u.email }}</div>
-                                                    <div v-if="u.phone" class="text-[10px] text-muted-foreground">{{ u.phone }}</div>
-                                                </TableCell>
-                                                <TableCell class="py-2 px-3">
-                                                    <AfyaStatusBadge status="active" :label="getUserPrimaryRole(u)" />
-                                                </TableCell>
-                                                <TableCell class="py-2 px-3 text-xs">
-                                                    <div v-if="u.role_assignments?.length" class="space-y-1">
-                                                        <div v-for="ra in u.role_assignments" :key="ra.id" class="text-[11px] text-muted-foreground">
-                                                            <span class="font-bold text-foreground">{{ ra.role?.name }}</span>
-                                                            <span v-if="ra.facility" class="text-primary font-mono ml-1">@ {{ ra.facility.name }}</span>
-                                                            <span v-else class="text-muted-foreground ml-1">(All Facilities)</span>
-                                                        </div>
-                                                    </div>
-                                                    <span v-else class="text-muted-foreground italic">Global Tenant Scope</span>
-                                                </TableCell>
-                                                <TableCell class="py-2 px-3">
-                                                    <AfyaStatusBadge 
-                                                        :status="u.status === 'Active' ? 'active' : (u.status === 'Suspended' ? 'warning' : 'inactive')" 
-                                                        :label="u.status || 'Active'" 
-                                                    />
-                                                </TableCell>
-                                                <TableCell class="py-2 px-3 text-right">
-                                                    <div class="flex items-center justify-end gap-1.5" @click.stop>
-                                                        <Button
-                                                            v-if="can.users"
-                                                            variant="outline"
-                                                            size="sm"
-                                                            class="h-6 px-2 text-[10px] font-semibold text-muted-foreground hover:text-foreground"
-                                                            @click="openEditUserModal(u)"
-                                                            title="Edit staff details and MCT credentials"
-                                                        >
-                                                            Edit
-                                                        </Button>
-                                                        <Button
-                                                            v-if="can.assignRole"
-                                                            variant="outline"
-                                                            size="sm"
-                                                            class="h-6 px-2 text-[10px] font-bold text-primary"
-                                                            @click="openAssignRoleModal(u)"
-                                                            title="Assign branch role scope"
-                                                        >
-                                                            + Scope
-                                                        </Button>
-                                                        <Button
-                                                            v-if="can.users"
-                                                            variant="outline"
-                                                            size="sm"
-                                                            class="h-6 px-2 text-[10px] font-semibold"
-                                                            :class="u.status === 'Active' ? 'text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/20' : 'text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/20'"
-                                                            @click="openToggleStatusModal(u)"
-                                                            title="Change account active/suspended status"
-                                                        >
-                                                            {{ u.status === 'Active' ? 'Suspend' : 'Activate' }}
-                                                        </Button>
-                                                        <Button
-                                                            v-if="can.users"
-                                                            variant="outline"
-                                                            size="sm"
-                                                            class="h-6 px-2 text-[10px] font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20"
-                                                            @click="openResetPasswordModal(u)"
-                                                            title="Reset staff password"
-                                                        >
-                                                            PW
-                                                        </Button>
-                                                    </div>
-                                                </TableCell>
-                                            </TableRow>
-                                            <TableRow v-if="!filteredUsers.length">
-                                                <TableCell colspan="6" class="py-8 text-center text-xs text-muted-foreground">
-                                                    No staff members found matching "{{ searchQuery }}".
-                                                </TableCell>
-                                            </TableRow>
-                                        </TableBody>
-                                    </Table>
-                                </div>
+                                                </div>
+                                                <span v-else class="text-muted-foreground italic">Global Tenant Scope</span>
+                                            </TableCell>
+                                            <TableCell class="py-2 px-3">
+                                                <AfyaStatusBadge 
+                                                    :status="u.status === 'Active' ? 'active' : (u.status === 'Suspended' ? 'warning' : 'inactive')" 
+                                                    :label="u.status || 'Active'" 
+                                                />
+                                            </TableCell>
+                                            <TableCell class="py-2 px-3 text-right">
+                                                <div class="flex items-center justify-end gap-1.5" @click.stop>
+                                                    <Button
+                                                        v-if="can.users"
+                                                        variant="outline"
+                                                        size="sm"
+                                                        class="h-6 px-2 text-[10px] font-semibold text-muted-foreground hover:text-foreground"
+                                                        @click="openEditUserModal(u)"
+                                                        title="Edit staff details and MCT credentials"
+                                                    >
+                                                        Edit
+                                                    </Button>
+                                                    <Button
+                                                        v-if="can.assignRole"
+                                                        variant="outline"
+                                                        size="sm"
+                                                        class="h-6 px-2 text-[10px] font-bold text-primary"
+                                                        @click="openAssignRoleModal(u)"
+                                                        title="Assign branch role scope"
+                                                    >
+                                                        + Scope
+                                                    </Button>
+                                                    <Button
+                                                        v-if="can.users"
+                                                        variant="outline"
+                                                        size="sm"
+                                                        class="h-6 px-2 text-[10px] font-semibold"
+                                                        :class="u.status === 'Active' ? 'text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/20' : 'text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/20'"
+                                                        @click="openToggleStatusModal(u)"
+                                                        title="Change account active/suspended status"
+                                                    >
+                                                        {{ u.status === 'Active' ? 'Suspend' : 'Activate' }}
+                                                    </Button>
+                                                    <Button
+                                                        v-if="can.users"
+                                                        variant="outline"
+                                                        size="sm"
+                                                        class="h-6 px-2 text-[10px] font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/20"
+                                                        @click="openResetPasswordModal(u)"
+                                                        title="Reset staff password"
+                                                    >
+                                                        PW
+                                                    </Button>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                        <TableRow v-if="!filteredUsers.length">
+                                            <TableCell colspan="6" class="py-8 text-center text-xs text-muted-foreground">
+                                                No staff members found matching "{{ searchQuery }}".
+                                            </TableCell>
+                                        </TableRow>
+                                    </TableBody>
+                                </Table>
 
                                 <!-- Pagination Controls Footer -->
                                 <AfyaTablePagination
