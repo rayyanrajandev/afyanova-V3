@@ -97,19 +97,31 @@ class AccessControlWorkspaceController extends Controller
 
         $validated = $request->validate([
             'user_id' => 'required|string',
-            'role_id' => 'required|string',
+            'role_id' => 'nullable|string',
+            'role_ids' => 'nullable|array',
+            'role_ids.*' => 'string',
             'facility_id' => 'nullable|string',
             'department_id' => 'nullable|string',
         ]);
 
-        $action->execute(
-            $validated['user_id'],
-            $validated['role_id'],
-            $validated['facility_id'] ?? null,
-            $validated['department_id'] ?? null
-        );
+        $roleIds = !empty($validated['role_ids']) 
+            ? $validated['role_ids'] 
+            : (!empty($validated['role_id']) ? [$validated['role_id']] : []);
 
-        return back()->with('success', 'Role assigned successfully.');
+        if (empty($roleIds)) {
+            return back()->withErrors(['role_id' => 'At least one role must be selected.']);
+        }
+
+        foreach ($roleIds as $roleId) {
+            $action->execute(
+                $validated['user_id'],
+                $roleId,
+                $validated['facility_id'] ?? null,
+                $validated['department_id'] ?? null
+            );
+        }
+
+        return back()->with('success', count($roleIds) > 1 ? 'Roles assigned successfully.' : 'Role assigned successfully.');
     }
 
     public function unassignRole(Request $request, string $assignmentId, UnassignUserRoleAction $action, AuthorizationService $authService): RedirectResponse
