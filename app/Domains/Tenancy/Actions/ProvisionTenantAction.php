@@ -128,6 +128,7 @@ class ProvisionTenantAction
                 }
 
                 // 4. Seed Standard Hospital RBAC Roles for this Tenant
+                SyncTenantStandardRolesAction::ensureMasterPermissions();
                 $allPermsMap = Permission::pluck('id', 'slug')->toArray();
                 $tenantPermsMap = Permission::where('domain', '!=', 'Platform')->pluck('id', 'slug')->toArray();
 

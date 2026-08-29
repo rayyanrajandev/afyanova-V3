@@ -63,11 +63,23 @@ class AuthorizationService
         $cacheKey = "tenant:{$user->tenant_id}:user:{$user->id}:is-tenant-admin";
 
         return Cache::remember($cacheKey, 3600, function () use ($user) {
-            return $user->roleAssignments()
-                ->withoutGlobalScopes()
-                ->whereNull('facility_id')
-                ->whereHas('role', fn ($query) => $query->withoutGlobalScopes()->where('slug', 'tenant-admin'))
-                ->exists();
+            $previousTenantId = null;
+            if (\Illuminate\Support\Facades\DB::getDriverName() === 'pgsql' && $user->tenant_id) {
+                $previousTenantId = \Illuminate\Support\Facades\DB::scalar("SELECT current_setting('app.current_tenant_id', true)");
+                \Illuminate\Support\Facades\DB::statement('SELECT set_config(?, ?, false)', ['app.current_tenant_id', $user->tenant_id]);
+            }
+
+            try {
+                return $user->roleAssignments()
+                    ->withoutGlobalScopes()
+                    ->whereNull('facility_id')
+                    ->whereHas('role', fn ($query) => $query->withoutGlobalScopes()->where('slug', 'tenant-admin'))
+                    ->exists();
+            } finally {
+                if (\Illuminate\Support\Facades\DB::getDriverName() === 'pgsql' && $previousTenantId !== null) {
+                    \Illuminate\Support\Facades\DB::statement('SELECT set_config(?, ?, false)', ['app.current_tenant_id', $previousTenantId]);
+                }
+            }
         });
     }
 
@@ -155,19 +167,31 @@ class AuthorizationService
         $cacheKey = "tenant:{$user->tenant_id}:user:{$user->id}:permissions";
 
         return Cache::remember($cacheKey, 3600, function () use ($user) {
-            $assignments = $user->roleAssignments()->withoutGlobalScopes()->with(['role' => fn ($q) => $q->withoutGlobalScopes()->with('permissions')])->get();
-            $map = [];
-
-            foreach ($assignments as $assignment) {
-                if ($assignment->role) {
-                    foreach ($assignment->role->permissions as $permission) {
-                        $scopeKey = $this->buildScopeKey($assignment->facility_id, $assignment->department_id);
-                        $map[$scopeKey][] = $permission->slug;
-                    }
-                }
+            $previousTenantId = null;
+            if (\Illuminate\Support\Facades\DB::getDriverName() === 'pgsql' && $user->tenant_id) {
+                $previousTenantId = \Illuminate\Support\Facades\DB::scalar("SELECT current_setting('app.current_tenant_id', true)");
+                \Illuminate\Support\Facades\DB::statement('SELECT set_config(?, ?, false)', ['app.current_tenant_id', $user->tenant_id]);
             }
 
-            return $map;
+            try {
+                $assignments = $user->roleAssignments()->withoutGlobalScopes()->with(['role' => fn ($q) => $q->withoutGlobalScopes()->with('permissions')])->get();
+                $map = [];
+
+                foreach ($assignments as $assignment) {
+                    if ($assignment->role) {
+                        foreach ($assignment->role->permissions as $permission) {
+                            $scopeKey = $this->buildScopeKey($assignment->facility_id, $assignment->department_id);
+                            $map[$scopeKey][] = $permission->slug;
+                        }
+                    }
+                }
+
+                return $map;
+            } finally {
+                if (\Illuminate\Support\Facades\DB::getDriverName() === 'pgsql' && $previousTenantId !== null) {
+                    \Illuminate\Support\Facades\DB::statement('SELECT set_config(?, ?, false)', ['app.current_tenant_id', $previousTenantId]);
+                }
+            }
         });
     }
 

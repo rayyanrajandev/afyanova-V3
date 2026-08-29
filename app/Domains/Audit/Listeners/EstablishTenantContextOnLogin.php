@@ -42,5 +42,8 @@ class EstablishTenantContextOnLogin
         if (DB::getDriverName() === 'pgsql') {
             DB::statement('SELECT set_config(?, ?, false)', ['app.current_tenant_id', $tenantId]);
         }
+
+        // Invalidate stale permission cache on fresh authentication
+        app(\App\Domains\Identity\Services\AuthorizationService::class)->clearUserCache($event->user);
     }
 }

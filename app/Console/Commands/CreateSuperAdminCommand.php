@@ -90,6 +90,8 @@ class CreateSuperAdminCommand extends Command
                 DB::statement('SELECT set_config(?, ?, false)', ['app.current_tenant_id', $tenant->id]);
             }
 
+            \App\Domains\Tenancy\Actions\SyncTenantStandardRolesAction::ensureMasterPermissions();
+
             $permission = Permission::firstOrCreate(
                 ['slug' => 'platform.superadmin.access'],
                 ['name' => 'Superadmin Platform Access', 'domain' => 'Platform']
