@@ -731,50 +731,18 @@ const breadcrumbLabel = computed(() => {
                                                 <AfyaStatusBadge status="active" :label="getUserPrimaryRole(u)" />
                                             </TableCell>
                                             <TableCell class="py-2 px-3 text-xs">
-                                                <div v-if="u.role_assignments?.length" class="flex flex-wrap gap-1.5 items-center">
-                                                    <div 
+                                                <div v-if="u.role_assignments?.length" class="flex flex-wrap gap-1 items-center">
+                                                    <span 
                                                         v-for="ra in u.role_assignments" 
                                                         :key="ra.id" 
-                                                        class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-muted/60 border border-border/50 text-[10.5px] group hover:border-border transition-colors"
+                                                        class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-muted/60 text-foreground border border-border/50 text-[10px] font-medium leading-none whitespace-nowrap"
                                                     >
-                                                        <span class="font-bold text-foreground">{{ ra.role?.name }}</span>
-                                                        <span v-if="ra.facility" class="text-primary font-mono text-[9.5px]">@{{ ra.facility.name }}</span>
-                                                        <span v-else class="text-muted-foreground text-[9.5px]">(All)</span>
-                                                        <button 
-                                                            v-if="can.assignRole" 
-                                                            @click.stop="unassignRole(ra.id)" 
-                                                            class="text-muted-foreground hover:text-rose-600 ml-0.5 p-0.5 rounded hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors"
-                                                            :title="`Remove ${ra.role?.name} scope`"
-                                                            :disabled="isUnassigning === ra.id"
-                                                        >
-                                                            <Loader2 v-if="isUnassigning === ra.id" class="w-2.5 h-2.5 animate-spin text-primary" />
-                                                            <X v-else class="w-2.5 h-2.5" />
-                                                        </button>
-                                                    </div>
-                                                    <Button
-                                                        v-if="can.assignRole"
-                                                        variant="ghost"
-                                                        size="xs"
-                                                        class="h-5 px-1 text-[10px] text-primary hover:bg-primary/10"
-                                                        @click.stop="openAssignRoleModal(u)"
-                                                        title="Manage or add scopes for this staff member"
-                                                    >
-                                                        + Scope
-                                                    </Button>
+                                                        <span class="font-bold">{{ ra.role?.name }}</span>
+                                                        <span v-if="ra.facility" class="text-primary font-mono text-[9px]">@{{ ra.facility.name }}</span>
+                                                        <span v-else class="text-muted-foreground text-[9px]">(All)</span>
+                                                    </span>
                                                 </div>
-                                                <div v-else class="flex items-center gap-1.5">
-                                                    <span class="text-muted-foreground italic text-[11px]">Global Tenant Scope</span>
-                                                    <Button
-                                                        v-if="can.assignRole"
-                                                        variant="ghost"
-                                                        size="xs"
-                                                        class="h-5 px-1 text-[10px] text-primary hover:bg-primary/10"
-                                                        @click.stop="openAssignRoleModal(u)"
-                                                        title="Assign initial role scope"
-                                                    >
-                                                        + Add
-                                                    </Button>
-                                                </div>
+                                                <span v-else class="text-muted-foreground italic text-[10.5px]">Global Tenant Scope</span>
                                             </TableCell>
                                             <TableCell class="py-2 px-3">
                                                 <AfyaStatusBadge 
@@ -800,9 +768,9 @@ const breadcrumbLabel = computed(() => {
                                                         size="sm"
                                                         class="h-6 px-2 text-[10px] font-bold text-primary border-primary/40 hover:bg-primary/5"
                                                         @click="openAssignRoleModal(u)"
-                                                        title="Manage staff role scopes and facility assignments"
+                                                        title="Manage staff role scopes and branch assignments"
                                                     >
-                                                        Scopes ({{ u.role_assignments?.length || 0 }})
+                                                        Scope
                                                     </Button>
                                                     <Button
                                                         v-if="can.users"

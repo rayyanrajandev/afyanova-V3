@@ -7,6 +7,10 @@ const props = defineProps({
         type: String,
         required: true,
     },
+    label: {
+        type: String,
+        default: null,
+    },
     domain: {
         type: String,
         default: 'generic', // 'patient' | 'clinical' | 'billing' | 'lab' | 'generic'
@@ -102,7 +106,7 @@ const styleConfig = computed(() => {
 <template>
     <span
         :class="cn(
-            'inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[9px] font-bold border uppercase tracking-wider select-none whitespace-nowrap shrink-0 shadow-2xs',
+            'inline-flex items-center justify-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-semibold leading-none border select-none whitespace-nowrap shrink-0 shadow-2xs',
             styleConfig.classes,
             props.class
         )"
@@ -112,6 +116,6 @@ const styleConfig = computed(() => {
             :class="cn('w-1.5 h-1.5 rounded-full inline-block shrink-0', styleConfig.dotClass)"
             aria-hidden="true"
         />
-        <span>{{ styleConfig.label }}</span>
+        <span class="inline-flex items-center">{{ props.label || styleConfig.label }}</span>
     </span>
 </template>
