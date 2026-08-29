@@ -82,7 +82,7 @@ const isNumeric = (val) => !isNaN(parseFloat(val)) && isFinite(val);
         <div class="p-3 bg-muted/40 border-b border-border/50 flex flex-wrap items-center justify-between gap-2">
             <div class="flex items-center gap-2.5 min-w-0">
                 <div 
-                    class="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0"
+                    class="w-7 h-7 rounded-md flex items-center justify-center shrink-0"
                     :class="item.has_critical_value ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400' : 'bg-primary/10 text-primary'"
                 >
                     <FlaskConical class="w-4 h-4" />
@@ -160,7 +160,7 @@ const isNumeric = (val) => !isNaN(parseFloat(val)) && isFinite(val);
 
         <!-- Panic Alert Warning Callout -->
         <div v-if="item.has_critical_value" class="px-3 py-2 bg-rose-500/10 border-b border-rose-500/20 flex items-center gap-2 text-rose-700 dark:text-rose-300 text-xs">
-            <AlertTriangle class="w-4 h-4 flex-shrink-0 text-rose-600 dark:text-rose-400" />
+            <AlertTriangle class="w-4 h-4 shrink-0 text-rose-600 dark:text-rose-400" />
             <div class="leading-tight text-[11px]">
                 <strong class="font-bold">Life-Threatening Value Alert:</strong> One or more test parameters are outside critical safety thresholds. Prompt clinical intervention is indicated.
             </div>
@@ -272,7 +272,7 @@ const isNumeric = (val) => !isNaN(parseFloat(val)) && isFinite(val);
         <!-- Remarks and Sign-off Footer -->
         <div v-if="item.technician_remarks || item.performed_by" class="p-2.5 bg-muted/30 border-t border-border/50 flex flex-wrap items-center justify-between gap-2 text-[10px] text-muted-foreground">
             <div v-if="item.technician_remarks" class="flex items-center gap-1.5 min-w-0">
-                <FileText class="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                <FileText class="w-3.5 h-3.5 text-primary shrink-0" />
                 <span class="font-medium text-foreground">Technician Remarks:</span>
                 <span class="italic truncate">{{ item.technician_remarks }}</span>
             </div>

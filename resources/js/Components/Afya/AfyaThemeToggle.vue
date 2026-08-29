@@ -18,7 +18,7 @@ const options = [
         <template #trigger>
             <button
                 type="button"
-                class="h-7 w-7 flex items-center justify-center text-muted-foreground hover:text-foreground rounded hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                class="h-7 w-7 flex items-center justify-center text-muted-foreground hover:text-foreground rounded hover:bg-muted transition-colors focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring"
                 :title="`Theme: ${theme} (Current: ${resolvedTheme})`"
                 aria-label="Toggle Color Theme"
             >
@@ -45,7 +45,7 @@ const options = [
                         <component :is="opt.icon" class="w-3.5 h-3.5" :class="theme === opt.id ? 'text-primary' : 'text-muted-foreground'" />
                         <span>{{ opt.label }}</span>
                     </div>
-                    <Check v-if="theme === opt.id" class="w-3 h-3 text-primary flex-shrink-0" />
+                    <Check v-if="theme === opt.id" class="w-3 h-3 text-primary shrink-0" />
                 </button>
             </div>
         </template>

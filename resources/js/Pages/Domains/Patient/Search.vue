@@ -405,7 +405,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                         <!-- Telemetry Summary -->
                         <div v-if="latestVitals" class="p-2 rounded bg-card border border-border/80 space-y-1">
                             <div class="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                                <Gauge class="w-3 h-3 text-primary flex-shrink-0" />
+                                <Gauge class="w-3 h-3 text-primary shrink-0" />
                                 <span>Vital Telemetry</span>
                             </div>
                             <div class="grid grid-cols-3 gap-1 text-center text-xs">

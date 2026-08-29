@@ -43,7 +43,7 @@ const genderCode = computed(() => {
             <div class="flex items-center space-x-1.5 min-w-0 flex-1 overflow-hidden">
                 <!-- Initials Avatar -->
                 <div
-                    class="w-6 h-6 rounded bg-primary/10 text-primary font-bold flex items-center justify-center text-[10px] flex-shrink-0 border border-primary/20"
+                    class="w-6 h-6 rounded bg-primary/10 text-primary font-bold flex items-center justify-center text-[10px] shrink-0 border border-primary/20"
                     aria-hidden="true"
                 >
                     {{ initials }}
@@ -56,7 +56,7 @@ const genderCode = computed(() => {
             </div>
 
             <!-- Optional Status Badge or Action Slot -->
-            <div v-if="$slots.default" class="flex-shrink-0">
+            <div v-if="$slots.default" class="shrink-0">
                 <slot />
             </div>
         </div>
@@ -66,7 +66,7 @@ const genderCode = computed(() => {
             <span class="bg-muted px-1.5 py-0.2 rounded border border-border/60 text-foreground font-mono font-semibold truncate max-w-[130px]">
                 {{ patient.primary_mrn || patient.mrn }}
             </span>
-            <div class="flex items-center space-x-1.5 flex-shrink-0 text-[10px]">
+            <div class="flex items-center space-x-1.5 shrink-0 text-[10px]">
                 <span class="font-medium">{{ patient.age || '—' }}y ({{ genderCode }})</span>
                 <span class="text-border">·</span>
                 <span class="font-semibold text-rose-700">Blood: {{ patient.blood_group || 'O+' }}</span>

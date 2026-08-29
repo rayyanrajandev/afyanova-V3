@@ -271,7 +271,7 @@ const formatCurrency = (amount) => {
                             <div class="p-3 rounded-lg bg-card border border-border/80 space-y-1 shadow-2xs">
                                 <div class="flex items-center justify-between text-muted-foreground">
                                     <span class="text-[10px] font-bold uppercase tracking-wider">Patient Inflow</span>
-                                    <Users class="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                                    <Users class="w-3.5 h-3.5 text-primary shrink-0" />
                                 </div>
                                 <div class="text-xl font-mono font-extrabold text-foreground">
                                     {{ metrics.today_inflow || metrics.today_registered || 0 }}
@@ -285,7 +285,7 @@ const formatCurrency = (amount) => {
                             <div class="p-3 rounded-lg bg-card border border-border/80 space-y-1 shadow-2xs">
                                 <div class="flex items-center justify-between text-muted-foreground">
                                     <span class="text-[10px] font-bold uppercase tracking-wider">Today's Appointments</span>
-                                    <CalendarCheck class="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 flex-shrink-0" />
+                                    <CalendarCheck class="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" />
                                 </div>
                                 <div class="text-xl font-mono font-extrabold text-sky-700 dark:text-sky-400">
                                     {{ metrics.today_total_appointments ?? metrics.today_appointments ?? 0 }}
@@ -301,7 +301,7 @@ const formatCurrency = (amount) => {
                             <div class="p-3 rounded-lg bg-card border border-border/80 space-y-1 shadow-2xs">
                                 <div class="flex items-center justify-between text-muted-foreground">
                                     <span class="text-[10px] font-bold uppercase tracking-wider">Lobby Waiting Queue</span>
-                                    <Clock class="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                                    <Clock class="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
                                 </div>
                                 <div class="text-xl font-mono font-extrabold text-amber-700 dark:text-amber-400">
                                     {{ metrics.lobby_waiting || 0 }}
@@ -324,7 +324,7 @@ const formatCurrency = (amount) => {
                             <div class="p-3 rounded-lg bg-card border border-border/80 space-y-1 shadow-2xs">
                                 <div class="flex items-center justify-between text-muted-foreground">
                                     <span class="text-[10px] font-bold uppercase tracking-wider">Daily POS Collections</span>
-                                    <Receipt class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                                    <Receipt class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                                 </div>
                                 <div class="text-xl font-mono font-extrabold text-emerald-700 dark:text-emerald-400">
                                     TZS {{ formatCurrency(metrics.today_revenue) }}
@@ -360,7 +360,7 @@ const formatCurrency = (amount) => {
                                 >
                                     <div class="p-3 rounded-lg border border-border/80 bg-card hover:bg-muted/40 transition-all flex items-center justify-between shadow-2xs group cursor-pointer">
                                         <div class="flex items-center gap-2 min-w-0">
-                                            <div class="w-7.5 h-7.5 rounded-md bg-primary/10 flex items-center justify-center text-primary flex-shrink-0">
+                                            <div class="w-7.5 h-7.5 rounded-md bg-primary/10 flex items-center justify-center text-primary shrink-0">
                                                 <Stethoscope class="w-4 h-4" />
                                             </div>
                                             <div class="truncate min-w-0">
@@ -368,7 +368,7 @@ const formatCurrency = (amount) => {
                                                 <div class="text-[9px] text-muted-foreground truncate">OPD Consult Queue</div>
                                             </div>
                                         </div>
-                                        <div class="text-right pl-1.5 flex-shrink-0">
+                                        <div class="text-right pl-1.5 shrink-0">
                                             <div class="font-mono font-extrabold text-sm text-foreground">
                                                 {{ (metrics.point_counts?.Triage || 0) + (metrics.point_counts?.Doctor || 0) }}
                                             </div>
@@ -385,7 +385,7 @@ const formatCurrency = (amount) => {
                                 >
                                     <div class="p-3 rounded-lg border border-rose-200 dark:border-rose-900/60 bg-card hover:bg-rose-50/20 transition-all flex items-center justify-between shadow-2xs group cursor-pointer">
                                         <div class="flex items-center gap-2 min-w-0">
-                                            <div class="w-7.5 h-7.5 rounded-md bg-rose-100 dark:bg-rose-950/40 flex items-center justify-center text-rose-600 flex-shrink-0">
+                                            <div class="w-7.5 h-7.5 rounded-md bg-rose-100 dark:bg-rose-950/40 flex items-center justify-center text-rose-600 shrink-0">
                                                 <Syringe class="w-4 h-4" />
                                             </div>
                                             <div class="truncate min-w-0">
@@ -393,7 +393,7 @@ const formatCurrency = (amount) => {
                                                 <div class="text-[9px] text-muted-foreground truncate">Minor Procedure Queue</div>
                                             </div>
                                         </div>
-                                        <div class="text-right pl-1.5 flex-shrink-0">
+                                        <div class="text-right pl-1.5 shrink-0">
                                             <div class="font-mono font-extrabold text-sm text-rose-700 dark:text-rose-400">
                                                 {{ metrics.point_counts?.Procedure || 0 }}
                                             </div>
@@ -410,7 +410,7 @@ const formatCurrency = (amount) => {
                                 >
                                     <div class="p-3 rounded-lg border border-sky-200 dark:border-sky-900/60 bg-card hover:bg-sky-50/20 transition-all flex items-center justify-between shadow-2xs group cursor-pointer">
                                         <div class="flex items-center gap-2 min-w-0">
-                                            <div class="w-7.5 h-7.5 rounded-md bg-sky-100 dark:bg-sky-950/40 flex items-center justify-center text-sky-600 flex-shrink-0">
+                                            <div class="w-7.5 h-7.5 rounded-md bg-sky-100 dark:bg-sky-950/40 flex items-center justify-center text-sky-600 shrink-0">
                                                 <FlaskConical class="w-4 h-4" />
                                             </div>
                                             <div class="truncate min-w-0">
@@ -418,7 +418,7 @@ const formatCurrency = (amount) => {
                                                 <div class="text-[9px] text-muted-foreground truncate">Diagnostic Lab Queue</div>
                                             </div>
                                         </div>
-                                        <div class="text-right pl-1.5 flex-shrink-0">
+                                        <div class="text-right pl-1.5 shrink-0">
                                             <div class="font-mono font-extrabold text-sm text-sky-700 dark:text-sky-400">
                                                 {{ metrics.point_counts?.Lab || 0 }}
                                             </div>
@@ -435,7 +435,7 @@ const formatCurrency = (amount) => {
                                 >
                                     <div class="p-3 rounded-lg border border-amber-200 dark:border-amber-900/60 bg-card hover:bg-amber-50/20 transition-all flex items-center justify-between shadow-2xs group cursor-pointer">
                                         <div class="flex items-center gap-2 min-w-0">
-                                            <div class="w-7.5 h-7.5 rounded-md bg-amber-100 dark:bg-amber-950/40 flex items-center justify-center text-amber-600 flex-shrink-0">
+                                            <div class="w-7.5 h-7.5 rounded-md bg-amber-100 dark:bg-amber-950/40 flex items-center justify-center text-amber-600 shrink-0">
                                                 <Pill class="w-4 h-4" />
                                             </div>
                                             <div class="truncate min-w-0">
@@ -443,7 +443,7 @@ const formatCurrency = (amount) => {
                                                 <div class="text-[9px] text-muted-foreground truncate">Pharmacy Queue</div>
                                             </div>
                                         </div>
-                                        <div class="text-right pl-1.5 flex-shrink-0">
+                                        <div class="text-right pl-1.5 shrink-0">
                                             <div class="font-mono font-extrabold text-sm text-amber-700 dark:text-amber-400">
                                                 {{ metrics.point_counts?.Pharmacy || 0 }}
                                             </div>
@@ -460,7 +460,7 @@ const formatCurrency = (amount) => {
                                 >
                                     <div class="p-3 rounded-lg border border-emerald-200 dark:border-emerald-900/60 bg-card hover:bg-emerald-50/20 transition-all flex items-center justify-between shadow-2xs group cursor-pointer">
                                         <div class="flex items-center gap-2 min-w-0">
-                                            <div class="w-7.5 h-7.5 rounded-md bg-emerald-100 dark:bg-emerald-950/40 flex items-center justify-center text-emerald-600 flex-shrink-0">
+                                            <div class="w-7.5 h-7.5 rounded-md bg-emerald-100 dark:bg-emerald-950/40 flex items-center justify-center text-emerald-600 shrink-0">
                                                 <Receipt class="w-4 h-4" />
                                             </div>
                                             <div class="truncate min-w-0">
@@ -468,7 +468,7 @@ const formatCurrency = (amount) => {
                                                 <div class="text-[9px] text-muted-foreground truncate">Billing / POS Queue</div>
                                             </div>
                                         </div>
-                                        <div class="text-right pl-1.5 flex-shrink-0">
+                                        <div class="text-right pl-1.5 shrink-0">
                                             <div class="font-mono font-extrabold text-sm text-emerald-700 dark:text-emerald-400">
                                                 {{ metrics.point_counts?.Cashier || 0 }}
                                             </div>

@@ -34,29 +34,29 @@ const panelStyle = computed(() => ({
     <aside
         v-if="open"
         :style="panelStyle"
-        class="h-full flex flex-col bg-muted/30 border-l border-border/60 transition-[width] duration-150 ease-out flex-shrink-0 select-none overflow-hidden"
+        class="h-full flex flex-col bg-muted/30 border-l border-border/60 transition-[width] duration-150 ease-out shrink-0 select-none overflow-hidden"
         aria-label="Task Context Panel"
     >
         <!-- High-Density Meta Workstation Header (Aligned with Left Sidebar and Center Main) -->
-        <div class="h-10 px-3 border-b border-border/60 flex items-center justify-between bg-card flex-shrink-0">
+        <div class="h-10 px-3 border-b border-border/60 flex items-center justify-between bg-card shrink-0">
             <div class="flex items-center space-x-2 truncate min-w-0 pr-1">
                 <component
                     v-if="isComponentIcon"
                     :is="icon"
-                    class="w-4 h-4 text-primary flex-shrink-0"
+                    class="w-4 h-4 text-primary shrink-0"
                     aria-hidden="true"
                 />
-                <span v-else-if="icon" class="text-sm flex-shrink-0" aria-hidden="true">{{ icon }}</span>
+                <span v-else-if="icon" class="text-sm shrink-0" aria-hidden="true">{{ icon }}</span>
                 <h3 class="text-[11px] font-bold uppercase tracking-wider text-foreground truncate">
                     {{ title }}
                 </h3>
             </div>
 
-            <div class="flex items-center space-x-1 flex-shrink-0">
+            <div class="flex items-center space-x-1 shrink-0">
                 <slot name="header-actions" />
                 <button
                     @click="emit('close')"
-                    class="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    class="h-6 w-6 flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring"
                     title="Close context panel (Ctrl+I)"
                     aria-label="Close context panel"
                 >
@@ -71,7 +71,7 @@ const panelStyle = computed(() => ({
         </div>
 
         <!-- Optional Context Footer -->
-        <div v-if="$slots.footer" class="px-3 py-2 border-t border-border/60 bg-card flex-shrink-0 text-xs">
+        <div v-if="$slots.footer" class="px-3 py-2 border-t border-border/60 bg-card shrink-0 text-xs">
             <slot name="footer" />
         </div>
     </aside>

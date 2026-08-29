@@ -133,7 +133,7 @@ const handleCloseShift = () => {
             <div class="space-y-4 text-xs">
                 <!-- Context Prompt Notice Banner -->
                 <div v-if="notice" class="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-start gap-2.5 text-amber-900 dark:text-amber-300">
-                    <AlertTriangle class="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <AlertTriangle class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                     <div class="text-[11px] leading-relaxed">
                         {{ notice }}
                     </div>
@@ -247,8 +247,8 @@ const handleCloseShift = () => {
                     }"
                 >
                     <div class="flex items-center gap-2">
-                        <CheckCircle2 v-if="varianceStatus === 'Balanced'" class="w-4 h-4 text-emerald-600 flex-shrink-0" />
-                        <AlertTriangle v-else class="w-4 h-4 flex-shrink-0" :class="varianceStatus === 'Overage' ? 'text-amber-600' : 'text-rose-600'" />
+                        <CheckCircle2 v-if="varianceStatus === 'Balanced'" class="w-4 h-4 text-emerald-600 shrink-0" />
+                        <AlertTriangle v-else class="w-4 h-4 shrink-0" :class="varianceStatus === 'Overage' ? 'text-amber-600' : 'text-rose-600'" />
                         <div>
                             <div class="font-bold">Reconciliation Status: {{ varianceStatus }}</div>
                             <div class="text-[11px] opacity-80">

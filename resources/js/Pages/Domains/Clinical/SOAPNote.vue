@@ -425,7 +425,7 @@ const formatDate = (dateStr) => {
             class="p-2 rounded-md bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-200 text-xs font-semibold flex items-center justify-between shadow-2xs"
         >
             <div class="flex items-center gap-1.5">
-                <CheckCircle2 class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                <CheckCircle2 class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                 <span>{{ successMessage }}</span>
             </div>
             <button @click="successMessage = ''" class="text-emerald-700 hover:text-emerald-900">
@@ -438,7 +438,7 @@ const formatDate = (dateStr) => {
             class="p-2 rounded-md bg-rose-50 dark:bg-rose-950/50 border border-rose-300 dark:border-rose-700 text-rose-800 dark:text-rose-200 text-xs font-semibold flex items-center justify-between shadow-2xs"
         >
             <div class="flex items-center gap-1.5">
-                <AlertTriangle class="w-3.5 h-3.5 text-rose-600 dark:text-rose-400 flex-shrink-0" />
+                <AlertTriangle class="w-3.5 h-3.5 text-rose-600 dark:text-rose-400 shrink-0" />
                 <span>{{ errorMessage }}</span>
             </div>
             <button @click="errorMessage = ''" class="text-rose-700 hover:text-rose-900">
@@ -487,7 +487,7 @@ const formatDate = (dateStr) => {
                         v-model="form.content.subjective"
                         rows="2"
                         placeholder="Patient reports onset of symptoms, chief complaint, HPI, duration..."
-                        class="w-full rounded border border-border/70 bg-muted/10 p-1.5 text-xs text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary leading-relaxed resize-y min-h-[52px]"
+                        class="w-full rounded border border-border/70 bg-muted/10 p-1.5 text-xs text-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary leading-relaxed resize-y min-h-[52px]"
                     ></textarea>
                 </div>
 
@@ -528,7 +528,7 @@ const formatDate = (dateStr) => {
                         v-model="form.content.objective"
                         rows="2"
                         placeholder="Physical exam findings, vitals correlation, chest, abdomen, neurological..."
-                        class="w-full rounded border border-border/70 bg-muted/10 p-1.5 text-xs text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary leading-relaxed resize-y min-h-[52px]"
+                        class="w-full rounded border border-border/70 bg-muted/10 p-1.5 text-xs text-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary leading-relaxed resize-y min-h-[52px]"
                     ></textarea>
                 </div>
 
@@ -569,7 +569,7 @@ const formatDate = (dateStr) => {
                         v-model="form.content.assessment"
                         rows="2"
                         placeholder="Primary clinical impression, ICD-10 code, differential diagnoses..."
-                        class="w-full rounded border border-border/70 bg-muted/10 p-1.5 text-xs text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary leading-relaxed resize-y min-h-[52px]"
+                        class="w-full rounded border border-border/70 bg-muted/10 p-1.5 text-xs text-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary leading-relaxed resize-y min-h-[52px]"
                     ></textarea>
 
                     <!-- Structured Diagnosis (separate from the narrative above — writes an
@@ -596,24 +596,24 @@ const formatDate = (dateStr) => {
                                 v-model="diagnosisForm.description"
                                 type="text"
                                 placeholder="Diagnosis (e.g. Uncomplicated malaria)"
-                                class="flex-1 min-w-[120px] rounded border border-border/70 bg-muted/10 px-1.5 py-1 text-[10px] text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                                class="flex-1 min-w-[120px] rounded border border-border/70 bg-muted/10 px-1.5 py-1 text-[10px] text-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary"
                             />
                             <input
                                 v-model="diagnosisForm.icd_10_code"
                                 type="text"
                                 placeholder="ICD-10"
-                                class="w-16 rounded border border-border/70 bg-muted/10 px-1.5 py-1 text-[10px] text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                                class="w-16 rounded border border-border/70 bg-muted/10 px-1.5 py-1 text-[10px] text-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary"
                             />
                             <Select
                                 v-model="diagnosisForm.certainty"
-                                class="rounded border border-border/70 bg-muted/10 px-1 py-1 text-[10px] text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                                class="rounded border border-border/70 bg-muted/10 px-1 py-1 text-[10px] text-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary"
                             >
                                 <option value="Confirmed">Confirmed</option>
                                 <option value="Suspected">Suspected</option>
                             </Select>
                             <Select
                                 v-model="diagnosisForm.type"
-                                class="rounded border border-border/70 bg-muted/10 px-1 py-1 text-[10px] text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                                class="rounded border border-border/70 bg-muted/10 px-1 py-1 text-[10px] text-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary"
                             >
                                 <option value="Primary">Primary</option>
                                 <option value="Secondary">Secondary</option>
@@ -669,7 +669,7 @@ const formatDate = (dateStr) => {
                         v-model="form.content.plan"
                         rows="2"
                         placeholder="Prescription regimen, lab investigations, patient education, review timeline..."
-                        class="w-full rounded border border-border/70 bg-muted/10 p-1.5 text-xs text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary leading-relaxed resize-y min-h-[52px]"
+                        class="w-full rounded border border-border/70 bg-muted/10 p-1.5 text-xs text-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary leading-relaxed resize-y min-h-[52px]"
                     ></textarea>
                 </div>
 
@@ -678,7 +678,7 @@ const formatDate = (dateStr) => {
             <!-- Bottom Action Bar -->
             <div class="flex items-center justify-between pt-0.5">
                 <div class="text-[10px] text-muted-foreground flex items-center gap-1">
-                    <Info class="w-3 h-3 text-primary flex-shrink-0" />
+                    <Info class="w-3 h-3 text-primary shrink-0" />
                     <span>Saved notes are timestamped and linked to physician provider ID.</span>
                 </div>
 
@@ -895,7 +895,7 @@ const formatDate = (dateStr) => {
 
                 <div class="p-3 bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 rounded text-amber-950 dark:text-amber-200 text-xs space-y-1">
                     <div class="flex items-center gap-1.5 font-bold text-amber-900 dark:text-amber-300">
-                        <AlertTriangle class="w-4 h-4 text-amber-600 flex-shrink-0" />
+                        <AlertTriangle class="w-4 h-4 text-amber-600 shrink-0" />
                         <span>Medico-Legal Immutability Notice</span>
                     </div>
                     <p class="text-[11px] text-amber-800 dark:text-amber-300 leading-snug">
@@ -945,7 +945,7 @@ const formatDate = (dateStr) => {
                             v-model="amendSubjective"
                             rows="3"
                             placeholder="Enter addendum text to append to this signed medical record..."
-                            class="w-full rounded border border-border bg-card p-2 text-xs text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+                            class="w-full rounded border border-border bg-card p-2 text-xs text-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-primary"
                         ></textarea>
                     </div>
                 </div>

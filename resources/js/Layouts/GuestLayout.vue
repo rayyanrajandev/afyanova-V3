@@ -18,7 +18,7 @@ import {
         <!-- Left Side Banner (Enterprise Hospital Visual & Telemetry) -->
         <div class="hidden lg:flex lg:w-1/2 bg-slate-900 text-slate-100 flex-col justify-between p-10 relative overflow-hidden border-r border-border">
             <!-- Subtle Grid Graphic Background -->
-            <div class="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-30"></div>
+            <div class="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-size-[4rem_4rem] mask-[radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] opacity-30"></div>
             
             <div class="relative z-10">
                 <Link href="/" class="inline-flex">
@@ -44,21 +44,21 @@ import {
                 <!-- Value Props -->
                 <div class="space-y-3 pt-2">
                     <div class="flex items-center gap-2.5 text-xs text-slate-200">
-                        <div class="w-5 h-5 rounded bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0 border border-emerald-500/30">
+                        <div class="w-5 h-5 rounded bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/30">
                             <CheckCircle2 class="w-3.5 h-3.5" />
                         </div>
                         <span>Legally immutable clinical notes with SHA-256 digital signatures</span>
                     </div>
 
                     <div class="flex items-center gap-2.5 text-xs text-slate-200">
-                        <div class="w-5 h-5 rounded bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0 border border-emerald-500/30">
+                        <div class="w-5 h-5 rounded bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/30">
                             <CheckCircle2 class="w-3.5 h-3.5" />
                         </div>
                         <span>Double-entry accounting ledger with debit/credit balance enforcement</span>
                     </div>
 
                     <div class="flex items-center gap-2.5 text-xs text-slate-200">
-                        <div class="w-5 h-5 rounded bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0 border border-emerald-500/30">
+                        <div class="w-5 h-5 rounded bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/30">
                             <CheckCircle2 class="w-3.5 h-3.5" />
                         </div>
                         <span>Row-Level Security (RLS) & Multi-Facility data isolation</span>

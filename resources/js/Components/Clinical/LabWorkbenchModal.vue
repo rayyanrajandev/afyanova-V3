@@ -122,7 +122,7 @@ const submitResults = () => {
                 v-if="hasLivePanicValue"
                 class="p-3 rounded-lg bg-rose-600 text-white flex items-center gap-2.5 text-xs animate-pulse shadow-sm font-medium"
             >
-                <ShieldAlert class="w-5 h-5 flex-shrink-0" />
+                <ShieldAlert class="w-5 h-5 shrink-0" />
                 <div>
                     <div class="font-bold uppercase tracking-wider text-[11px]">CRITICAL PANIC LIMIT REACHED</div>
                     <div class="text-[11px] opacity-90">Entered findings exceed critical physiological limits. Alert will be flagged immediately.</div>
@@ -203,7 +203,7 @@ const submitResults = () => {
                         v-model="technicianRemarks"
                         rows="2"
                         placeholder="Optional remarks, morphology notes, or analyzer flags..."
-                        class="w-full rounded-md border border-input bg-background px-3 py-2 text-xs placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                        class="w-full rounded-md border border-input bg-background px-3 py-2 text-xs placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring"
                     ></textarea>
                 </div>
 

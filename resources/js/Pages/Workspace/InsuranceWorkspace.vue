@@ -847,7 +847,7 @@ const formatDate = (dateStr) => {
                                     v-if="can.processRemittance"
                                     variant="default"
                                     size="sm"
-                                    class="h-7 px-3 text-xs font-bold bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white gap-1.5 shadow-2xs"
+                                    class="h-7 px-3 text-xs font-bold bg-linear-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white gap-1.5 shadow-2xs"
                                     @click="openRemittanceBatchModal"
                                 >
                                     <Receipt class="w-3.5 h-3.5" />
@@ -1736,7 +1736,7 @@ const formatDate = (dateStr) => {
                             variant="default"
                             size="sm"
                             type="submit"
-                            class="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold"
+                            class="bg-linear-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold"
                             :disabled="isProcessingRemittance || remittanceForm.claim_lines.length === 0"
                         >
                             <Loader2 v-if="isProcessingRemittance" class="w-3.5 h-3.5 animate-spin mr-1.5" />

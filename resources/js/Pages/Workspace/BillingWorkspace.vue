@@ -621,7 +621,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                             <div class="p-3 rounded-lg bg-card hover:bg-muted/30 transition-all space-y-1 select-none shadow-2xs group">
                                 <div class="flex items-center justify-between text-muted-foreground">
                                     <span class="text-[10px] font-bold uppercase tracking-wider group-hover:text-foreground transition-colors">Physical Cash in Till</span>
-                                    <Wallet class="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                                    <Wallet class="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
                                 </div>
                                 <div class="text-xl font-mono font-extrabold text-foreground">
                                     TZS {{ Number(tillTelemetry.cash_in_drawer || 0).toLocaleString() }}
@@ -635,7 +635,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                             <div class="p-3 rounded-lg bg-card hover:bg-muted/30 transition-all space-y-1 select-none shadow-2xs group">
                                 <div class="flex items-center justify-between text-muted-foreground">
                                     <span class="text-[10px] font-bold uppercase tracking-wider group-hover:text-foreground transition-colors">Lipa Namba Till</span>
-                                    <Smartphone class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                                    <Smartphone class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                                 </div>
                                 <div class="text-xl font-mono font-extrabold text-emerald-700 dark:text-emerald-400">
                                     TZS {{ Number(tillTelemetry.lipa_namba_total || 0).toLocaleString() }}
@@ -649,7 +649,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                             <div class="p-3 rounded-lg bg-card hover:bg-muted/30 transition-all space-y-1 select-none shadow-2xs group">
                                 <div class="flex items-center justify-between text-muted-foreground">
                                     <span class="text-[10px] font-bold uppercase tracking-wider group-hover:text-foreground transition-colors">Bank POS Card</span>
-                                    <CreditCard class="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                                    <CreditCard class="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
                                 </div>
                                 <div class="text-xl font-mono font-extrabold text-blue-700 dark:text-blue-400">
                                     TZS {{ Number(tillTelemetry.card_pos_total || 0).toLocaleString() }}
@@ -663,7 +663,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                             <div class="p-3 rounded-lg bg-card hover:bg-muted/30 transition-all space-y-1 select-none shadow-2xs group">
                                 <div class="flex items-center justify-between text-muted-foreground">
                                     <span class="text-[10px] font-bold uppercase tracking-wider group-hover:text-foreground transition-colors">Shift Collections</span>
-                                    <Scale class="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                                    <Scale class="w-3.5 h-3.5 text-primary shrink-0" />
                                 </div>
                                 <div class="text-xl font-mono font-extrabold text-foreground">
                                     TZS {{ Number(tillTelemetry.total_inflow || 0).toLocaleString() }}
@@ -898,7 +898,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                                         <div class="font-medium text-foreground truncate">{{ item.description }}</div>
                                         <div class="text-[9px] text-muted-foreground">{{ item.category }} · Qty {{ item.quantity }}</div>
                                     </div>
-                                    <div class="font-mono font-bold text-foreground flex-shrink-0">
+                                    <div class="font-mono font-bold text-foreground shrink-0">
                                         {{ Number(item.total_price).toLocaleString() }}
                                     </div>
                                 </div>
@@ -911,7 +911,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                         <!-- Double Entry Ledger Card -->
                         <div class="p-3 rounded-lg bg-card space-y-1.5 shadow-2xs">
                             <div class="flex items-center gap-1.5 text-[11px] font-bold text-foreground">
-                                <Scale class="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                                <Scale class="w-3.5 h-3.5 text-primary shrink-0" />
                                 <span>Double-Entry Accounts</span>
                             </div>
                             <div class="text-[10px] space-y-1 font-mono">
@@ -1069,7 +1069,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                                     <!-- Top: Icon Pill + Selection Dot -->
                                     <div class="flex items-center justify-between w-full">
                                         <div 
-                                            class="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 border transition-transform group-hover:scale-105"
+                                            class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 border transition-transform group-hover:scale-105"
                                             :class="method.bg"
                                         >
                                             <component :is="method.icon" class="w-3.5 h-3.5" :class="method.color" />
@@ -1180,14 +1180,14 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                                 <Select
                                     v-model="split.method"
                                     :options="paymentMethods.map(m => ({ label: `${m.name} (${m.subtitle})`, value: m.id }))"
-                                    class="w-52 h-8 text-xs font-medium flex-shrink-0"
+                                    class="w-52 h-8 text-xs font-medium shrink-0"
                                 />
                                 <Input
                                     v-model="split.amount"
                                     type="number"
                                     min="1"
                                     placeholder="Amount (TZS)"
-                                    class="w-36 h-8 font-mono text-xs flex-shrink-0"
+                                    class="w-36 h-8 font-mono text-xs shrink-0"
                                 />
                                 <Input
                                     v-model="split.reference_number"
@@ -1199,7 +1199,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                                     v-if="splitMethods.length > 1"
                                     type="button"
                                     @click="removeSplitRow(idx)"
-                                    class="w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-rose-600 rounded transition-colors flex-shrink-0"
+                                    class="w-8 h-8 flex items-center justify-center text-muted-foreground hover:text-rose-600 rounded transition-colors shrink-0"
                                     title="Remove row"
                                 >
                                     <X class="w-4 h-4" />

@@ -102,14 +102,14 @@ const styleConfig = computed(() => {
 <template>
     <span
         :class="cn(
-            'inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[9px] font-bold border uppercase tracking-wider select-none whitespace-nowrap flex-shrink-0 shadow-2xs',
+            'inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[9px] font-bold border uppercase tracking-wider select-none whitespace-nowrap shrink-0 shadow-2xs',
             styleConfig.classes,
             props.class
         )"
     >
         <span
             v-if="dot"
-            :class="cn('w-1.5 h-1.5 rounded-full inline-block flex-shrink-0', styleConfig.dotClass)"
+            :class="cn('w-1.5 h-1.5 rounded-full inline-block shrink-0', styleConfig.dotClass)"
             aria-hidden="true"
         />
         <span>{{ styleConfig.label }}</span>

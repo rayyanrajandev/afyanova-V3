@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import { ChevronDown } from 'lucide-vue-next';
 
 const selectVariants = cva(
-    'block w-full appearance-none rounded-md border border-slate-300 dark:border-border/80 bg-white dark:bg-card text-slate-900 dark:text-foreground shadow-2xs transition-all placeholder:text-muted-foreground hover:border-slate-400 dark:hover:border-border focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer font-medium truncate',
+    'block w-full appearance-none rounded-md border border-slate-300 dark:border-border/80 bg-white dark:bg-card text-slate-900 dark:text-foreground shadow-2xs transition-all placeholder:text-muted-foreground hover:border-slate-400 dark:hover:border-border focus:outline-hidden focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer font-medium truncate',
     {
         variants: {
             size: {

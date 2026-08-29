@@ -117,7 +117,7 @@ const handleKeyDown = (event) => {
         @mousedown="startDrag"
         @touchstart="startDrag"
         @keydown="handleKeyDown"
-        class="w-1.5 hover:w-2 -mx-0.5 relative z-20 cursor-col-resize group flex items-center justify-center transition-all select-none focus:outline-none focus:ring-1 focus:ring-ring will-change-transform"
+        class="w-1.5 hover:w-2 -mx-0.5 relative z-20 cursor-col-resize group flex items-center justify-center transition-all select-none focus:outline-hidden focus:ring-1 focus:ring-ring will-change-transform"
         :class="{ 'bg-primary w-2': isDragging, 'bg-transparent hover:bg-primary/20': !isDragging }"
     >
         <!-- Resizer handle indicator -->

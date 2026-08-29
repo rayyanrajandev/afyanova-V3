@@ -156,7 +156,7 @@ defineExpose({
                 class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-slate-400 dark:text-slate-500"
             >
                 <slot name="leading">
-                    <component :is="icon" class="w-4 h-4 flex-shrink-0" />
+                    <component :is="icon" class="w-4 h-4 shrink-0" />
                 </slot>
             </div>
 
@@ -173,7 +173,7 @@ defineExpose({
                 :aria-invalid="typeof error === 'string' && error ? 'true' : undefined"
                 :aria-describedby="(typeof error === 'string' && error) || hint ? `${id}-description` : undefined"
                 :class="cn(
-                    'block w-full rounded-md border bg-white dark:bg-slate-900/90 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 shadow-2xs transition-all outline-none',
+                    'block w-full rounded-md border bg-white dark:bg-slate-900/90 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 shadow-2xs transition-all outline-hidden',
                     'border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600',
                     'focus:border-primary focus:ring-2 focus:ring-primary/20',
                     sizeClasses,
@@ -194,7 +194,7 @@ defineExpose({
                     type="button"
                     tabindex="-1"
                     @click="showPassword = !showPassword"
-                    class="text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 focus:outline-none p-0.5 rounded transition-colors"
+                    class="text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 focus:outline-hidden p-0.5 rounded transition-colors"
                 >
                     <EyeOff v-if="showPassword" class="w-4 h-4" />
                     <Eye v-else class="w-4 h-4" />
@@ -203,7 +203,7 @@ defineExpose({
                     v-else-if="trailingIcon"
                     type="button"
                     @click="emit('click:trailing')"
-                    class="text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 focus:outline-none p-0.5 rounded transition-colors"
+                    class="text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 focus:outline-hidden p-0.5 rounded transition-colors"
                 >
                     <component :is="trailingIcon" class="w-4 h-4" />
                 </button>
@@ -214,7 +214,7 @@ defineExpose({
 
         <!-- Error Message or Hint -->
         <div v-if="typeof error === 'string' && error" :id="`${id}-description`" role="alert" class="flex items-center gap-1 text-[11px] font-medium text-rose-600 dark:text-rose-400 pt-0.5">
-            <AlertCircle class="w-3.5 h-3.5 flex-shrink-0" />
+            <AlertCircle class="w-3.5 h-3.5 shrink-0" />
             <span>{{ error }}</span>
         </div>
         <div v-else-if="hint" :id="`${id}-description`" class="text-[11px] text-muted-foreground pt-0.5">

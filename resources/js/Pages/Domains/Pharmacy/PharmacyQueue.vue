@@ -723,7 +723,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                         <!-- Waiting Walk-in Direct Pharmacy Patients Banner -->
                         <div v-if="waitingTickets.length > 0" class="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30 flex items-center justify-between shadow-2xs">
                             <div class="flex items-center gap-2.5">
-                                <Users class="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                                <Users class="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
                                 <div>
                                     <div class="text-xs font-bold text-amber-950 dark:text-amber-200">
                                         {{ waitingTickets.length }} Fast-Track Walk-in Patient(s) Waiting at Pharmacy Window
@@ -1398,7 +1398,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                             class="p-2 rounded bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-950 dark:text-rose-200 text-xs flex items-center justify-between"
                         >
                             <div class="flex items-center gap-1.5 font-bold text-rose-900 dark:text-rose-300 text-[10.5px]">
-                                <Lock class="w-3 h-3 text-rose-600 dark:text-rose-400 flex-shrink-0" />
+                                <Lock class="w-3 h-3 text-rose-600 dark:text-rose-400 shrink-0" />
                                 <span>Unpaid POS Invoice</span>
                             </div>
                             <Link v-if="can.billing" :href="route('billing.desk')">
@@ -1640,7 +1640,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                     </div>
 
                     <div v-if="!isStockSufficient" class="p-2 rounded bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-900 dark:text-rose-300 text-xs flex items-center gap-1.5">
-                        <AlertTriangle class="w-3.5 h-3.5 text-rose-600 dark:text-rose-400 flex-shrink-0" />
+                        <AlertTriangle class="w-3.5 h-3.5 text-rose-600 dark:text-rose-400 shrink-0" />
                         <div>
                             <strong>Stockout Warning:</strong>
                             <p class="text-[10px]">Requested {{ dispenseQty }} units, but only {{ totalStockForDispenseMed }} units available.</p>
@@ -1708,7 +1708,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                         <Select 
                             v-model="receiveForm.medication_id" 
                             required
-                            class="w-full h-8 rounded border border-input bg-background text-foreground px-2.5 py-0 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                            class="w-full h-8 rounded border border-input bg-background text-foreground px-2.5 py-0 text-xs shadow-xs focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring"
                         >
                             <option v-for="m in medications" :key="m.id" :value="m.id">
                                 {{ m.generic_name }} ({{ m.strength }} - {{ m.form }})
@@ -1798,7 +1798,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                         <label class="block font-bold text-[11px] text-foreground">Standard Audit Reason *</label>
                         <Select
                             v-model="adjustReasonPreset"
-                            class="w-full h-8 rounded border border-input bg-background text-foreground px-2.5 py-0 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                            class="w-full h-8 rounded border border-input bg-background text-foreground px-2.5 py-0 text-xs shadow-xs focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring"
                         >
                             <option v-for="r in adjustmentReasons" :key="r" :value="r">
                                 {{ r }}

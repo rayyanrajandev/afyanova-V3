@@ -128,14 +128,14 @@ const logout = () => {
 </script>
 
 <template>
-    <header class="h-12 bg-card border-b border-border/60 px-3 flex items-center justify-between select-none z-30 flex-shrink-0">
+    <header class="h-12 bg-card border-b border-border/60 px-3 flex items-center justify-between select-none z-30 shrink-0">
         <!-- Left: Logo & Workspace Module Switcher -->
         <div class="flex items-center space-x-2.5">
             <!-- Sidebar Toggle Button (Shows when hidden or toggleable) -->
             <button
                 v-if="preferences.sidebarState === 'hidden'"
                 @click="restoreSidebar"
-                class="h-7 w-7 flex items-center justify-center text-muted-foreground hover:text-foreground rounded hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                class="h-7 w-7 flex items-center justify-center text-muted-foreground hover:text-foreground rounded hover:bg-muted transition-colors focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring"
                 title="Show Sidebar (Ctrl+B)"
                 aria-label="Show Sidebar"
             >
@@ -167,7 +167,7 @@ const logout = () => {
                 <template #trigger>
                     <button
                         type="button"
-                        class="inline-flex items-center h-7 px-2.5 border border-border/60 text-xs font-semibold rounded-md text-foreground bg-card hover:bg-muted/70 focus:outline-none focus:ring-1 focus:ring-ring transition shadow-2xs gap-1.5"
+                        class="inline-flex items-center h-7 px-2.5 border border-border/60 text-xs font-semibold rounded-md text-foreground bg-card hover:bg-muted/70 focus:outline-hidden focus:ring-1 focus:ring-ring transition shadow-2xs gap-1.5"
                     >
                         <component :is="currentModuleObj().icon" class="w-3.5 h-3.5 text-primary" aria-hidden="true" />
                         <span class="text-[11.5px] font-medium">{{ currentModuleObj().label }}</span>
@@ -205,10 +205,10 @@ const logout = () => {
                 class="w-full text-left bg-muted/40 hover:bg-muted/70 text-muted-foreground hover:text-foreground px-2.5 h-7 rounded-md text-xs flex items-center justify-between border border-border/50 transition"
             >
                 <div class="flex items-center space-x-1.5 truncate">
-                    <Search class="w-3 h-3 text-muted-foreground flex-shrink-0" />
+                    <Search class="w-3 h-3 text-muted-foreground shrink-0" />
                     <span class="text-[11px] truncate">Search MRN, bill, order...</span>
                 </div>
-                <kbd class="hidden sm:inline-block px-1.5 py-0.2 text-[9px] font-mono bg-card text-muted-foreground rounded border border-border/60 flex-shrink-0 shadow-2xs">
+                <kbd class="hidden sm:inline-block px-1.5 py-0.2 text-[9px] font-mono bg-card text-muted-foreground rounded border border-border/60 shrink-0 shadow-2xs">
                     ⌘K
                 </kbd>
             </button>
@@ -223,7 +223,7 @@ const logout = () => {
             <button
                 type="button"
                 @click="toggleContext"
-                class="h-7 w-7 flex items-center justify-center text-muted-foreground hover:text-foreground rounded hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                class="h-7 w-7 flex items-center justify-center text-muted-foreground hover:text-foreground rounded hover:bg-muted transition-colors focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring"
                 :class="preferences.contextOpen ? 'text-primary bg-primary/10' : ''"
                 :title="preferences.contextOpen ? 'Hide Inspector Panel (Ctrl+I)' : 'Show Inspector Panel (Ctrl+I)'"
                 aria-label="Toggle Inspector Panel"
@@ -234,7 +234,7 @@ const logout = () => {
             <!-- Notifications Bell -->
             <button
                 type="button"
-                class="h-7 w-7 flex items-center justify-center text-muted-foreground hover:text-foreground rounded hover:bg-muted relative focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                class="h-7 w-7 flex items-center justify-center text-muted-foreground hover:text-foreground rounded hover:bg-muted relative focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring"
                 title="Notifications"
                 aria-label="Notifications"
             >
@@ -245,7 +245,7 @@ const logout = () => {
             <!-- User Menu Dropdown -->
             <Dropdown align="right" width="56" content-classes="p-1 bg-card text-card-foreground border border-border shadow-lg rounded-lg">
                 <template #trigger>
-                    <button class="flex items-center space-x-1.5 text-xs font-medium text-foreground hover:bg-muted p-1 rounded-md transition focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring h-7">
+                    <button class="flex items-center space-x-1.5 text-xs font-medium text-foreground hover:bg-muted p-1 rounded-md transition focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring h-7">
                         <div class="w-5 h-5 rounded bg-primary/10 text-primary font-bold flex items-center justify-center text-[10px] border border-primary/20">
                             {{ user.first_name ? user.first_name[0] : 'U' }}
                         </div>

@@ -643,7 +643,7 @@ const patientBillingStatus = computed(() => {
                             >
                                 <div class="flex items-center justify-between text-muted-foreground">
                                     <span class="text-[10px] font-bold uppercase tracking-wider text-muted-foreground group-hover:text-foreground transition-colors">Queue Waiting</span>
-                                    <Clock class="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                                    <Clock class="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
                                 </div>
                                 <div class="text-xl font-mono font-extrabold text-amber-700 dark:text-amber-400">
                                     {{ patients.length }}
@@ -670,7 +670,7 @@ const patientBillingStatus = computed(() => {
                             <div class="p-3 rounded-lg bg-card space-y-1 shadow-2xs">
                                 <div class="flex items-center justify-between text-muted-foreground">
                                     <span class="text-[10px] font-bold uppercase tracking-wider">Formulary Rx</span>
-                                    <Pill class="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 flex-shrink-0" />
+                                    <Pill class="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" />
                                 </div>
                                 <div class="text-xl font-mono font-extrabold text-foreground">
                                     {{ formularies.length }}
@@ -682,7 +682,7 @@ const patientBillingStatus = computed(() => {
                             <div class="p-3 rounded-lg bg-card space-y-1 shadow-2xs">
                                 <div class="flex items-center justify-between text-muted-foreground">
                                     <span class="text-[10px] font-bold uppercase tracking-wider">Station Pulse</span>
-                                    <Activity class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                                    <Activity class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                                 </div>
                                 <div class="text-xs font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5 mt-1.5">
                                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
@@ -1273,7 +1273,7 @@ const patientBillingStatus = computed(() => {
                             
                             <!-- Left: Patient Avatar & Demographics -->
                             <div class="flex items-center space-x-2.5 min-w-0">
-                                <div class="w-8 h-8 rounded-lg bg-primary/10 text-primary font-bold text-xs flex items-center justify-center flex-shrink-0 border border-primary/20 shadow-2xs">
+                                <div class="w-8 h-8 rounded-lg bg-primary/10 text-primary font-bold text-xs flex items-center justify-center shrink-0 border border-primary/20 shadow-2xs">
                                     {{ (activePatient.first_name?.[0] || '') + (activePatient.last_name?.[0] || '') }}
                                 </div>
                                 <div class="min-w-0">
@@ -1293,7 +1293,7 @@ const patientBillingStatus = computed(() => {
                             </div>
 
                             <!-- Right: Financial Status Pill + Allergy Alert + Fast Vitals -->
-                            <div class="flex items-center gap-2 flex-shrink-0">
+                            <div class="flex items-center gap-2 shrink-0">
 
                                 <!-- Financial Payment Status Pill -->
                                 <div 
@@ -1307,9 +1307,9 @@ const patientBillingStatus = computed(() => {
                                     class="flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-[10px] font-bold"
                                     :title="`Financial Status: ${patientBillingStatus.label}`"
                                 >
-                                    <CheckCircle2 v-if="patientBillingStatus.type === 'paid'" class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
-                                    <ShieldCheck v-else-if="patientBillingStatus.type === 'insured'" class="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 flex-shrink-0" />
-                                    <CreditCard v-else-if="patientBillingStatus.type === 'unpaid'" class="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                                    <CheckCircle2 v-if="patientBillingStatus.type === 'paid'" class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                                    <ShieldCheck v-else-if="patientBillingStatus.type === 'insured'" class="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" />
+                                    <CreditCard v-else-if="patientBillingStatus.type === 'unpaid'" class="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
                                     <span>{{ patientBillingStatus.label }}</span>
                                 </div>
                                 
@@ -1319,14 +1319,14 @@ const patientBillingStatus = computed(() => {
                                     class="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-rose-50 dark:bg-rose-950/60 border border-rose-300 dark:border-rose-800 text-rose-800 dark:text-rose-200 text-[10px] font-semibold animate-pulse"
                                     title="Patient has recorded critical allergies"
                                 >
-                                    <ShieldAlert class="w-3.5 h-3.5 text-rose-600 dark:text-rose-400 flex-shrink-0" />
+                                    <ShieldAlert class="w-3.5 h-3.5 text-rose-600 dark:text-rose-400 shrink-0" />
                                     <span class="font-bold uppercase tracking-wider text-[9px] text-rose-700 dark:text-rose-300">Allergy:</span>
                                     <span class="truncate max-w-[200px]">{{ patientAllergies.map(a => a.allergen).join(', ') }}</span>
                                 </div>
 
                                 <!-- Fast Vitals Summary Pill if Recorded -->
                                 <div v-if="(activeEncounter?.vitals || []).length > 0" class="flex items-center gap-1.5 bg-muted/40 px-2 py-1 rounded-md text-[10px] font-mono border border-border/40">
-                                    <Activity class="w-3 h-3 text-primary flex-shrink-0" />
+                                    <Activity class="w-3 h-3 text-primary shrink-0" />
                                     <span class="text-foreground font-semibold">
                                         {{ activeEncounter.vitals[0].systolic_bp || activeEncounter.vitals[0].systolic }}/{{ activeEncounter.vitals[0].diastolic_bp || activeEncounter.vitals[0].diastolic }}
                                     </span>
@@ -1342,10 +1342,10 @@ const patientBillingStatus = computed(() => {
                         <!-- Payment Alert Banner for Unpaid Clinical Orders / Invoices -->
                         <div v-if="patientBillingStatus?.type === 'unpaid'" class="flex items-center justify-between px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs">
                             <div class="flex items-center gap-2">
-                                <AlertTriangle class="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                                <AlertTriangle class="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
                                 <span><strong>{{ patientBillingStatus.title }}:</strong> {{ patientBillingStatus.description }}</span>
                             </div>
-                            <Link v-if="can.billing" :href="route('billing.desk')" class="flex-shrink-0">
+                            <Link v-if="can.billing" :href="route('billing.desk')" class="shrink-0">
                                 <button type="button" class="h-6 px-2.5 rounded text-[10px] bg-amber-600 hover:bg-amber-700 text-white font-semibold flex items-center gap-1 transition-colors">
                                     <CreditCard class="w-3 h-3" />
                                     <span>Cashier Desk</span>
@@ -1697,7 +1697,7 @@ const patientBillingStatus = computed(() => {
                         <div class="p-3 rounded-lg bg-card space-y-1.5 shadow-2xs">
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center gap-1.5 text-[11px] font-bold text-rose-600 dark:text-rose-400">
-                                    <AlertTriangle class="w-3.5 h-3.5 text-rose-600 flex-shrink-0" />
+                                    <AlertTriangle class="w-3.5 h-3.5 text-rose-600 shrink-0" />
                                     <span>Documented Allergies</span>
                                 </div>
                                 <span v-if="patientAllergies.length" class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-rose-50 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
@@ -1707,7 +1707,7 @@ const patientBillingStatus = computed(() => {
                             <div class="text-[11px] space-y-1">
                                 <div v-if="patientAllergies.length > 0">
                                     <div v-for="alg in patientAllergies" :key="alg.id" class="text-rose-700 dark:text-rose-300 font-medium truncate flex items-center gap-1.5">
-                                        <span class="w-1.5 h-1.5 rounded-full bg-rose-600 flex-shrink-0"></span>
+                                        <span class="w-1.5 h-1.5 rounded-full bg-rose-600 shrink-0"></span>
                                         <span class="truncate">{{ alg.allergen }} ({{ alg.severity || 'Active' }})</span>
                                     </div>
                                 </div>
@@ -1929,7 +1929,7 @@ const patientBillingStatus = computed(() => {
                         <label class="block font-bold text-foreground">Select Patient *</label>
                         <Select
                             v-model="newEncounterForm.patient_id"
-                            class="w-full h-8 rounded border border-border bg-card px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                            class="w-full h-8 rounded border border-border bg-card px-2 text-xs text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary"
                             required
                         >
                             <option value="" disabled>Choose patient from waiting list / MPI...</option>
@@ -1943,7 +1943,7 @@ const patientBillingStatus = computed(() => {
                         <label class="block font-bold text-foreground">Encounter Type *</label>
                         <Select
                             v-model="newEncounterForm.encounter_type"
-                            class="w-full h-8 rounded border border-border bg-card px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                            class="w-full h-8 rounded border border-border bg-card px-2 text-xs text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary"
                             required
                         >
                             <option value="OPD Consultation">OPD General Consultation</option>

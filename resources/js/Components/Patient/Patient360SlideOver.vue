@@ -207,12 +207,12 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown));
                         <!-- ═══════════════════════════════════════════════════
                              HEADER — Identity + Switcher + Close
                         ════════════════════════════════════════════════════ -->
-                        <div class="flex-shrink-0 border-b border-border bg-card">
+                        <div class="shrink-0 border-b border-border bg-card">
                             <!-- Top bar -->
                             <div class="h-12 px-4 flex items-center justify-between gap-3">
                                 <!-- Patient Avatar + Identity -->
                                 <div class="flex items-center gap-3 min-w-0">
-                                    <div class="w-8 h-8 rounded-md bg-primary/10 text-primary font-bold text-sm flex items-center justify-center border border-primary/20 flex-shrink-0">
+                                    <div class="w-8 h-8 rounded-md bg-primary/10 text-primary font-bold text-sm flex items-center justify-center border border-primary/20 shrink-0">
                                         {{ initials }}
                                     </div>
                                     <div class="min-w-0">
@@ -220,7 +220,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown));
                                             <span class="font-bold text-foreground text-sm truncate">
                                                 {{ patient.first_name }} {{ patient.middle_name || '' }} {{ patient.last_name }}
                                             </span>
-                                            <span class="font-mono text-[11px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded border border-border/60 flex-shrink-0">
+                                            <span class="font-mono text-[11px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded border border-border/60 shrink-0">
                                                 {{ patient.primary_mrn }}
                                             </span>
                                             <AfyaStatusBadge :status="patient.status || 'Active'" dot />
@@ -243,7 +243,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown));
                                 </div>
 
                                 <!-- Right controls: Patient switcher + Close -->
-                                <div class="flex items-center gap-2 flex-shrink-0">
+                                <div class="flex items-center gap-2 shrink-0">
                                     <!-- Patient Switcher -->
                                     <div class="relative">
                                         <button
@@ -263,11 +263,11 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown));
                                         >
                                             <div class="p-2 border-b border-border">
                                                 <div class="flex items-center gap-2 px-2 py-1 bg-muted/50 rounded border border-border/50">
-                                                    <Search class="w-3 h-3 text-muted-foreground flex-shrink-0" />
+                                                    <Search class="w-3 h-3 text-muted-foreground shrink-0" />
                                                     <input
                                                         v-model="switchSearch"
                                                         placeholder="Search patients…"
-                                                        class="flex-1 bg-transparent text-xs text-foreground placeholder:text-muted-foreground outline-none"
+                                                        class="flex-1 bg-transparent text-xs text-foreground placeholder:text-muted-foreground outline-hidden"
                                                         autofocus
                                                     />
                                                 </div>
@@ -282,14 +282,14 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown));
                                                         p.id === patient.id ? 'bg-primary/5' : ''
                                                     ]"
                                                 >
-                                                    <div class="w-6 h-6 rounded bg-primary/10 text-primary text-[10px] font-bold flex items-center justify-center flex-shrink-0">
+                                                    <div class="w-6 h-6 rounded bg-primary/10 text-primary text-[10px] font-bold flex items-center justify-center shrink-0">
                                                         {{ (p.first_name?.[0] || '') + (p.last_name?.[0] || '') }}
                                                     </div>
                                                     <div class="min-w-0">
                                                         <div class="text-xs font-semibold text-foreground truncate">{{ p.first_name }} {{ p.last_name }}</div>
                                                         <div class="text-[10px] text-muted-foreground font-mono">{{ p.primary_mrn }}</div>
                                                     </div>
-                                                    <UserCheck v-if="p.id === patient.id" class="w-3.5 h-3.5 text-primary ml-auto flex-shrink-0" />
+                                                    <UserCheck v-if="p.id === patient.id" class="w-3.5 h-3.5 text-primary ml-auto shrink-0" />
                                                 </button>
                                                 <div v-if="switcherResults.length === 0" class="px-4 py-6 text-center text-xs text-muted-foreground">
                                                     No patients found
@@ -325,7 +325,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown));
                         <div class="flex-1 flex overflow-hidden">
 
                             <!-- LEFT VERTICAL NAV -->
-                            <nav class="flex-shrink-0 w-48 border-r border-border bg-muted/30 flex flex-col overflow-y-auto">
+                            <nav class="shrink-0 w-48 border-r border-border bg-muted/30 flex flex-col overflow-y-auto">
                                 <div class="px-3 pt-3 pb-1 text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
                                     Patient 360
                                 </div>
@@ -344,14 +344,14 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown));
                                     >
                                         <component
                                             :is="tab.icon"
-                                            class="w-3.5 h-3.5 flex-shrink-0"
+                                            class="w-3.5 h-3.5 shrink-0"
                                             :class="tab.alert && activeTab !== tab.id ? 'text-rose-600' : ''"
                                         />
                                         <span class="flex-1 truncate">{{ tab.label }}</span>
                                         <span
                                             v-if="tab.badge !== undefined && tab.badge > 0"
                                             :class="[
-                                                'text-[9px] font-mono rounded-full px-1.5 py-0 font-bold flex-shrink-0',
+                                                'text-[9px] font-mono rounded-full px-1.5 py-0 font-bold shrink-0',
                                                 activeTab === tab.id
                                                     ? 'bg-primary-foreground/20 text-primary-foreground'
                                                     : tab.alert ? 'bg-rose-100 text-rose-700' : 'bg-muted text-muted-foreground'
@@ -480,7 +480,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown));
                                             <div class="bg-card border border-border rounded-lg p-3">
                                                 <div class="flex items-center justify-between gap-2">
                                                     <span class="font-semibold text-foreground text-sm">{{ ev.title }}</span>
-                                                    <span class="text-[10px] font-mono text-muted-foreground flex-shrink-0">{{ ev.date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) }}</span>
+                                                    <span class="text-[10px] font-mono text-muted-foreground shrink-0">{{ ev.date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) }}</span>
                                                 </div>
                                                 <p v-if="ev.subtitle" class="text-xs text-muted-foreground mt-0.5">{{ ev.subtitle }}</p>
                                             </div>
@@ -588,7 +588,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown));
                                                 <span class="font-semibold">Reaction:</span> {{ alg.reaction || 'Not specified' }}
                                             </div>
                                         </div>
-                                        <span class="flex-shrink-0 text-[11px] font-bold px-2.5 py-1 rounded-full bg-rose-100 border border-rose-300 text-rose-800">
+                                        <span class="shrink-0 text-[11px] font-bold px-2.5 py-1 rounded-full bg-rose-100 border border-rose-300 text-rose-800">
                                             {{ alg.severity || 'Unknown' }}
                                         </span>
                                     </div>

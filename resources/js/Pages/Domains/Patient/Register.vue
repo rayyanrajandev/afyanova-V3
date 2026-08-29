@@ -459,7 +459,7 @@ const submit = () => {
                         class="mb-2 px-3 py-1.5 bg-sky-50 border border-sky-200 rounded flex items-center justify-between text-xs text-sky-800 shadow-2xs"
                     >
                         <div class="flex items-center gap-1.5">
-                            <History class="w-3.5 h-3.5 text-sky-600 flex-shrink-0" />
+                            <History class="w-3.5 h-3.5 text-sky-600 shrink-0" />
                             <span><strong>Session Draft Restored:</strong> Unsaved patient data was recovered safely from your previous session.</span>
                         </div>
                         <div class="flex items-center gap-2">
@@ -592,7 +592,7 @@ const submit = () => {
                                         </div>
                                         <div class="w-1/2 min-w-0">
                                             <div v-if="computedAge" class="flex items-center gap-1 text-[11px] text-primary font-bold truncate">
-                                                <Sparkles class="w-3 h-3 flex-shrink-0" />
+                                                <Sparkles class="w-3 h-3 shrink-0" />
                                                 <span class="truncate font-mono">{{ computedAge.formatted }}</span>
                                             </div>
                                             <div v-else class="text-[10px] text-muted-foreground italic truncate">
@@ -898,7 +898,7 @@ const submit = () => {
                         <!-- 1. DYNAMIC PANEL: Immunization Protocol (Active during Age / DOB focus) -->
                         <div v-if="activeSection === 'dob_age'" class="p-2 rounded bg-card border border-border/80 space-y-1.5">
                             <div class="flex items-center gap-1 text-primary font-bold text-[11px]">
-                                <Syringe class="w-3 h-3 flex-shrink-0" />
+                                <Syringe class="w-3 h-3 shrink-0" />
                                 <span class="truncate">Tanzania EPI Schedule</span>
                             </div>
                             <div class="space-y-1 text-[10px]">
@@ -920,7 +920,7 @@ const submit = () => {
                         <!-- 2. DYNAMIC PANEL: Geographic Routing Hierarchy (Active during Address focus) -->
                         <div v-else-if="activeSection === 'address'" class="p-2 rounded bg-card border border-border/80 space-y-1.5">
                             <div class="flex items-center gap-1 text-primary font-bold text-[11px]">
-                                <MapPin class="w-3 h-3 flex-shrink-0" />
+                                <MapPin class="w-3 h-3 shrink-0" />
                                 <span class="truncate">Catchment HMIS Route</span>
                             </div>
                             <div class="space-y-1 text-[10px]">
@@ -942,7 +942,7 @@ const submit = () => {
                         <!-- 3. DYNAMIC PANEL: Identification & Contacts (Active during NIDA/Contacts focus) -->
                         <div v-else-if="activeSection === 'contacts'" class="p-2 rounded bg-card border border-border/80 space-y-1.5">
                             <div class="flex items-center gap-1 text-primary font-bold text-[11px]">
-                                <ShieldCheck class="w-3 h-3 flex-shrink-0" />
+                                <ShieldCheck class="w-3 h-3 shrink-0" />
                                 <span class="truncate">NIDA & Telecom Standards</span>
                             </div>
                             <div class="text-[10px] space-y-1">
@@ -961,7 +961,7 @@ const submit = () => {
                         <!-- 4. DEFAULT PANEL: Master Patient Index Policy -->
                         <div v-else class="p-2 rounded bg-card border border-border/80 space-y-1.5">
                             <div class="flex items-center gap-1 text-primary font-bold text-[11px]">
-                                <FileText class="w-3 h-3 flex-shrink-0" />
+                                <FileText class="w-3 h-3 shrink-0" />
                                 <span class="truncate">MPI Protocols</span>
                             </div>
                             <div class="text-[10px] text-muted-foreground space-y-0.5 leading-tight">

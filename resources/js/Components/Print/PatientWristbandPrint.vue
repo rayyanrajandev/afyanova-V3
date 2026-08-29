@@ -110,7 +110,7 @@ const formatDate = (dateStr) => {
                 </div>
 
                 <!-- Right QR Code for Bedside Scanner Verification -->
-                <div class="flex-shrink-0 pl-2 border-l border-dashed border-black/50">
+                <div class="shrink-0 pl-2 border-l border-dashed border-black/50">
                     <img v-if="qrCodeDataUrl" :src="qrCodeDataUrl" alt="Wristband QR" class="w-14 h-14" />
                 </div>
             </div>

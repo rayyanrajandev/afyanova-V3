@@ -188,7 +188,7 @@ const getCategoryColor = (cat) => {
                         <div class="relative w-full">
                             <Select
                                 v-model="selectedUserId"
-                                class="w-full h-8 text-xs rounded-md border border-input bg-card pl-2.5 pr-8 text-foreground truncate cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary shadow-2xs appearance-none"
+                                class="w-full h-8 text-xs rounded-md border border-input bg-card pl-2.5 pr-8 text-foreground truncate cursor-pointer focus:outline-hidden focus:ring-1 focus:ring-primary shadow-2xs appearance-none"
                                 @change="applyFilter"
                             >
                                 <option value="">All Staff Members</option>
@@ -243,7 +243,7 @@ const getCategoryColor = (cat) => {
                                     v-if="hasActiveFilters"
                                     size="sm"
                                     variant="ghost"
-                                    class="text-muted-foreground hover:text-foreground flex-shrink-0"
+                                    class="text-muted-foreground hover:text-foreground shrink-0"
                                     @click="resetFilter"
                                 >
                                     Reset

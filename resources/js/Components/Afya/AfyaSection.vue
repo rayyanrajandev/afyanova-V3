@@ -37,7 +37,7 @@ const props = defineProps({
                 </div>
             </div>
 
-            <div class="flex items-center space-x-2 flex-shrink-0">
+            <div class="flex items-center space-x-2 shrink-0">
                 <slot name="actions" />
             </div>
         </div>

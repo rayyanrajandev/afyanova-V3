@@ -786,7 +786,7 @@ const breadcrumbLabel = computed(() => {
                             </div>
                             <div class="max-h-40 overflow-y-auto space-y-1 p-2 bg-muted/20 rounded border border-border/30 font-mono text-[10px]">
                                 <div v-for="slug in effectivePermissions" :key="slug" class="text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
-                                    <CheckCircle2 class="w-3 h-3 flex-shrink-0" />
+                                    <CheckCircle2 class="w-3 h-3 shrink-0" />
                                     <span class="truncate">{{ slug }}</span>
                                 </div>
                             </div>
@@ -892,7 +892,7 @@ const breadcrumbLabel = computed(() => {
         <!-- MODAL: CONFIGURE ROLE PERMISSIONS -->
         <div v-if="showEditRolePermissionsModal" class="fixed inset-0 bg-background/80 backdrop-blur-xs z-50 flex items-center justify-center p-4">
             <div class="bg-card border border-border/60 rounded-xl shadow-xl w-full max-w-2xl max-h-[85vh] flex flex-col p-5 space-y-4">
-                <div class="flex items-center justify-between border-b border-border/50 pb-3 flex-shrink-0">
+                <div class="flex items-center justify-between border-b border-border/50 pb-3 shrink-0">
                     <h3 class="font-bold text-foreground text-sm flex items-center gap-2">
                         <Sliders class="w-4 h-4 text-primary" />
                         <span>Configure Role: {{ selectedRole?.name }}</span>
@@ -930,7 +930,7 @@ const breadcrumbLabel = computed(() => {
                     </div>
                 </div>
 
-                <div class="flex justify-end gap-2 border-t border-border/50 pt-3 flex-shrink-0">
+                <div class="flex justify-end gap-2 border-t border-border/50 pt-3 shrink-0">
                     <Button variant="outline" size="sm" @click="showEditRolePermissionsModal = false">Cancel</Button>
                     <Button variant="default" size="sm" :disabled="rolePermissionsForm.processing" @click="submitRolePermissions">
                         Save Role Permissions

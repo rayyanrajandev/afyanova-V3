@@ -38,7 +38,7 @@ const emit = defineEmits(['update:searchModel']);
                 type="text"
                 :value="searchModel"
                 :placeholder="searchPlaceholder"
-                class="w-full pl-8 pr-2.5 py-1 h-7 text-xs rounded border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring focus:border-ring"
+                class="w-full pl-8 pr-2.5 py-1 h-7 text-xs rounded border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-hidden focus:ring-1 focus:ring-ring focus:border-ring"
                 @input="emit('update:searchModel', $event.target.value)"
             />
         </div>

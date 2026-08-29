@@ -85,7 +85,7 @@ const onClear = () => {
         <!-- Embedded Search Icon -->
         <Search
             :class="cn(
-                'absolute pointer-events-none text-muted-foreground flex-shrink-0',
+                'absolute pointer-events-none text-muted-foreground shrink-0',
                 size === 'sm' ? 'left-2 w-3.5 h-3.5' : size === 'lg' ? 'left-3 w-4 h-4' : 'left-2.5 w-3.5 h-3.5'
             )"
         />
@@ -97,7 +97,7 @@ const onClear = () => {
             :disabled="disabled"
             :placeholder="placeholder"
             :class="cn(
-                'w-full border border-slate-300 dark:border-border/80 bg-white dark:bg-card text-slate-900 dark:text-foreground placeholder:text-muted-foreground shadow-2xs transition-all hover:border-slate-400 dark:hover:border-border focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50 font-normal',
+                'w-full border border-slate-300 dark:border-border/80 bg-white dark:bg-card text-slate-900 dark:text-foreground placeholder:text-muted-foreground shadow-2xs transition-all hover:border-slate-400 dark:hover:border-border focus:outline-hidden focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50 font-normal',
                 size === 'sm' && 'h-7 text-xs pl-7 pr-6 rounded',
                 size === 'default' && 'h-8 text-xs pl-8 pr-7 rounded-md',
                 size === 'lg' && 'h-9 text-xs pl-9 pr-8 rounded-md',

@@ -571,7 +571,7 @@ const submitCheckIn = () => {
                     <label class="text-[10.5px] font-semibold text-foreground">Injection Service Item</label>
                     <Select
                         v-model="form.procedure_catalog_id"
-                        class="w-full text-xs h-8 rounded-md border border-input bg-background px-2 text-foreground shadow-2xs focus:ring-1 focus:ring-primary/20 focus:outline-none"
+                        class="w-full text-xs h-8 rounded-md border border-input bg-background px-2 text-foreground shadow-2xs focus:ring-1 focus:ring-primary/20 focus:outline-hidden"
                     >
                         <option v-for="cat in injectionCatalogs" :key="cat.id" :value="cat.id">
                             {{ cat.name }} ({{ cat.procedure_code }}) — TZS {{ Number(cat.standard_price || 2000).toLocaleString() }}
@@ -622,7 +622,7 @@ const submitCheckIn = () => {
                     <label class="text-[10.5px] font-semibold text-foreground">Dressing Service Catalog</label>
                     <Select
                         v-model="form.procedure_catalog_id"
-                        class="w-full text-xs h-8 rounded-md border border-input bg-background px-2 text-foreground shadow-2xs focus:ring-1 focus:ring-primary/20 focus:outline-none"
+                        class="w-full text-xs h-8 rounded-md border border-input bg-background px-2 text-foreground shadow-2xs focus:ring-1 focus:ring-primary/20 focus:outline-hidden"
                     >
                         <option v-for="cat in dressingCatalogs" :key="cat.id" :value="cat.id">
                             {{ cat.name }} ({{ cat.procedure_code }}) — TZS {{ Number(cat.standard_price || 15000).toLocaleString() }}
@@ -647,7 +647,7 @@ const submitCheckIn = () => {
                     <label class="text-[10.5px] font-semibold text-foreground">Minor Procedure / Surgical Tariff</label>
                     <Select
                         v-model="form.procedure_catalog_id"
-                        class="w-full text-xs h-8 rounded-md border border-input bg-background px-2 text-foreground shadow-2xs focus:ring-1 focus:ring-primary/20 focus:outline-none"
+                        class="w-full text-xs h-8 rounded-md border border-input bg-background px-2 text-foreground shadow-2xs focus:ring-1 focus:ring-primary/20 focus:outline-hidden"
                     >
                         <option v-for="cat in minorSurgeryCatalogs" :key="cat.id" :value="cat.id">
                             {{ cat.name }} ({{ cat.procedure_code }}) — TZS {{ Number(cat.standard_price || 25000).toLocaleString() }}

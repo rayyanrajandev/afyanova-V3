@@ -334,7 +334,7 @@ const standards = [
                         class="p-3 rounded-md bg-card border border-border space-y-1 shadow-2xs"
                     >
                         <div class="flex items-center gap-1.5 text-xs font-bold text-foreground">
-                            <CheckCircle2 class="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                            <CheckCircle2 class="w-3.5 h-3.5 text-primary shrink-0" />
                             <span>{{ std.name }}</span>
                         </div>
                         <p class="text-[11px] text-muted-foreground pl-5">{{ std.desc }}</p>

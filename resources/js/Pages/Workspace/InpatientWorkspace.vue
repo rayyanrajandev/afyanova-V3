@@ -1248,7 +1248,7 @@ const formatCurrency = (val) => {
                         <Select 
                             v-model="admitForm.patient_id" 
                             required
-                            class="w-full h-8.5 rounded-md border border-input bg-background text-foreground px-3 py-1 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                            class="w-full h-8.5 rounded-md border border-input bg-background text-foreground px-3 py-1 text-xs shadow-xs focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring"
                         >
                             <option v-for="p in availablePatients" :key="p.id" :value="p.id">
                                 {{ p.first_name }} {{ p.last_name }} (MRN: {{ p.primary_mrn }})
@@ -1408,7 +1408,7 @@ const formatCurrency = (val) => {
                             v-model="dischargeForm.discharge_summary" 
                             required 
                             rows="3" 
-                            class="w-full rounded-md border border-input bg-background text-foreground p-2.5 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                            class="w-full rounded-md border border-input bg-background text-foreground p-2.5 text-xs shadow-xs focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring"
                             placeholder="Enter final clinical status, medications on discharge, and follow-up review plan..."
                         ></textarea>
                     </div>

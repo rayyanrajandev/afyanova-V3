@@ -155,13 +155,13 @@ const setTab = (tab) => {
                         <!-- Top Practitioner Identity Banner (Surface Elevation) -->
                         <div class="p-3.5 rounded-lg bg-card shadow-2xs flex items-center justify-between gap-3">
                             <div class="flex items-center gap-3 min-w-0">
-                                <div class="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold text-sm border border-primary/20 flex-shrink-0">
+                                <div class="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold text-sm border border-primary/20 shrink-0">
                                     {{ user.name ? user.name.charAt(0).toUpperCase() : 'U' }}
                                 </div>
                                 <div class="min-w-0">
                                     <h2 class="text-sm font-bold text-foreground flex items-center gap-1.5 truncate">
                                         <span>{{ user.name || 'Clinical Practitioner' }}</span>
-                                        <BadgeCheck class="w-4 h-4 text-primary flex-shrink-0" />
+                                        <BadgeCheck class="w-4 h-4 text-primary shrink-0" />
                                     </h2>
                                     <div class="text-[11px] text-muted-foreground flex items-center gap-2 truncate mt-0.5">
                                         <span class="font-mono">{{ user.email }}</span>
@@ -172,7 +172,7 @@ const setTab = (tab) => {
                                     </div>
                                 </div>
                             </div>
-                            <div class="hidden sm:flex items-center gap-2 flex-shrink-0">
+                            <div class="hidden sm:flex items-center gap-2 shrink-0">
                                 <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                                     Active Practitioner

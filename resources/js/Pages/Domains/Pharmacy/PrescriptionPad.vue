@@ -305,7 +305,7 @@ const cancelAllergyOrder = () => {
             class="p-2.5 rounded-md bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-200 text-xs font-semibold flex items-center justify-between"
         >
             <div class="flex items-center gap-2">
-                <CheckCircle2 class="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                <CheckCircle2 class="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                 <span>{{ successMessage }}</span>
             </div>
             <button @click="successMessage = ''" class="text-emerald-700 hover:text-emerald-900">
@@ -318,7 +318,7 @@ const cancelAllergyOrder = () => {
             class="p-2.5 rounded-md bg-rose-50 dark:bg-rose-950/50 border border-rose-300 dark:border-rose-700 text-rose-800 dark:text-rose-200 text-xs font-semibold flex items-center justify-between"
         >
             <div class="flex items-center gap-2">
-                <AlertTriangle class="w-4 h-4 text-rose-600 dark:text-rose-400 flex-shrink-0" />
+                <AlertTriangle class="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
                 <span>{{ errorMessage || form.errors.prescription }}</span>
             </div>
             <button @click="errorMessage = ''; form.clearErrors('prescription')" class="text-rose-700 hover:text-rose-900">
@@ -400,7 +400,7 @@ const cancelAllergyOrder = () => {
         <!-- Clinical Override Banner -->
         <div v-if="overrideConfirmed" class="p-2 rounded bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700 text-amber-950 dark:text-amber-200 text-xs flex items-center justify-between">
             <div class="flex items-center gap-1.5">
-                <AlertTriangle class="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
+                <AlertTriangle class="w-3.5 h-3.5 text-amber-600 shrink-0" />
                 <span><strong>Clinical Override Active:</strong> Prescribing despite documented allergy to {{ matchedAllergy?.allergen }}.</span>
             </div>
             <button @click="overrideConfirmed = false" class="text-xs text-amber-800 underline font-semibold">Reset</button>
@@ -518,7 +518,7 @@ const cancelAllergyOrder = () => {
                 <!-- Real-Time Estimated Cost Strip for Transparency -->
                 <div v-if="selectedMedication && form.quantity" class="sm:col-span-2 lg:col-span-12 flex items-center justify-between p-2 rounded-md bg-sky-50/80 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800 text-xs">
                     <div class="flex items-center gap-2 text-sky-950 dark:text-sky-200">
-                        <DollarSign class="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 flex-shrink-0" />
+                        <DollarSign class="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" />
                         <span>
                             <strong>Estimated Medication Charge:</strong> 
                             <strong class="text-sky-700 dark:text-sky-300 font-mono text-sm ml-1">
@@ -623,7 +623,7 @@ const cancelAllergyOrder = () => {
                 <div v-if="matchedAllergy && selectedMedication" class="space-y-3 text-xs">
                     <div class="p-3 bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 rounded text-rose-950 dark:text-rose-200 space-y-1.5">
                         <div class="font-bold text-rose-900 dark:text-rose-300 flex items-center gap-1">
-                            <AlertTriangle class="w-4 h-4 text-rose-600 flex-shrink-0" />
+                            <AlertTriangle class="w-4 h-4 text-rose-600 shrink-0" />
                             <span>Documented Allergen: {{ matchedAllergy.allergen }} (Severity: {{ matchedAllergy.severity || 'Critical' }})</span>
                         </div>
                         <p class="text-[11px] text-rose-800 dark:text-rose-300 leading-snug">

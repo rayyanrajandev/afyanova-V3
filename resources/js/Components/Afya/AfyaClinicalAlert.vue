@@ -68,7 +68,7 @@ const severityStyles = computed(() => {
         <div class="flex items-start space-x-2 min-w-0">
             <component
                 :is="severityStyles.icon"
-                class="w-4 h-4 flex-shrink-0 mt-0.5"
+                class="w-4 h-4 shrink-0 mt-0.5"
                 :class="severityStyles.iconClass"
                 aria-hidden="true"
             />
@@ -86,7 +86,7 @@ const severityStyles = computed(() => {
         <button
             v-if="dismissible"
             @click="emit('dismiss')"
-            class="text-muted-foreground hover:text-foreground p-0.5 rounded transition focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            class="text-muted-foreground hover:text-foreground p-0.5 rounded transition focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring"
             title="Dismiss alert"
             aria-label="Dismiss alert"
         >

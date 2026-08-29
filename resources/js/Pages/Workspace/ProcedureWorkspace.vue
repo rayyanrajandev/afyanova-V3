@@ -942,7 +942,7 @@ const formatTime = (dateStr) => {
                                             </TableCell>
                                             <TableCell class="py-1 px-3">
                                                 <div class="font-semibold text-foreground text-[11px] flex items-center gap-1.5">
-                                                    <Syringe class="w-3.5 h-3.5 text-rose-500 flex-shrink-0" />
+                                                    <Syringe class="w-3.5 h-3.5 text-rose-500 shrink-0" />
                                                     <span>{{ order.catalog?.name }}</span>
                                                 </div>
                                                 <div class="text-[9.5px] text-muted-foreground truncate max-w-[160px]">{{ order.clinical_indication || 'Medication Administration' }}</div>
@@ -1068,7 +1068,7 @@ const formatTime = (dateStr) => {
                                             </TableCell>
                                             <TableCell class="py-1 px-3">
                                                 <div class="font-semibold text-foreground text-[11px] flex items-center gap-1.5">
-                                                    <Bandage class="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+                                                    <Bandage class="w-3.5 h-3.5 text-amber-500 shrink-0" />
                                                     <span>{{ order.catalog?.name }}</span>
                                                 </div>
                                             </TableCell>
@@ -1170,7 +1170,7 @@ const formatTime = (dateStr) => {
                                             </TableCell>
                                             <TableCell class="py-1 px-3">
                                                 <div class="font-semibold text-foreground text-[11px] flex items-center gap-1.5">
-                                                    <Scissors class="w-3.5 h-3.5 text-sky-500 flex-shrink-0" />
+                                                    <Scissors class="w-3.5 h-3.5 text-sky-500 shrink-0" />
                                                     <span>{{ order.catalog?.name }}</span>
                                                 </div>
                                             </TableCell>

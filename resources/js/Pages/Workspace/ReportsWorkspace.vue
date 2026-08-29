@@ -499,7 +499,7 @@ const contextIcon = computed(() => {
                                     >
                                         <div class="flex items-center justify-between text-xs">
                                             <div class="flex items-center gap-2.5 min-w-0">
-                                                <div class="w-6 h-6 rounded-md bg-primary/10 text-primary font-bold font-mono text-[11px] flex items-center justify-center flex-shrink-0">
+                                                <div class="w-6 h-6 rounded-md bg-primary/10 text-primary font-bold font-mono text-[11px] flex items-center justify-center shrink-0">
                                                     #{{ item.rank }}
                                                 </div>
                                                 <div class="min-w-0">
@@ -511,7 +511,7 @@ const contextIcon = computed(() => {
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div class="flex items-center gap-3 font-mono text-xs flex-shrink-0">
+                                            <div class="flex items-center gap-3 font-mono text-xs shrink-0">
                                                 <span class="font-bold text-foreground">{{ item.total_cases }} cases</span>
                                                 <span class="text-muted-foreground font-semibold">({{ item.percentage }}%)</span>
                                             </div>
@@ -584,7 +584,7 @@ const contextIcon = computed(() => {
                                                 class="hover:bg-muted/20 border-b border-border/30"
                                             >
                                                 <TableCell class="py-2 px-3 font-bold text-rose-600 dark:text-rose-400 flex items-center gap-1.5">
-                                                    <AlertTriangle class="w-3.5 h-3.5 flex-shrink-0" />
+                                                    <AlertTriangle class="w-3.5 h-3.5 shrink-0" />
                                                     <span>{{ alert.disease_name }}</span>
                                                 </TableCell>
                                                 <TableCell class="py-2 px-3 font-mono font-bold text-foreground">

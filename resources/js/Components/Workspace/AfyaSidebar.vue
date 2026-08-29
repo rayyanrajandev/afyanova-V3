@@ -41,20 +41,20 @@ const sidebarStyle = computed(() => {
     <aside
         v-if="state !== 'hidden'"
         :style="sidebarStyle"
-        class="h-full flex flex-col bg-muted/30 border-r border-border/60 transition-[width] duration-150 ease-out flex-shrink-0 select-none overflow-hidden"
+        class="h-full flex flex-col bg-muted/30 border-r border-border/60 transition-[width] duration-150 ease-out shrink-0 select-none overflow-hidden"
         aria-label="Module Navigation"
     >
         <!-- Clean Module Header (Standardized h-10 px-3 across all panels) -->
-        <div class="h-10 px-3 border-b border-border/60 flex items-center justify-between bg-card flex-shrink-0">
+        <div class="h-10 px-3 border-b border-border/60 flex items-center justify-between bg-card shrink-0">
             <!-- Expanded: Title & Icon -->
             <div v-if="!isCollapsed" class="flex items-center space-x-2 truncate min-w-0">
                 <component
                     v-if="isComponentIcon"
                     :is="icon"
-                    class="w-4 h-4 text-primary flex-shrink-0"
+                    class="w-4 h-4 text-primary shrink-0"
                     aria-hidden="true"
                 />
-                <span v-else-if="icon" class="text-sm flex-shrink-0" aria-hidden="true">{{ icon }}</span>
+                <span v-else-if="icon" class="text-sm shrink-0" aria-hidden="true">{{ icon }}</span>
                 <h2 class="text-[11px] font-bold uppercase tracking-wider text-foreground truncate">
                     {{ title }}
                 </h2>
@@ -64,7 +64,7 @@ const sidebarStyle = computed(() => {
             <div v-else class="w-full flex justify-center items-center">
                 <button
                     @click="emit('set-state', 'expanded')"
-                    class="w-7 h-7 flex items-center justify-center rounded hover:bg-muted text-muted-foreground hover:text-foreground transition focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    class="w-7 h-7 flex items-center justify-center rounded hover:bg-muted text-muted-foreground hover:text-foreground transition focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring"
                     title="Expand navigation (Ctrl+B)"
                     aria-label="Expand navigation"
                 >
@@ -85,13 +85,13 @@ const sidebarStyle = computed(() => {
         </nav>
 
         <!-- Consistent Bottom Controls: Unified Collapse/Expand Position -->
-        <div class="p-2 border-t border-border/60 bg-card flex-shrink-0 flex items-center justify-between">
+        <div class="p-2 border-t border-border/60 bg-card shrink-0 flex items-center justify-between">
             <slot name="footer">
                 <!-- 1. COLLAPSED STATE: Expand button in bottom footer -->
                 <button
                     v-if="isCollapsed"
                     @click="emit('set-state', 'expanded')"
-                    class="w-full h-7 flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    class="w-full h-7 flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring"
                     title="Expand sidebar (Ctrl+B)"
                     aria-label="Expand sidebar"
                 >
@@ -103,7 +103,7 @@ const sidebarStyle = computed(() => {
                     <!-- Primary Action: Collapse to Rail -->
                     <button
                         @click="emit('set-state', 'collapsed')"
-                        class="flex-1 flex items-center justify-between px-2 h-7 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                        class="flex-1 flex items-center justify-between px-2 h-7 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring"
                         title="Collapse sidebar (Ctrl+B)"
                         aria-label="Collapse sidebar"
                     >
@@ -119,7 +119,7 @@ const sidebarStyle = computed(() => {
                     <!-- Secondary Action: Subtle Hide Button -->
                     <button
                         @click="emit('set-state', 'hidden')"
-                        class="h-7 w-7 flex items-center justify-center rounded text-muted-foreground/60 hover:text-muted-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                        class="h-7 w-7 flex items-center justify-center rounded text-muted-foreground/60 hover:text-muted-foreground hover:bg-muted transition-colors focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring"
                         title="Hide navigation completely"
                         aria-label="Hide navigation completely"
                     >

@@ -128,7 +128,7 @@ const formatDate = (dateStr) => {
 
         <div v-if="successMessage" class="p-2 rounded-md bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-200 text-xs font-semibold flex items-center justify-between shadow-2xs">
             <div class="flex items-center gap-1.5">
-                <CheckCircle2 class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                <CheckCircle2 class="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                 <span>{{ successMessage }}</span>
             </div>
             <button @click="successMessage = ''" class="text-emerald-700 hover:text-emerald-900">
@@ -138,7 +138,7 @@ const formatDate = (dateStr) => {
 
         <div v-if="errorMessage" class="p-2 rounded-md bg-rose-50 dark:bg-rose-950/50 border border-rose-300 dark:border-rose-700 text-rose-800 dark:text-rose-200 text-xs font-semibold flex items-center justify-between shadow-2xs">
             <div class="flex items-center gap-1.5">
-                <AlertTriangle class="w-3.5 h-3.5 text-rose-600 dark:text-rose-400 flex-shrink-0" />
+                <AlertTriangle class="w-3.5 h-3.5 text-rose-600 dark:text-rose-400 shrink-0" />
                 <span>{{ errorMessage }}</span>
             </div>
             <button @click="errorMessage = ''" class="text-rose-700 hover:text-rose-900">

@@ -85,7 +85,7 @@ const formatDate = (dateStr) => {
             <div id="specimen-label-paper" class="bg-white text-black font-mono text-[9px] leading-tight p-2 rounded border border-slate-200 print:border-none print:p-0 select-none flex items-center gap-2 w-[50mm] min-h-[25mm]">
                 
                 <!-- Left QR / Matrix Code -->
-                <div class="flex-shrink-0">
+                <div class="shrink-0">
                     <img v-if="qrCodeDataUrl" :src="qrCodeDataUrl" alt="Sample QR" class="w-14 h-14 border border-black/20" />
                 </div>
 

@@ -949,7 +949,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                     v-if="ticketToTransfer && (ticketToTransfer.current_service_point === 'Lab' || ticketToTransfer.current_service_point === 'Procedure') && targetServicePoint === 'Triage'"
                     class="p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 text-[11px] text-amber-800 dark:text-amber-300 flex items-start gap-2"
                 >
-                    <Activity class="w-4 h-4 flex-shrink-0 mt-0.5 text-amber-600" />
+                    <Activity class="w-4 h-4 shrink-0 mt-0.5 text-amber-600" />
                     <div>
                         <span class="font-bold">Re-routing to Triage:</span> Patient was queued for {{ ticketToTransfer.current_service_point }}. Moving back to Triage will reset their queue priority.
                     </div>
@@ -960,7 +960,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                     <label class="text-xs font-semibold text-foreground">Reason for Re-Routing</label>
                     <Select
                         v-model="transferReason"
-                        class="w-full text-xs h-8 rounded-md border border-input bg-background px-2.5 py-1 text-foreground shadow-xs focus:ring-1 focus:ring-ring focus:outline-none"
+                        class="w-full text-xs h-8 rounded-md border border-input bg-background px-2.5 py-1 text-foreground shadow-xs focus:ring-1 focus:ring-ring focus:outline-hidden"
                     >
                         <option v-for="r in transferReasons" :key="r.id" :value="r.id">
                             {{ r.label }}

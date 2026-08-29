@@ -68,11 +68,11 @@ const itemClasses = computed(() => [
             <component
                 v-if="isComponentIcon"
                 :is="icon"
-                class="w-3.5 h-3.5 flex-shrink-0 transition-transform group-hover:scale-105"
+                class="w-3.5 h-3.5 shrink-0 transition-transform group-hover:scale-105"
                 :class="active ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'"
                 aria-hidden="true"
             />
-            <span v-else-if="icon" class="text-xs flex-shrink-0" aria-hidden="true">{{ icon }}</span>
+            <span v-else-if="icon" class="text-xs shrink-0" aria-hidden="true">{{ icon }}</span>
             <span v-if="!collapsed" class="truncate text-[11.5px]">{{ label }}</span>
         </div>
 

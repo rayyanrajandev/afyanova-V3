@@ -26,7 +26,7 @@ const props = defineProps({
         <!-- Main Top Bar (Standardized h-10 px-3 across all panels) -->
         <header
             v-if="title || breadcrumbs.length > 0 || $slots.header || $slots.actions"
-            class="h-10 px-3 border-b border-border/60 flex items-center justify-between bg-card flex-shrink-0 z-10 select-none"
+            class="h-10 px-3 border-b border-border/60 flex items-center justify-between bg-card shrink-0 z-10 select-none"
         >
             <div class="flex items-center space-x-2.5 min-w-0">
                 <AfyaBreadcrumbs v-if="breadcrumbs.length > 0" :items="breadcrumbs" />
@@ -39,7 +39,7 @@ const props = defineProps({
                 <slot name="header" />
             </div>
 
-            <div class="flex items-center space-x-2 flex-shrink-0">
+            <div class="flex items-center space-x-2 shrink-0">
                 <slot name="actions" />
             </div>
         </header>
@@ -53,7 +53,7 @@ const props = defineProps({
         </div>
 
         <!-- Optional Footer -->
-        <footer v-if="$slots.footer" class="px-3 py-2 border-t border-border/60 bg-card flex-shrink-0">
+        <footer v-if="$slots.footer" class="px-3 py-2 border-t border-border/60 bg-card shrink-0">
             <slot name="footer" />
         </footer>
     </main>

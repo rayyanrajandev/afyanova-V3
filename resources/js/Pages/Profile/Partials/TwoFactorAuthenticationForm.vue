@@ -127,7 +127,7 @@ const copyAll = () => {
         <!-- ── IDLE: MFA not yet enabled ──────────────────────────────────── -->
         <div v-if="phase === 'idle'" class="space-y-4">
             <div class="flex items-start gap-3 p-3.5 rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30">
-                <AlertTriangle class="w-4 h-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                <AlertTriangle class="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
                 <div class="text-[11px] text-amber-800 dark:text-amber-300 space-y-0.5">
                     <div class="font-bold">Two-factor authentication is not enabled</div>
                     <div class="text-amber-700 dark:text-amber-400">
@@ -154,7 +154,7 @@ const copyAll = () => {
         <!-- ── PENDING: secret generated, awaiting confirmation ────────────── -->
         <div v-else-if="phase === 'pending'" class="space-y-5">
             <div class="flex items-start gap-3 p-3 rounded-lg border border-primary/20 bg-primary/5">
-                <QrCode class="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                <QrCode class="w-4 h-4 text-primary shrink-0 mt-0.5" />
                 <div class="text-[11px] space-y-0.5">
                     <div class="font-bold text-foreground">Scan the QR code with your authenticator app</div>
                     <div class="text-muted-foreground">
@@ -227,7 +227,7 @@ const copyAll = () => {
         <!-- ── ACTIVE: MFA fully confirmed ───────────────────────────────────── -->
         <div v-else class="space-y-5">
             <div class="flex items-start gap-3 p-3.5 rounded-lg border border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/30">
-                <ShieldCheck class="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0 mt-0.5" />
+                <ShieldCheck class="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
                 <div class="text-[11px] text-emerald-800 dark:text-emerald-300 space-y-0.5">
                     <div class="font-bold">Two-factor authentication is active</div>
                     <div class="text-emerald-700 dark:text-emerald-400">
@@ -282,8 +282,8 @@ const copyAll = () => {
                                 <code class="text-[11px] font-mono font-bold text-foreground tracking-wider">
                                     {{ code }}
                                 </code>
-                                <Check v-if="copiedIndex === i" class="w-3 h-3 text-emerald-600 flex-shrink-0" />
-                                <Copy v-else class="w-3 h-3 text-muted-foreground group-hover:text-primary flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                <Check v-if="copiedIndex === i" class="w-3 h-3 text-emerald-600 shrink-0" />
+                                <Copy v-else class="w-3 h-3 text-muted-foreground group-hover:text-primary shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
                             </button>
                         </div>
 

@@ -34,14 +34,14 @@ const activeTab = ref('vitals');
                 
                 <!-- Left Sidebar: Patient History -->
                 <div class="col-span-12 md:col-span-3 space-y-6">
-                    <div class="bg-white shadow overflow-hidden sm:rounded-lg p-4">
+                    <div class="bg-white shadow-sm overflow-hidden sm:rounded-lg p-4">
                         <h3 class="text-md font-medium text-gray-900 border-b pb-2 mb-2">Patient Summary</h3>
                         <p class="text-sm text-gray-600">MRN: {{ encounter.patient.primary_mrn }}</p>
                         <p class="text-sm text-gray-600">Gender: {{ encounter.patient.gender }}</p>
                         <p class="text-sm text-gray-600">DOB: {{ encounter.patient.dob || 'Unknown' }}</p>
                     </div>
 
-                    <div class="bg-white shadow overflow-hidden sm:rounded-lg p-4">
+                    <div class="bg-white shadow-sm overflow-hidden sm:rounded-lg p-4">
                         <h3 class="text-md font-medium text-gray-900 border-b pb-2 mb-2">Active Allergies</h3>
                         <ul v-if="encounter.patient.allergies.length > 0" class="text-sm space-y-1">
                             <li v-for="allergy in encounter.patient.allergies" :key="allergy.id" class="text-red-600 font-medium">
@@ -54,7 +54,7 @@ const activeTab = ref('vitals');
 
                 <!-- Right Workspace: Charting -->
                 <div class="col-span-12 md:col-span-9">
-                    <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+                    <div class="bg-white shadow-sm overflow-hidden sm:rounded-lg">
                         
                         <!-- Tabs -->
                         <div class="border-b border-gray-200">

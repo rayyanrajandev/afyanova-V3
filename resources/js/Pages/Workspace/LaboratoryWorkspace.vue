@@ -902,7 +902,7 @@ const formatCurrency = (val) => Number(val || 0).toLocaleString('en-US');
                             >
                                 <div class="flex items-center justify-between text-muted-foreground">
                                     <span class="text-[9.5px] font-bold uppercase tracking-wider group-hover:text-foreground transition-colors">Total Orders</span>
-                                    <FlaskConical class="w-3 h-3 text-muted-foreground flex-shrink-0" />
+                                    <FlaskConical class="w-3 h-3 text-muted-foreground shrink-0" />
                                 </div>
                                 <div class="text-base font-bold text-foreground font-mono">{{ metrics.total_orders }}</div>
                             </div>
@@ -916,7 +916,7 @@ const formatCurrency = (val) => Number(val || 0).toLocaleString('en-US');
                             >
                                 <div class="flex items-center justify-between text-muted-foreground">
                                     <span class="text-[9.5px] font-bold uppercase tracking-wider group-hover:text-foreground transition-colors">Pending Phlebotomy</span>
-                                    <Syringe class="w-3 h-3 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                                    <Syringe class="w-3 h-3 text-amber-600 dark:text-amber-400 shrink-0" />
                                 </div>
                                 <div class="text-base font-bold text-amber-600 dark:text-amber-400 font-mono">{{ metrics.pending_phlebotomy }}</div>
                             </div>
@@ -930,7 +930,7 @@ const formatCurrency = (val) => Number(val || 0).toLocaleString('en-US');
                             >
                                 <div class="flex items-center justify-between text-muted-foreground">
                                     <span class="text-[9.5px] font-bold uppercase tracking-wider group-hover:text-foreground transition-colors">In Testing Worklist</span>
-                                    <Microscope class="w-3 h-3 text-primary flex-shrink-0" />
+                                    <Microscope class="w-3 h-3 text-primary shrink-0" />
                                 </div>
                                 <div class="text-base font-bold text-primary font-mono">{{ metrics.in_testing }}</div>
                             </div>
@@ -944,7 +944,7 @@ const formatCurrency = (val) => Number(val || 0).toLocaleString('en-US');
                             >
                                 <div class="flex items-center justify-between text-muted-foreground">
                                     <span class="text-[9.5px] font-bold uppercase tracking-wider group-hover:text-foreground transition-colors">Completed Today</span>
-                                    <CheckCircle2 class="w-3 h-3 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                                    <CheckCircle2 class="w-3 h-3 text-emerald-600 dark:text-emerald-400 shrink-0" />
                                 </div>
                                 <div class="text-base font-bold text-emerald-600 dark:text-emerald-400 font-mono">{{ metrics.completed_today }}</div>
                             </div>
@@ -958,7 +958,7 @@ const formatCurrency = (val) => Number(val || 0).toLocaleString('en-US');
                             >
                                 <div class="flex items-center justify-between text-muted-foreground">
                                     <span class="text-[9.5px] font-bold uppercase tracking-wider group-hover:text-foreground transition-colors">Critical Alerts</span>
-                                    <AlertTriangle class="w-3 h-3 text-rose-600 dark:text-rose-400 flex-shrink-0" :class="metrics.critical_alerts > 0 ? 'animate-pulse' : ''" />
+                                    <AlertTriangle class="w-3 h-3 text-rose-600 dark:text-rose-400 shrink-0" :class="metrics.critical_alerts > 0 ? 'animate-pulse' : ''" />
                                 </div>
                                 <div class="text-base font-bold text-rose-600 dark:text-rose-400 font-mono">{{ metrics.critical_alerts }}</div>
                             </div>
@@ -1873,7 +1873,7 @@ const formatCurrency = (val) => Number(val || 0).toLocaleString('en-US');
                         <textarea
                             v-model="verifyForm.pathologist_notes"
                             rows="3"
-                            class="w-full rounded-md border border-input bg-background text-foreground p-2.5 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                            class="w-full rounded-md border border-input bg-background text-foreground p-2.5 text-xs shadow-xs focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring"
                             placeholder="Enter pathology verification commentary..."
                         ></textarea>
                     </div>
@@ -2115,7 +2115,7 @@ const formatCurrency = (val) => Number(val || 0).toLocaleString('en-US');
                 <div v-if="amendItem" class="space-y-4">
                     <!-- Forensic Audit Notice -->
                     <div class="p-3 bg-amber-50/80 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-700/60 rounded-lg flex items-start gap-2 text-[11px] text-amber-900 dark:text-amber-300">
-                        <AlertTriangle class="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                        <AlertTriangle class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                         <div>
                             <span class="font-bold">Forensic Protocol Invariant:</span>
                             The verified original result will be marked <span class="font-mono font-bold">deprecated</span>. A new immutable amendment record will be generated linked directly to this specimen barcode.
@@ -2181,7 +2181,7 @@ const formatCurrency = (val) => Number(val || 0).toLocaleString('en-US');
                                 required
                                 minlength="10"
                                 rows="3"
-                                class="w-full rounded-md border border-input bg-background text-foreground p-2.5 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                                class="w-full rounded-md border border-input bg-background text-foreground p-2.5 text-xs shadow-xs focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring"
                                 placeholder="Explain why the previously signed result is being amended (e.g. Analyzer drift re-run, dilution recheck, specimen re-evaluation)..."
                             ></textarea>
                         </div>

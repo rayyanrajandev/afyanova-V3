@@ -353,7 +353,7 @@ onUnmounted(() => {
         <!-- DROPDOWN POPOVER (Smart Top/Bottom Placement) -->
         <div
             v-if="isOpen"
-            class="absolute left-0 z-[100] bg-card border border-border/80 rounded-lg shadow-2xl overflow-hidden animate-in fade-in-0 duration-100 flex flex-col max-h-[340px] w-full min-w-[380px]"
+            class="absolute left-0 z-100 bg-card border border-border/80 rounded-lg shadow-2xl overflow-hidden animate-in fade-in-0 duration-100 flex flex-col max-h-[340px] w-full min-w-[380px]"
             :class="openUpwards ? 'bottom-full mb-1 zoom-in-95 origin-bottom' : 'top-full mt-1 zoom-in-95 origin-top'"
         >
             <!-- 1. LIVE SEARCH HEADER -->

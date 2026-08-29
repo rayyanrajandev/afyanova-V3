@@ -457,7 +457,7 @@ onUnmounted(() => {
                 tabindex="0"
                 :class="cn(
                     'flex h-8 w-full items-center justify-between rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1 text-xs text-slate-900 dark:text-slate-100 shadow-2xs transition-all cursor-pointer select-none font-mono',
-                    disabled ? 'opacity-50 cursor-not-allowed bg-slate-50 dark:bg-slate-800' : 'hover:border-slate-400 dark:hover:border-slate-600 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20',
+                    disabled ? 'opacity-50 cursor-not-allowed bg-slate-50 dark:bg-slate-800' : 'hover:border-slate-400 dark:hover:border-slate-600 focus:outline-hidden focus:border-primary focus:ring-2 focus:ring-primary/20',
                     error ? 'border-destructive focus:border-destructive focus:ring-destructive/20' : '',
                     isOpen ? 'border-primary ring-2 ring-primary/20' : '',
                     props.class
@@ -506,7 +506,7 @@ onUnmounted(() => {
         >
             <div
                 v-if="isOpen"
-                class="absolute z-[9999] w-[276px] rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl p-2.5 space-y-2 text-slate-900 dark:text-slate-100"
+                class="absolute z-9999 w-[276px] rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl p-2.5 space-y-2 text-slate-900 dark:text-slate-100"
                 :class="openUpward ? 'bottom-full mb-1' : 'top-full mt-1'"
             >
                 <!-- Navigation Header with Month & Year Select Buttons -->

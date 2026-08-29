@@ -183,7 +183,7 @@ const handleClose = () => {
                             v-model="searchQuery"
                             type="text"
                             placeholder="Search duplicate by MRN, First/Last Name, or Phone..."
-                            class="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none transition"
+                            class="w-full pl-10 pr-4 py-2.5 text-sm rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-hidden transition"
                         />
                     </div>
 
@@ -342,7 +342,7 @@ const handleClose = () => {
                             v-model="form.justification_reason"
                             rows="2"
                             placeholder="State the reason for merge (e.g. Duplicate registration created during emergency intake; verified by NIDA/phone)..."
-                            class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none transition"
+                            class="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-hidden transition"
                         ></textarea>
                         <InputError :message="form.errors.justification_reason || form.errors.merge" />
                     </div>
@@ -362,7 +362,7 @@ const handleClose = () => {
                         v-if="selectedCandidate"
                         type="submit"
                         :disabled="!isFormValid || form.processing"
-                        class="px-5 py-2.5 text-xs font-bold rounded-xl text-white bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition"
+                        class="px-5 py-2.5 text-xs font-bold rounded-xl text-white bg-linear-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition"
                     >
                         <Loader2 v-if="form.processing" class="w-4 h-4 animate-spin" />
                         <GitMerge v-else class="w-4 h-4" />

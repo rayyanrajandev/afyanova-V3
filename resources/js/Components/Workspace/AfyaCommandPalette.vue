@@ -179,13 +179,13 @@ onUnmounted(() => {
                 >
                     <!-- Search Input Bar -->
                     <div class="flex items-center px-3.5 border-b border-border h-11 bg-card">
-                        <Search class="w-4 h-4 text-muted-foreground mr-2.5 flex-shrink-0" />
+                        <Search class="w-4 h-4 text-muted-foreground mr-2.5 shrink-0" />
                         <input
                             ref="inputRef"
                             v-model="query"
                             type="text"
                             placeholder="Type a command, destination, or shortcut (⌘K)..."
-                            class="w-full bg-transparent border-0 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-0 p-0"
+                            class="w-full bg-transparent border-0 text-xs text-foreground placeholder:text-muted-foreground focus:outline-hidden focus:ring-0 p-0"
                         />
                         <kbd class="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[9px] font-mono bg-muted text-muted-foreground rounded border border-border">
                             ESC
@@ -207,12 +207,12 @@ onUnmounted(() => {
                             <div class="flex items-center space-x-2.5 min-w-0">
                                 <component
                                     :is="item.icon"
-                                    class="w-4 h-4 flex-shrink-0"
+                                    class="w-4 h-4 shrink-0"
                                     :class="selectedIndex === idx ? 'text-primary' : 'text-muted-foreground'"
                                 />
                                 <span class="truncate text-[11.5px]">{{ item.label }}</span>
                             </div>
-                            <div class="flex items-center gap-1.5 flex-shrink-0">
+                            <div class="flex items-center gap-1.5 shrink-0">
                                 <kbd v-if="item.shortcut" class="text-[9px] font-mono text-muted-foreground px-1.5 py-0.5 rounded bg-muted border border-border">
                                     {{ item.shortcut }}
                                 </kbd>

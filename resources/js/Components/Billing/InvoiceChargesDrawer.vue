@@ -163,11 +163,11 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown));
                         <!-- ═══════════════════════════════════════════════════
                              1. DRAWER HEADER: Invoice # & Patient Demographics
                         ════════════════════════════════════════════════════ -->
-                        <div class="flex-shrink-0 border-b border-border/60 bg-card p-4">
+                        <div class="shrink-0 border-b border-border/60 bg-card p-4">
                             <div class="flex items-center justify-between gap-3">
                                 <!-- Invoice Identity -->
                                 <div class="flex items-center gap-3 min-w-0">
-                                    <div class="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-mono font-bold text-sm shadow-2xs flex-shrink-0">
+                                    <div class="w-9 h-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-mono font-bold text-sm shadow-2xs shrink-0">
                                         <Receipt class="w-5 h-5" />
                                     </div>
                                     <div class="min-w-0">
@@ -190,7 +190,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown));
                                 </div>
 
                                 <!-- Action Buttons & Close -->
-                                <div class="flex items-center gap-2 flex-shrink-0">
+                                <div class="flex items-center gap-2 shrink-0">
                                     <Button
                                         variant="outline"
                                         size="sm"
@@ -272,7 +272,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown));
                                     <span class="text-[10px] text-muted-foreground">Appends item and updates general ledger automatically</span>
                                 </div>
                                 <div class="flex items-end gap-2 text-xs">
-                                    <div class="w-40 flex-shrink-0 space-y-1">
+                                    <div class="w-40 shrink-0 space-y-1">
                                         <label class="text-[10px] font-bold text-muted-foreground uppercase">Category</label>
                                         <Select
                                             v-model="chargeCategory"
@@ -288,7 +288,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown));
                                             class="h-8 text-xs w-full"
                                         />
                                     </div>
-                                    <div class="w-16 flex-shrink-0 space-y-1">
+                                    <div class="w-16 shrink-0 space-y-1">
                                         <label class="text-[10px] font-bold text-muted-foreground uppercase text-center block">Qty</label>
                                         <Input
                                             v-model="chargeQuantity"
@@ -297,7 +297,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown));
                                             class="h-8 text-xs font-mono text-center w-full"
                                         />
                                     </div>
-                                    <div class="w-32 flex-shrink-0 space-y-1">
+                                    <div class="w-32 shrink-0 space-y-1">
                                         <label class="text-[10px] font-bold text-muted-foreground uppercase">Unit (TZS)</label>
                                         <Input
                                             v-model="chargeUnitPrice"
@@ -306,7 +306,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown));
                                             class="h-8 text-xs font-mono w-full"
                                         />
                                     </div>
-                                    <div class="w-32 flex-shrink-0 space-y-1">
+                                    <div class="w-32 shrink-0 space-y-1">
                                         <label class="text-[10px] font-bold text-muted-foreground uppercase text-right block">Line Total</label>
                                         <div class="h-8 px-2 flex items-center justify-end font-mono font-bold text-foreground text-xs bg-card rounded-md border border-border/60">
                                             {{ (Number(chargeQuantity || 0) * Number(chargeUnitPrice || 0)).toLocaleString() }}
@@ -315,7 +315,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown));
                                     <Button
                                         variant="default"
                                         size="sm"
-                                        class="h-8 px-3 text-[11px] font-semibold gap-1.5 shadow-2xs flex-shrink-0"
+                                        class="h-8 px-3 text-[11px] font-semibold gap-1.5 shadow-2xs shrink-0"
                                         :disabled="isSubmittingCharge || !chargeDescription || !chargeUnitPrice"
                                         @click="submitAddCharge"
                                     >
@@ -449,7 +449,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown));
                         <!-- ═══════════════════════════════════════════════════
                              4. DRAWER FOOTER: Quick Summary & POS Trigger
                         ════════════════════════════════════════════════════ -->
-                        <div class="flex-shrink-0 border-t border-border/60 bg-card p-3 flex items-center justify-between">
+                        <div class="shrink-0 border-t border-border/60 bg-card p-3 flex items-center justify-between">
                             <div class="flex items-center gap-2 text-xs">
                                 <span class="text-muted-foreground">Invoice Status:</span>
                                 <AfyaStatusBadge :status="invoice.status" dot />
