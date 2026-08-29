@@ -18,7 +18,9 @@ import {
     X,
     UserCheck,
     Stethoscope,
-    ShieldAlert
+    ShieldAlert,
+    Check,
+    ChevronsUpDown
 } from '@lucide/vue';
 import AfyaShell from '@/Layouts/AfyaShell.vue';
 import AfyaWorkspace from '@/Components/Workspace/AfyaWorkspace.vue';
@@ -28,6 +30,18 @@ import AfyaWorkspaceMain from '@/Components/Workspace/AfyaWorkspaceMain.vue';
 import AfyaContextPanel from '@/Components/Workspace/AfyaContextPanel.vue';
 import Button from '@/Components/ui/Button.vue';
 import Select from '@/Components/ui/Select.vue';
+import {
+    Combobox,
+    ComboboxAnchor,
+    ComboboxEmpty,
+    ComboboxGroup,
+    ComboboxInput,
+    ComboboxItem,
+    ComboboxItemIndicator,
+    ComboboxList,
+    ComboboxTrigger,
+    ComboboxViewport,
+} from '@/Components/ui/combobox';
 import Input from '@/Components/ui/Input.vue';
 import SearchInput from '@/Components/ui/SearchInput.vue';
 import Table from '@/Components/ui/Table.vue';
@@ -75,6 +89,13 @@ const assignRoleForm = useForm({
     role_id: '',
     facility_id: '',
     department_id: '',
+});
+
+// Display label for the currently selected staff member in the Assign Role
+// combobox trigger - the form field itself stays a plain user id.
+const assignRoleStaffLabel = computed(() => {
+    const u = props.users.find(u => u.id === assignRoleForm.user_id);
+    return u ? `${u.first_name} ${u.last_name} (${u.email})` : '';
 });
 
 const createUserForm = useForm({
@@ -856,9 +877,30 @@ const breadcrumbLabel = computed(() => {
                 <div class="space-y-3 text-xs">
                     <div>
                         <label class="font-bold text-muted-foreground text-[10px] uppercase">Staff Member</label>
-                        <Select v-model="assignRoleForm.user_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
-                            <option v-for="u in users" :key="u.id" :value="u.id">{{ u.first_name }} {{ u.last_name }} ({{ u.email }})</option>
-                        </Select>
+                        <Combobox v-model="assignRoleForm.user_id">
+                            <ComboboxAnchor as-child>
+                                <ComboboxTrigger class="w-full h-8 text-xs rounded border border-border bg-card px-2.5 flex items-center justify-between gap-2 hover:border-primary/50 transition-colors">
+                                    <span class="truncate text-left" :class="!assignRoleStaffLabel && 'text-muted-foreground'">
+                                        {{ assignRoleStaffLabel || 'Select staff member...' }}
+                                    </span>
+                                    <ChevronsUpDown class="w-3.5 h-3.5 opacity-50 shrink-0" />
+                                </ComboboxTrigger>
+                            </ComboboxAnchor>
+                            <ComboboxList>
+                                <ComboboxInput placeholder="Search staff by name or email..." />
+                                <ComboboxEmpty>No staff member found.</ComboboxEmpty>
+                                <ComboboxViewport>
+                                    <ComboboxGroup>
+                                        <ComboboxItem v-for="u in users" :key="u.id" :value="u.id">
+                                            <span class="truncate">{{ u.first_name }} {{ u.last_name }} <span class="text-muted-foreground">({{ u.email }})</span></span>
+                                            <ComboboxItemIndicator>
+                                                <Check class="w-3.5 h-3.5" />
+                                            </ComboboxItemIndicator>
+                                        </ComboboxItem>
+                                    </ComboboxGroup>
+                                </ComboboxViewport>
+                            </ComboboxList>
+                        </Combobox>
                         <InputError :message="assignRoleForm.errors.user_id" class="mt-1" />
                     </div>
 
