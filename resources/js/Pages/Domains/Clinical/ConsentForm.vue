@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import { FileSignature, Save, Loader2, CheckCircle2, AlertTriangle, X, ShieldCheck } from 'lucide-vue-next';
 import Button from '@/Components/ui/Button.vue';
+import Select from '@/Components/ui/Select.vue';
 import Input from '@/Components/ui/Input.vue';
 import InputError from '@/Components/InputError.vue';
 import Table from '@/Components/ui/Table.vue';
@@ -112,13 +113,13 @@ const formatDate = (dateStr) => {
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                     <label class="block text-[11px] font-semibold text-foreground mb-1">Consent Type *</label>
-                    <select v-model="form.consent_type" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                    <Select v-model="form.consent_type" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
                         <option value="Surgical">Surgical Procedure</option>
                         <option value="Anesthesia">Anesthesia Administration</option>
                         <option value="BloodTransfusion">Blood & Blood Products Transfusion</option>
                         <option value="InvasiveProcedure">Invasive Diagnostic / Interventional</option>
                         <option value="GeneralTreatment">General Treatment & Admission</option>
-                    </select>
+                    </Select>
                     <InputError :message="form.errors.consent_type" class="mt-1" />
                 </div>
                 <div>
@@ -144,12 +145,12 @@ const formatDate = (dateStr) => {
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                     <label class="block text-[11px] font-semibold text-foreground mb-1">Signatory Type *</label>
-                    <select v-model="form.signatory_type" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                    <Select v-model="form.signatory_type" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
                         <option value="Patient">Patient Self</option>
                         <option value="NextOfKin">Next of Kin</option>
                         <option value="Guardian">Legal Guardian</option>
                         <option value="MedicalPowerOfAttorney">Medical Power of Attorney</option>
-                    </select>
+                    </Select>
                     <InputError :message="form.errors.signatory_type" class="mt-1" />
                 </div>
                 <div>

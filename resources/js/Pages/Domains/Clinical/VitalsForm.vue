@@ -3,6 +3,7 @@ import { ref, computed } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import { Activity, Plus, Save, Loader2, CheckCircle2, AlertTriangle, X, HeartPulse, Scale, ShieldAlert, ShieldCheck, Zap } from '@lucide/vue';
 import Button from '@/Components/ui/Button.vue';
+import Select from '@/Components/ui/Select.vue';
 import Input from '@/Components/ui/Input.vue';
 import Table from '@/Components/ui/Table.vue';
 import TableHeader from '@/Components/ui/TableHeader.vue';
@@ -335,12 +336,12 @@ const formatDate = (dateStr) => {
             </div>
             <div>
                 <label class="block text-[11px] font-semibold text-foreground mb-1">Consciousness (AVPU)</label>
-                <select v-model="form.avpu" class="h-8 text-xs w-full rounded-md border border-input bg-background px-2">
+                <Select v-model="form.avpu" class="h-8 text-xs w-full rounded-md border border-input bg-background px-2">
                     <option value="A">A - Alert</option>
                     <option value="V">V - Voice</option>
                     <option value="P">P - Pain</option>
                     <option value="U">U - Unresponsive</option>
-                </select>
+                </Select>
             </div>
             <div>
                 <label class="block text-[11px] font-semibold text-foreground mb-1">Weight (kg)</label>

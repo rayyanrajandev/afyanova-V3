@@ -11,7 +11,6 @@ import {
     Server,
     Database,
     Plus,
-    Search,
     Edit3,
     Power,
     UserCheck,
@@ -58,7 +57,9 @@ import AfyaSidebarItem from '@/Components/Workspace/AfyaSidebarItem.vue';
 import AfyaWorkspaceMain from '@/Components/Workspace/AfyaWorkspaceMain.vue';
 import AfyaContextPanel from '@/Components/Workspace/AfyaContextPanel.vue';
 import Button from '@/Components/ui/Button.vue';
+import Select from '@/Components/ui/Select.vue';
 import Input from '@/Components/ui/Input.vue';
+import SearchInput from '@/Components/ui/SearchInput.vue';
 import Table from '@/Components/ui/Table.vue';
 import TableHeader from '@/Components/ui/TableHeader.vue';
 import TableHead from '@/Components/ui/TableHead.vue';
@@ -763,17 +764,15 @@ const formatDate = (iso) => {
                         <div v-if="activeTab === 'tenants'" class="space-y-2.5">
                             <!-- Compact Search & Filters Toolbar -->
                             <div class="p-2 bg-card rounded-lg border border-border/60 shadow-2xs flex flex-wrap items-center justify-between gap-2">
-                                <div class="relative flex-1 min-w-[220px]">
-                                    <Search class="w-3.5 h-3.5 absolute left-2.5 top-2 text-muted-foreground" />
-                                    <Input
-                                        v-model="searchQuery"
-                                        placeholder="Search hospital by name, slug, or domain..."
-                                        class="h-7.5 pl-8 text-xs font-medium"
-                                    />
-                                </div>
+                                <SearchInput
+                                    v-model="searchQuery"
+                                    placeholder="Search hospital by name, slug, or domain..."
+                                    class="flex-1 min-w-[220px]"
+                                    input-class="font-medium"
+                                />
 
                                 <div class="flex items-center gap-2">
-                                    <select 
+                                    <Select 
                                         v-model="filterTier"
                                         class="h-8 min-w-[125px] pl-2.5 pr-7 rounded-md border border-border bg-background text-xs font-medium focus:ring-1 focus:ring-purple-500 cursor-pointer shadow-2xs"
                                     >
@@ -781,9 +780,9 @@ const formatDate = (iso) => {
                                         <option value="starter">Starter</option>
                                         <option value="growth">Growth</option>
                                         <option value="enterprise">Enterprise</option>
-                                    </select>
+                                    </Select>
 
-                                    <select 
+                                    <Select 
                                         v-model="filterStatus"
                                         class="h-8 min-w-[130px] pl-2.5 pr-7 rounded-md border border-border bg-background text-xs font-medium focus:ring-1 focus:ring-purple-500 cursor-pointer shadow-2xs"
                                     >
@@ -791,7 +790,7 @@ const formatDate = (iso) => {
                                         <option value="active">Active</option>
                                         <option value="trial">Trial</option>
                                         <option value="suspended">Suspended</option>
-                                    </select>
+                                    </Select>
                                 </div>
                             </div>
 
@@ -1152,14 +1151,11 @@ const formatDate = (iso) => {
                                 </div>
 
                                 <div class="flex items-center gap-2">
-                                    <div class="relative w-48 sm:w-64">
-                                        <Search class="w-3 h-3 absolute left-2 top-2.5 text-muted-foreground" />
-                                        <Input 
-                                            v-model="catalogSearch" 
-                                            placeholder="Search catalog items..." 
-                                            class="h-7.5 pl-7 text-xs"
-                                        />
-                                    </div>
+                                    <SearchInput
+                                        v-model="catalogSearch"
+                                        placeholder="Search catalog items..."
+                                        class="w-48 sm:w-64"
+                                    />
                                     <Button
                                         size="sm"
                                         class="h-7 text-xs bg-purple-600 hover:bg-purple-700 text-white gap-1.5 font-bold shadow-2xs"
@@ -1684,19 +1680,19 @@ const formatDate = (iso) => {
 
                 <div class="space-y-1">
                     <label class="font-bold text-foreground text-[11px]">Subscription Tier *</label>
-                    <select v-model="provisionForm.subscription_tier" class="w-full h-8 px-2.5 rounded-md border border-border bg-background text-xs font-medium">
+                    <Select v-model="provisionForm.subscription_tier" class="w-full h-8 px-2.5 rounded-md border border-border bg-background text-xs font-medium">
                         <option v-for="plan in subscriptionPlans" :key="plan.id" :value="plan.code">
                             {{ plan.name }} ({{ plan.max_facilities }} Br / {{ plan.max_users }} Seats)
                         </option>
-                    </select>
+                    </Select>
                 </div>
 
                 <div class="space-y-1">
                     <label class="font-bold text-foreground text-[11px]">Initial Status *</label>
-                    <select v-model="provisionForm.subscription_status" class="w-full h-8 px-2.5 rounded-md border border-border bg-background text-xs font-medium">
+                    <Select v-model="provisionForm.subscription_status" class="w-full h-8 px-2.5 rounded-md border border-border bg-background text-xs font-medium">
                         <option value="active">Active (Production)</option>
                         <option value="trial">Trial (14 Days)</option>
-                    </select>
+                    </Select>
                 </div>
 
                 <div class="space-y-1">
@@ -1708,14 +1704,14 @@ const formatDate = (iso) => {
 
                 <div class="space-y-1">
                     <label class="font-bold text-foreground text-[11px]">Facility Classification</label>
-                    <select v-model="provisionForm.facility_type" class="w-full h-8 px-2.5 rounded-md border border-border bg-background text-xs font-medium">
+                    <Select v-model="provisionForm.facility_type" class="w-full h-8 px-2.5 rounded-md border border-border bg-background text-xs font-medium">
                         <option value="National Referral Hospital">National Referral Hospital</option>
                         <option value="Regional Referral Hospital">Regional Referral Hospital</option>
                         <option value="District Hospital">District Hospital</option>
                         <option value="Polyclinic">Polyclinic</option>
                         <option value="Health Center">Health Center</option>
                         <option value="Dispensary">Dispensary</option>
-                    </select>
+                    </Select>
                 </div>
 
                 <div class="space-y-1">
@@ -1836,13 +1832,13 @@ const formatDate = (iso) => {
 
                 <div class="space-y-1">
                     <label class="font-bold text-foreground text-[11px]">Facility Classification *</label>
-                    <select v-model="facilityForm.facility_type" class="w-full h-8 px-2.5 rounded-md border border-border bg-background text-xs font-medium">
+                    <Select v-model="facilityForm.facility_type" class="w-full h-8 px-2.5 rounded-md border border-border bg-background text-xs font-medium">
                         <option value="Polyclinic">Polyclinic / Outpatient Center</option>
                         <option value="District Hospital">District Hospital Wing</option>
                         <option value="Specialized Center">Specialized Dialysis / Diagnostics</option>
                         <option value="Health Center">Health Center</option>
                         <option value="Dispensary">Dispensary</option>
-                    </select>
+                    </Select>
                 </div>
 
                 <div class="space-y-1">
@@ -1913,21 +1909,21 @@ const formatDate = (iso) => {
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                 <div class="space-y-1">
                     <label class="font-bold text-foreground text-[11px]">Subscription Tier</label>
-                    <select v-model="editSubForm.subscription_tier" class="w-full h-8 px-2.5 rounded-md border border-border bg-background text-xs font-medium">
+                    <Select v-model="editSubForm.subscription_tier" class="w-full h-8 px-2.5 rounded-md border border-border bg-background text-xs font-medium">
                         <option v-for="plan in subscriptionPlans" :key="plan.id" :value="plan.code">
                             {{ plan.name }}
                         </option>
-                    </select>
+                    </Select>
                 </div>
 
                 <div class="space-y-1">
                     <label class="font-bold text-foreground text-[11px]">Status</label>
-                    <select v-model="editSubForm.subscription_status" class="w-full h-8 px-2.5 rounded-md border border-border bg-background text-xs font-medium">
+                    <Select v-model="editSubForm.subscription_status" class="w-full h-8 px-2.5 rounded-md border border-border bg-background text-xs font-medium">
                         <option value="active">Active</option>
                         <option value="trial">Trial</option>
                         <option value="past_due">Past Due</option>
                         <option value="suspended">Suspended</option>
-                    </select>
+                    </Select>
                 </div>
 
                 <div class="space-y-1">
@@ -2017,12 +2013,12 @@ const formatDate = (iso) => {
             <div class="space-y-2.5 text-xs">
                 <div class="space-y-1">
                     <label class="font-bold text-foreground text-[11px]">Select Target Staff Account *</label>
-                    <select v-model="impersonateForm.user_id" class="w-full h-8 px-2.5 rounded-md border border-border bg-background text-xs font-medium" required>
+                    <Select v-model="impersonateForm.user_id" class="w-full h-8 px-2.5 rounded-md border border-border bg-background text-xs font-medium" required>
                         <option value="" disabled>Select User</option>
                         <option v-for="u in (tenantToImpersonate?.users || [])" :key="u.id" :value="u.id">
                             {{ u.name }} ({{ u.email }}) — {{ u.role }}
                         </option>
-                    </select>
+                    </Select>
                 </div>
 
                 <div class="space-y-1">
@@ -2075,21 +2071,21 @@ const formatDate = (iso) => {
             <div class="space-y-2.5 text-xs">
                 <div class="space-y-1">
                     <label class="font-bold text-foreground text-[11px]">Dictionary Type</label>
-                    <select v-model="syncForm.dictionary_type" class="w-full h-8 px-2.5 rounded-md border border-border bg-background text-xs font-medium">
+                    <Select v-model="syncForm.dictionary_type" class="w-full h-8 px-2.5 rounded-md border border-border bg-background text-xs font-medium">
                         <option value="all">All Catalogs (NEMLIT Drugs, LOINC Lab, ICD-10 Diagnoses)</option>
                         <option value="nemlit">Tanzania MSD / WHO Essential Drugs Formulary</option>
                         <option value="loinc">Clinical Laboratory Diagnostic Tests Catalog</option>
-                    </select>
+                    </Select>
                 </div>
 
                 <div class="space-y-1">
                     <label class="font-bold text-foreground text-[11px]">Target Scope</label>
-                    <select v-model="syncForm.tenant_id" class="w-full h-8 px-2.5 rounded-md border border-border bg-background text-xs font-medium">
+                    <Select v-model="syncForm.tenant_id" class="w-full h-8 px-2.5 rounded-md border border-border bg-background text-xs font-medium">
                         <option value="">Broadcast to ALL Active Hospital Tenants</option>
                         <option v-for="t in tenants" :key="t.id" :value="t.id">
                             Only {{ t.name }} ({{ t.slug }})
                         </option>
-                    </select>
+                    </Select>
                 </div>
             </div>
 

@@ -3,6 +3,7 @@ import { ref, computed, watch } from 'vue';
 import { router } from '@inertiajs/vue3';
 import Modal from '@/Components/Modal.vue';
 import Button from '@/Components/ui/Button.vue';
+import Select from '@/Components/ui/Select.vue';
 import Input from '@/Components/ui/Input.vue';
 import {
     Stethoscope,
@@ -568,14 +569,14 @@ const submitCheckIn = () => {
                 <!-- Procedure Catalog Selector -->
                 <div v-if="form.visit_type !== 'Treatment_Followup'" class="space-y-1">
                     <label class="text-[10.5px] font-semibold text-foreground">Injection Service Item</label>
-                    <select
+                    <Select
                         v-model="form.procedure_catalog_id"
                         class="w-full text-xs h-8 rounded-md border border-input bg-background px-2 text-foreground shadow-2xs focus:ring-1 focus:ring-primary/20 focus:outline-none"
                     >
                         <option v-for="cat in injectionCatalogs" :key="cat.id" :value="cat.id">
                             {{ cat.name }} ({{ cat.procedure_code }}) — TZS {{ Number(cat.standard_price || 2000).toLocaleString() }}
                         </option>
-                    </select>
+                    </Select>
                 </div>
             </div>
 
@@ -619,14 +620,14 @@ const submitCheckIn = () => {
 
                 <div v-if="form.visit_type === 'Procedure'" class="space-y-1">
                     <label class="text-[10.5px] font-semibold text-foreground">Dressing Service Catalog</label>
-                    <select
+                    <Select
                         v-model="form.procedure_catalog_id"
                         class="w-full text-xs h-8 rounded-md border border-input bg-background px-2 text-foreground shadow-2xs focus:ring-1 focus:ring-primary/20 focus:outline-none"
                     >
                         <option v-for="cat in dressingCatalogs" :key="cat.id" :value="cat.id">
                             {{ cat.name }} ({{ cat.procedure_code }}) — TZS {{ Number(cat.standard_price || 15000).toLocaleString() }}
                         </option>
-                    </select>
+                    </Select>
                 </div>
             </div>
 
@@ -644,14 +645,14 @@ const submitCheckIn = () => {
 
                 <div class="space-y-1">
                     <label class="text-[10.5px] font-semibold text-foreground">Minor Procedure / Surgical Tariff</label>
-                    <select
+                    <Select
                         v-model="form.procedure_catalog_id"
                         class="w-full text-xs h-8 rounded-md border border-input bg-background px-2 text-foreground shadow-2xs focus:ring-1 focus:ring-primary/20 focus:outline-none"
                     >
                         <option v-for="cat in minorSurgeryCatalogs" :key="cat.id" :value="cat.id">
                             {{ cat.name }} ({{ cat.procedure_code }}) — TZS {{ Number(cat.standard_price || 25000).toLocaleString() }}
                         </option>
-                    </select>
+                    </Select>
                 </div>
             </div>
 

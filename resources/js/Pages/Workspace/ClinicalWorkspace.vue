@@ -59,6 +59,7 @@ import Modal from '@/Components/Modal.vue';
 
 // Design Foundation Primitives
 import Button from '@/Components/ui/Button.vue';
+import Select from '@/Components/ui/Select.vue';
 import Input from '@/Components/ui/Input.vue';
 import Table from '@/Components/ui/Table.vue';
 import TableHeader from '@/Components/ui/TableHeader.vue';
@@ -1926,7 +1927,7 @@ const patientBillingStatus = computed(() => {
                 <form @submit.prevent="createNewEncounter" class="space-y-3 text-xs">
                     <div class="space-y-1">
                         <label class="block font-bold text-foreground">Select Patient *</label>
-                        <select
+                        <Select
                             v-model="newEncounterForm.patient_id"
                             class="w-full h-8 rounded border border-border bg-card px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                             required
@@ -1935,12 +1936,12 @@ const patientBillingStatus = computed(() => {
                             <option v-for="p in (allPatients.length ? allPatients : patients)" :key="p.id" :value="p.id">
                                 {{ p.first_name }} {{ p.last_name }} ({{ p.primary_mrn }}) · {{ p.gender }}
                             </option>
-                        </select>
+                        </Select>
                     </div>
 
                     <div class="space-y-1">
                         <label class="block font-bold text-foreground">Encounter Type *</label>
-                        <select
+                        <Select
                             v-model="newEncounterForm.encounter_type"
                             class="w-full h-8 rounded border border-border bg-card px-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
                             required
@@ -1950,7 +1951,7 @@ const patientBillingStatus = computed(() => {
                             <option value="Emergency Visit">Emergency / Acute Triage</option>
                             <option value="Antenatal Care (ANC)">Antenatal Care (ANC)</option>
                             <option value="Follow-up Review">Chronic / Follow-up Review</option>
-                        </select>
+                        </Select>
                     </div>
 
                     <div class="space-y-1">
@@ -1997,7 +1998,7 @@ const patientBillingStatus = computed(() => {
                 <form @submit.prevent="submitDoctorProcedureOrder" class="space-y-3 text-xs">
                     <div class="space-y-1">
                         <label class="block font-bold text-xs text-foreground">Select Procedure *</label>
-                        <select 
+                        <Select 
                             v-model="clinicalProcForm.procedure_catalog_id" 
                             required
                             class="w-full h-8.5 rounded-md border border-input bg-background text-foreground px-3 py-1 text-xs shadow-xs"
@@ -2005,12 +2006,12 @@ const patientBillingStatus = computed(() => {
                             <option v-for="cat in procedureCatalogs" :key="cat.id" :value="cat.id">
                                 {{ cat.name }} ({{ cat.category }}) — TZS {{ Number(cat.standard_price || 0).toLocaleString() }}
                             </option>
-                        </select>
+                        </Select>
                     </div>
 
                     <div class="space-y-1">
                         <label class="block font-bold text-xs text-foreground">Priority Urgency *</label>
-                        <select 
+                        <Select 
                             v-model="clinicalProcForm.priority" 
                             required
                             class="w-full h-8.5 rounded-md border border-input bg-background text-foreground px-3 py-1 text-xs shadow-xs"
@@ -2018,7 +2019,7 @@ const patientBillingStatus = computed(() => {
                             <option value="Routine">Routine</option>
                             <option value="Urgent">Urgent</option>
                             <option value="Emergency">Emergency</option>
-                        </select>
+                        </Select>
                     </div>
 
                     <div class="space-y-1">

@@ -20,14 +20,15 @@ import {
     Stethoscope,
     Baby,
     HeartPulse,
-    Search,
     Bug,
     Info,
     RotateCcw,
     Trash2
 } from '@lucide/vue';
 import Button from '@/Components/ui/Button.vue';
+import Select from '@/Components/ui/Select.vue';
 import Input from '@/Components/ui/Input.vue';
+import SearchInput from '@/Components/ui/SearchInput.vue';
 import AfyaStatusBadge from '@/Components/Afya/AfyaStatusBadge.vue';
 import Modal from '@/Components/Modal.vue';
 
@@ -603,21 +604,21 @@ const formatDate = (dateStr) => {
                                 placeholder="ICD-10"
                                 class="w-16 rounded border border-border/70 bg-muted/10 px-1.5 py-1 text-[10px] text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
                             />
-                            <select
+                            <Select
                                 v-model="diagnosisForm.certainty"
                                 class="rounded border border-border/70 bg-muted/10 px-1 py-1 text-[10px] text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
                             >
                                 <option value="Confirmed">Confirmed</option>
                                 <option value="Suspected">Suspected</option>
-                            </select>
-                            <select
+                            </Select>
+                            <Select
                                 v-model="diagnosisForm.type"
                                 class="rounded border border-border/70 bg-muted/10 px-1 py-1 text-[10px] text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
                             >
                                 <option value="Primary">Primary</option>
                                 <option value="Secondary">Secondary</option>
                                 <option value="Comorbidity">Comorbidity</option>
-                            </select>
+                            </Select>
                             <button
                                 type="button"
                                 @click="submitDiagnosis"
@@ -813,14 +814,11 @@ const formatDate = (dateStr) => {
 
                 <!-- Category Filters & Search -->
                 <div class="space-y-2.5">
-                    <div class="relative">
-                        <Search class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                        <Input 
-                            v-model="templateSearch" 
-                            placeholder="Search clinical templates by condition, symptoms, medication, or ICD-10 code..." 
-                            class="pl-9 text-xs h-8.5"
-                        />
-                    </div>
+                    <SearchInput
+                        v-model="templateSearch"
+                        size="default"
+                        placeholder="Search clinical templates by condition, symptoms, medication, or ICD-10 code..."
+                    />
 
                     <div class="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
                         <button

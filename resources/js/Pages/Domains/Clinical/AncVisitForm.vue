@@ -3,6 +3,7 @@ import { ref, watch } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import { Heart, Save, Loader2, CheckCircle2, AlertTriangle, X, ShieldAlert, Baby } from 'lucide-vue-next';
 import Button from '@/Components/ui/Button.vue';
+import Select from '@/Components/ui/Select.vue';
 import Input from '@/Components/ui/Input.vue';
 import AfyaDatePicker from '@/Components/Afya/AfyaDatePicker.vue';
 import InputError from '@/Components/InputError.vue';
@@ -183,11 +184,11 @@ const formatDate = (dateStr) => {
                 </div>
                 <div>
                     <label class="block text-[11px] font-semibold text-foreground mb-1">Fetal Presentation</label>
-                    <select v-model="form.fetal_presentation" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                    <Select v-model="form.fetal_presentation" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
                         <option value="Cephalic">Cephalic (Vertex)</option>
                         <option value="Breech">Breech</option>
                         <option value="Transverse">Transverse / Oblique</option>
-                    </select>
+                    </Select>
                     <InputError :message="form.errors.fetal_presentation" class="mt-1" />
                 </div>
                 <div>
@@ -200,32 +201,32 @@ const formatDate = (dateStr) => {
             <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
                 <div>
                     <label class="block text-[11px] font-semibold text-foreground mb-1">Fetal Movement</label>
-                    <select v-model="form.fetal_movement" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                    <Select v-model="form.fetal_movement" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
                         <option value="Normal">Normal (> 10 kicks/12h)</option>
                         <option value="Reduced">Reduced / Decreased</option>
                         <option value="Absent">Absent</option>
-                    </select>
+                    </Select>
                     <InputError :message="form.errors.fetal_movement" class="mt-1" />
                 </div>
                 <div>
                     <label class="block text-[11px] font-semibold text-foreground mb-1">Urine Protein (Dipstick)</label>
-                    <select v-model.number="form.urinary_protein" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                    <Select v-model.number="form.urinary_protein" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
                         <option :value="0">Nil / Negative</option>
                         <option :value="1">+1 (30 mg/dL)</option>
                         <option :value="2">+2 (100 mg/dL)</option>
                         <option :value="3">+3 (300 mg/dL)</option>
-                    </select>
+                    </Select>
                     <InputError :message="form.errors.urinary_protein" class="mt-1" />
                 </div>
                 <div>
                     <label class="block text-[11px] font-semibold text-foreground mb-1">IPTp Malaria Dose</label>
-                    <select v-model="form.iptp_malaria_dose" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                    <Select v-model="form.iptp_malaria_dose" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
                         <option value="None">None / Not Due</option>
                         <option value="IPTp-1">IPTp-1 (SP Dose 1)</option>
                         <option value="IPTp-2">IPTp-2 (SP Dose 2)</option>
                         <option value="IPTp-3">IPTp-3 (SP Dose 3)</option>
                         <option value="IPTp-4+">IPTp-4+ (SP Dose 4+)</option>
-                    </select>
+                    </Select>
                     <InputError :message="form.errors.iptp_malaria_dose" class="mt-1" />
                 </div>
                 <div class="flex items-center pt-5">

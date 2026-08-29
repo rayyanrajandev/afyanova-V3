@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import { Film, Save, Loader2, CheckCircle2, AlertTriangle, X, ShieldAlert, Sparkles } from 'lucide-vue-next';
 import Button from '@/Components/ui/Button.vue';
+import Select from '@/Components/ui/Select.vue';
 import Input from '@/Components/ui/Input.vue';
 import InputError from '@/Components/InputError.vue';
 import Table from '@/Components/ui/Table.vue';
@@ -159,20 +160,20 @@ const formatDate = (dateStr) => {
             <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
                 <div>
                     <label class="block text-[11px] font-semibold text-foreground mb-1">Modality *</label>
-                    <select v-model="form.modality" @change="onModalityChange" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                    <Select v-model="form.modality" @change="onModalityChange" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
                         <option value="X-Ray">X-Ray (Plain Radiography)</option>
                         <option value="Ultrasound">Ultrasound (US / Doppler)</option>
                         <option value="CT Scan">Computed Tomography (CT)</option>
                         <option value="MRI">Magnetic Resonance Imaging (MRI)</option>
                         <option value="Echo">Echocardiography (Echo)</option>
-                    </select>
+                    </Select>
                     <InputError :message="form.errors.modality" class="mt-1" />
                 </div>
                 <div>
                     <label class="block text-[11px] font-semibold text-foreground mb-1">Standard Study Preset</label>
-                    <select v-model="form.procedure_name" @change="onProcedureSelect" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                    <Select v-model="form.procedure_name" @change="onProcedureSelect" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
                         <option v-for="p in standardProcedures[form.modality] || []" :key="p.name" :value="p.name">{{ p.name }}</option>
-                    </select>
+                    </Select>
                 </div>
                 <div>
                     <label class="block text-[11px] font-semibold text-foreground mb-1">Procedure Name *</label>
@@ -181,7 +182,7 @@ const formatDate = (dateStr) => {
                 </div>
                 <div>
                     <label class="block text-[11px] font-semibold text-foreground mb-1">Priority *</label>
-                    <select v-model="form.priority" class="w-full h-8 text-xs rounded border border-border bg-card px-2 font-bold"
+                    <Select v-model="form.priority" class="w-full h-8 text-xs rounded border border-border bg-card px-2 font-bold"
                         :class="{
                             'text-rose-600': form.priority === 'STAT',
                             'text-amber-600': form.priority === 'Urgent',
@@ -191,7 +192,7 @@ const formatDate = (dateStr) => {
                         <option value="Routine">Routine</option>
                         <option value="Urgent">Urgent (&lt; 4 Hours)</option>
                         <option value="STAT">STAT (Immediate Critical)</option>
-                    </select>
+                    </Select>
                     <InputError :message="form.errors.priority" class="mt-1" />
                 </div>
             </div>

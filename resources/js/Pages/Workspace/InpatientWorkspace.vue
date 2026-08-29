@@ -43,6 +43,7 @@ import PatientWristbandPrint from '@/Components/Print/PatientWristbandPrint.vue'
 
 // UI Primitives & Design Foundation
 import Button from '@/Components/ui/Button.vue';
+import Select from '@/Components/ui/Select.vue';
 import Input from '@/Components/ui/Input.vue';
 import SearchInput from '@/Components/ui/SearchInput.vue';
 import Card from '@/Components/ui/Card.vue';
@@ -1244,7 +1245,7 @@ const formatCurrency = (val) => {
                 <form @submit.prevent="submitAdmit" class="space-y-3 text-xs">
                     <div class="space-y-1">
                         <label class="block font-bold text-xs text-foreground">Select Patient *</label>
-                        <select 
+                        <Select 
                             v-model="admitForm.patient_id" 
                             required
                             class="w-full h-8.5 rounded-md border border-input bg-background text-foreground px-3 py-1 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
@@ -1252,13 +1253,13 @@ const formatCurrency = (val) => {
                             <option v-for="p in availablePatients" :key="p.id" :value="p.id">
                                 {{ p.first_name }} {{ p.last_name }} (MRN: {{ p.primary_mrn }})
                             </option>
-                        </select>
+                        </Select>
                     </div>
 
                     <div class="grid grid-cols-2 gap-3">
                         <div class="space-y-1">
                             <label class="block font-bold text-xs text-foreground">Ward *</label>
-                            <select 
+                            <Select 
                                 v-model="admitForm.ward_id" 
                                 required
                                 class="w-full h-8.5 rounded-md border border-input bg-background text-foreground px-3 py-1 text-xs shadow-xs"
@@ -1266,11 +1267,11 @@ const formatCurrency = (val) => {
                                 <option v-for="w in wards" :key="w.id" :value="w.id">
                                     {{ w.name }}
                                 </option>
-                            </select>
+                            </Select>
                         </div>
                         <div class="space-y-1">
                             <label class="block font-bold text-xs text-foreground">Available Bed *</label>
-                            <select 
+                            <Select 
                                 v-model="admitForm.bed_id" 
                                 required
                                 class="w-full h-8.5 rounded-md border border-input bg-background text-foreground px-3 py-1 text-xs shadow-xs font-mono font-bold text-primary"
@@ -1278,13 +1279,13 @@ const formatCurrency = (val) => {
                                 <option v-for="b in availableBedsForAdmit" :key="b.id" :value="b.id">
                                     {{ b.bed_number }} ({{ b.bed_type }})
                                 </option>
-                            </select>
+                            </Select>
                         </div>
                     </div>
 
                     <div class="space-y-1">
                         <label class="block font-bold text-xs text-foreground">Attending Physician *</label>
-                        <select 
+                        <Select 
                             v-model="admitForm.admitting_doctor_id" 
                             required
                             class="w-full h-8.5 rounded-md border border-input bg-background text-foreground px-3 py-1 text-xs shadow-xs"
@@ -1292,7 +1293,7 @@ const formatCurrency = (val) => {
                             <option v-for="d in doctors" :key="d.id" :value="d.id">
                                 Dr. {{ d.first_name }} {{ d.last_name }}
                             </option>
-                        </select>
+                        </Select>
                     </div>
 
                     <div class="space-y-1">
@@ -1333,7 +1334,7 @@ const formatCurrency = (val) => {
                     <div class="grid grid-cols-2 gap-3">
                         <div class="space-y-1">
                             <label class="block font-bold text-xs text-foreground">Destination Ward *</label>
-                            <select 
+                            <Select 
                                 v-model="transferForm.to_ward_id" 
                                 required
                                 class="w-full h-8.5 rounded-md border border-input bg-background text-foreground px-3 py-1 text-xs shadow-xs"
@@ -1341,11 +1342,11 @@ const formatCurrency = (val) => {
                                 <option v-for="w in wards" :key="w.id" :value="w.id">
                                     {{ w.name }}
                                 </option>
-                            </select>
+                            </Select>
                         </div>
                         <div class="space-y-1">
                             <label class="block font-bold text-xs text-foreground">Destination Bed *</label>
-                            <select 
+                            <Select 
                                 v-model="transferForm.to_bed_id" 
                                 required
                                 class="w-full h-8.5 rounded-md border border-input bg-background text-foreground px-3 py-1 text-xs shadow-xs font-mono font-bold text-primary"
@@ -1353,7 +1354,7 @@ const formatCurrency = (val) => {
                                 <option v-for="b in availableBedsForTransfer" :key="b.id" :value="b.id">
                                     {{ b.bed_number }} ({{ b.bed_type }})
                                 </option>
-                            </select>
+                            </Select>
                         </div>
                     </div>
 
@@ -1389,7 +1390,7 @@ const formatCurrency = (val) => {
                 <form @submit.prevent="submitDischarge" class="space-y-3 text-xs">
                     <div class="space-y-1">
                         <label class="block font-bold text-xs text-foreground">Discharge Disposition *</label>
-                        <select 
+                        <Select 
                             v-model="dischargeForm.discharge_disposition" 
                             required
                             class="w-full h-8.5 rounded-md border border-input bg-background text-foreground px-3 py-1 text-xs shadow-xs"
@@ -1398,7 +1399,7 @@ const formatCurrency = (val) => {
                             <option value="Transferred_Facility">Transferred to Specialized Referral Hospital</option>
                             <option value="Against_Medical_Advice">Discharged Against Medical Advice (DAMA)</option>
                             <option value="Deceased">Deceased</option>
-                        </select>
+                        </Select>
                     </div>
 
                     <div class="space-y-1">
@@ -1445,7 +1446,7 @@ const formatCurrency = (val) => {
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div class="space-y-1">
                             <label class="block font-bold text-xs text-foreground">Medication / Consumable *</label>
-                            <select 
+                            <Select 
                                 v-model="marForm.item_master_id" 
                                 required
                                 @change="onMarItemChange"
@@ -1454,12 +1455,12 @@ const formatCurrency = (val) => {
                                 <option v-for="item in itemMasters" :key="item.id" :value="item.id">
                                     [{{ item.category?.replace('_', ' ') }}] {{ item.name }}
                                 </option>
-                            </select>
+                            </Select>
                         </div>
 
                         <div class="space-y-1">
                             <label class="block font-bold text-xs text-foreground">Ward Cabinet (Source Stock) *</label>
-                            <select 
+                            <Select 
                                 v-model="marForm.location_id" 
                                 required
                                 class="w-full h-8.5 rounded-md border border-input bg-background text-foreground px-2.5 py-1 text-xs shadow-xs font-semibold"
@@ -1467,7 +1468,7 @@ const formatCurrency = (val) => {
                                 <option v-for="cab in wardCabinets" :key="cab.id" :value="cab.id">
                                     {{ cab.name }} ({{ cab.type }})
                                 </option>
-                            </select>
+                            </Select>
                         </div>
                     </div>
 
@@ -1487,7 +1488,7 @@ const formatCurrency = (val) => {
 
                         <div class="space-y-1">
                             <label class="block font-bold text-xs text-foreground">Unit *</label>
-                            <select 
+                            <Select 
                                 v-model="marForm.dose_unit" 
                                 class="w-full h-8.5 rounded-md border border-input bg-background text-foreground px-2 py-1 text-xs shadow-xs"
                             >
@@ -1498,12 +1499,12 @@ const formatCurrency = (val) => {
                                 <option value="capsule">capsule</option>
                                 <option value="ml">ml</option>
                                 <option value="piece">piece</option>
-                            </select>
+                            </Select>
                         </div>
 
                         <div class="space-y-1">
                             <label class="block font-bold text-xs text-foreground">Route *</label>
-                            <select 
+                            <Select 
                                 v-model="marForm.route" 
                                 class="w-full h-8.5 rounded-md border border-input bg-background text-foreground px-2 py-1 text-xs shadow-xs"
                             >
@@ -1514,12 +1515,12 @@ const formatCurrency = (val) => {
                                 <option value="Topical">Topical</option>
                                 <option value="Inhalation">Inhalation</option>
                                 <option value="PR">PR (Rectal)</option>
-                            </select>
+                            </Select>
                         </div>
 
                         <div class="space-y-1">
                             <label class="block font-bold text-xs text-foreground">Frequency</label>
-                            <select 
+                            <Select 
                                 v-model="marForm.frequency" 
                                 class="w-full h-8.5 rounded-md border border-input bg-background text-foreground px-2 py-1 text-xs shadow-xs"
                             >
@@ -1528,7 +1529,7 @@ const formatCurrency = (val) => {
                                 <option value="TDS">TDS (3x daily)</option>
                                 <option value="QID">QID (4x daily)</option>
                                 <option value="PRN">PRN (As needed)</option>
-                            </select>
+                            </Select>
                         </div>
                     </div>
 
@@ -1550,7 +1551,7 @@ const formatCurrency = (val) => {
                         <div v-if="marForm.is_dda_narcotic" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2 mt-2 border-t border-rose-200/60 dark:border-rose-800/60">
                             <div class="space-y-1">
                                 <label class="block font-bold text-[10.5px] text-rose-900 dark:text-rose-200">Witness Nurse / Clinician *</label>
-                                <select 
+                                <Select 
                                     v-model="marForm.witness_by" 
                                     :required="marForm.is_dda_narcotic"
                                     class="w-full h-8 rounded-md border border-rose-300 bg-background text-foreground px-2 py-0.5 text-xs"
@@ -1559,7 +1560,7 @@ const formatCurrency = (val) => {
                                     <option v-for="n in nurses" :key="n.id" :value="n.id">
                                         {{ n.first_name }} {{ n.last_name }} (Staff)
                                     </option>
-                                </select>
+                                </Select>
                             </div>
 
                             <div class="flex items-end pb-1">
@@ -1633,7 +1634,7 @@ const formatCurrency = (val) => {
                     <div class="grid grid-cols-2 gap-3">
                         <div class="space-y-1">
                             <label class="block font-bold text-muted-foreground text-[10px] uppercase">Ward Type *</label>
-                            <select v-model="createWardForm.ward_type" class="w-full h-8 rounded border border-input bg-background px-2 text-xs">
+                            <Select v-model="createWardForm.ward_type" class="w-full h-8 rounded border border-input bg-background px-2 text-xs">
                                 <option value="General">General Medical/Surgical</option>
                                 <option value="ICU">Intensive Care Unit (ICU)</option>
                                 <option value="HDU">High Dependency Unit (HDU)</option>
@@ -1641,16 +1642,16 @@ const formatCurrency = (val) => {
                                 <option value="Pediatric">Pediatric Ward</option>
                                 <option value="VIP_Private">VIP / Executive Suite</option>
                                 <option value="Isolation">Infectious Disease Isolation</option>
-                            </select>
+                            </Select>
                         </div>
                         <div class="space-y-1">
                             <label class="block font-bold text-muted-foreground text-[10px] uppercase">Gender Restriction</label>
-                            <select v-model="createWardForm.gender_restriction" class="w-full h-8 rounded border border-input bg-background px-2 text-xs">
+                            <Select v-model="createWardForm.gender_restriction" class="w-full h-8 rounded border border-input bg-background px-2 text-xs">
                                 <option value="None">None (Co-ed / Private)</option>
                                 <option value="Male_Only">Male Only</option>
                                 <option value="Female_Only">Female Only</option>
-                                <option value="Pediatric">Pediatric (< 12 yrs)</option>
-                            </select>
+                                <option value="Pediatric">Pediatric (&lt; 12 yrs)</option>
+                            </Select>
                         </div>
                     </div>
 
@@ -1704,7 +1705,7 @@ const formatCurrency = (val) => {
                     <div class="grid grid-cols-2 gap-3">
                         <div class="space-y-1">
                             <label class="block font-bold text-muted-foreground text-[10px] uppercase">Ward Type</label>
-                            <select v-model="editWardForm.ward_type" class="w-full h-8 rounded border border-input bg-background px-2 text-xs">
+                            <Select v-model="editWardForm.ward_type" class="w-full h-8 rounded border border-input bg-background px-2 text-xs">
                                 <option value="General">General Medical/Surgical</option>
                                 <option value="ICU">Intensive Care Unit (ICU)</option>
                                 <option value="HDU">High Dependency Unit (HDU)</option>
@@ -1712,16 +1713,16 @@ const formatCurrency = (val) => {
                                 <option value="Pediatric">Pediatric Ward</option>
                                 <option value="VIP_Private">VIP / Executive Suite</option>
                                 <option value="Isolation">Infectious Disease Isolation</option>
-                            </select>
+                            </Select>
                         </div>
                         <div class="space-y-1">
                             <label class="block font-bold text-muted-foreground text-[10px] uppercase">Gender Restriction</label>
-                            <select v-model="editWardForm.gender_restriction" class="w-full h-8 rounded border border-input bg-background px-2 text-xs">
+                            <Select v-model="editWardForm.gender_restriction" class="w-full h-8 rounded border border-input bg-background px-2 text-xs">
                                 <option value="None">None (Co-ed / Private)</option>
                                 <option value="Male_Only">Male Only</option>
                                 <option value="Female_Only">Female Only</option>
-                                <option value="Pediatric">Pediatric (< 12 yrs)</option>
-                            </select>
+                                <option value="Pediatric">Pediatric (&lt; 12 yrs)</option>
+                            </Select>
                         </div>
                     </div>
 
@@ -1768,9 +1769,9 @@ const formatCurrency = (val) => {
                 <form @submit.prevent="submitCreateBed" class="space-y-3">
                     <div class="space-y-1">
                         <label class="block font-bold text-muted-foreground text-[10px] uppercase">Target Ward *</label>
-                        <select v-model="createBedForm.ward_id" required class="w-full h-8 rounded border border-input bg-background px-2 text-xs">
+                        <Select v-model="createBedForm.ward_id" required class="w-full h-8 rounded border border-input bg-background px-2 text-xs">
                             <option v-for="w in wards" :key="w.id" :value="w.id">{{ w.name }} ({{ w.ward_type }})</option>
-                        </select>
+                        </Select>
                     </div>
 
                     <div class="grid grid-cols-2 gap-3">
@@ -1780,13 +1781,13 @@ const formatCurrency = (val) => {
                         </div>
                         <div class="space-y-1">
                             <label class="block font-bold text-muted-foreground text-[10px] uppercase">Bed Type</label>
-                            <select v-model="createBedForm.bed_type" class="w-full h-8 rounded border border-input bg-background px-2 text-xs">
+                            <Select v-model="createBedForm.bed_type" class="w-full h-8 rounded border border-input bg-background px-2 text-xs">
                                 <option value="Standard">Standard Hospital Bed</option>
                                 <option value="Electric_ICU">Electric ICU / Critical Bed</option>
                                 <option value="Pediatric_Crib">Pediatric Cot / Crib</option>
                                 <option value="Incubator">Neonatal Incubator</option>
                                 <option value="Delivery_Bed">Labour & Delivery Bed</option>
-                            </select>
+                            </Select>
                         </div>
                     </div>
 

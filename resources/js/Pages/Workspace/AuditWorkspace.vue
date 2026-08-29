@@ -28,6 +28,7 @@ import AfyaSidebarItem from '@/Components/Workspace/AfyaSidebarItem.vue';
 import AfyaWorkspaceMain from '@/Components/Workspace/AfyaWorkspaceMain.vue';
 import AfyaContextPanel from '@/Components/Workspace/AfyaContextPanel.vue';
 import Button from '@/Components/ui/Button.vue';
+import Select from '@/Components/ui/Select.vue';
 import Input from '@/Components/ui/Input.vue';
 import SearchInput from '@/Components/ui/SearchInput.vue';
 import Table from '@/Components/ui/Table.vue';
@@ -185,7 +186,7 @@ const getCategoryColor = (cat) => {
                             Filter by Staff
                         </div>
                         <div class="relative w-full">
-                            <select
+                            <Select
                                 v-model="selectedUserId"
                                 class="w-full h-8 text-xs rounded-md border border-input bg-card pl-2.5 pr-8 text-foreground truncate cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary shadow-2xs appearance-none"
                                 @change="applyFilter"
@@ -194,7 +195,7 @@ const getCategoryColor = (cat) => {
                                 <option v-for="u in users" :key="u.id" :value="u.id">
                                     {{ u.first_name }} {{ u.last_name }}
                                 </option>
-                            </select>
+                            </Select>
                             <ChevronDown class="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground opacity-70" />
                         </div>
                     </div>

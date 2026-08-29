@@ -36,6 +36,7 @@ import { useHospitalAudio } from '@/Composables/useHospitalAudio';
 
 // UI Primitives & Design Foundation
 import Button from '@/Components/ui/Button.vue';
+import Select from '@/Components/ui/Select.vue';
 import Input from '@/Components/ui/Input.vue';
 import Card from '@/Components/ui/Card.vue';
 import CardHeader from '@/Components/ui/CardHeader.vue';
@@ -957,14 +958,14 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                 <!-- Reason Selector -->
                 <div class="space-y-1.5">
                     <label class="text-xs font-semibold text-foreground">Reason for Re-Routing</label>
-                    <select
+                    <Select
                         v-model="transferReason"
                         class="w-full text-xs h-8 rounded-md border border-input bg-background px-2.5 py-1 text-foreground shadow-xs focus:ring-1 focus:ring-ring focus:outline-none"
                     >
                         <option v-for="r in transferReasons" :key="r.id" :value="r.id">
                             {{ r.label }}
                         </option>
-                    </select>
+                    </Select>
                 </div>
 
                 <!-- Additional Notes (Optional) -->

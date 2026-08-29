@@ -21,7 +21,6 @@ import {
     Layers,
     ArrowDownUp,
     RefreshCw,
-    Search,
     SlidersHorizontal,
     FileText,
     History,
@@ -44,7 +43,9 @@ import Modal from '@/Components/Modal.vue';
 
 // UI Primitives & Design Foundation
 import Button from '@/Components/ui/Button.vue';
+import Select from '@/Components/ui/Select.vue';
 import Input from '@/Components/ui/Input.vue';
+import SearchInput from '@/Components/ui/SearchInput.vue';
 import AfyaDatePicker from '@/Components/Afya/AfyaDatePicker.vue';
 import Card from '@/Components/ui/Card.vue';
 import CardHeader from '@/Components/ui/CardHeader.vue';
@@ -887,14 +888,11 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                                             <span class="text-[10px] font-mono text-muted-foreground">FEFO Batch Deductions</span>
                                         </div>
 
-                                        <div class="relative">
-                                            <Search class="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-muted-foreground" />
-                                            <Input 
-                                                v-model="otcSearchQuery" 
-                                                placeholder="Search drug by brand or generic name (e.g. Paracetamol, Amox, Cetirizine)..." 
-                                                class="h-8 pl-8 text-xs" 
-                                            />
-                                        </div>
+                                        <SearchInput
+                                            v-model="otcSearchQuery"
+                                            size="default"
+                                            placeholder="Search drug by brand or generic name (e.g. Paracetamol, Amox, Cetirizine)..."
+                                        />
 
                                         <div class="divide-y divide-border/40 max-h-[480px] overflow-y-auto rounded border border-border/40">
                                             <div 
@@ -1060,15 +1058,11 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
 
                             <!-- Filter & Search Strip (Seamless Container) -->
                             <div class="flex flex-wrap items-center justify-between gap-2 bg-card p-2 rounded-lg shadow-2xs">
-                                <div class="flex items-center gap-1.5 flex-1 max-w-xs">
-                                    <Search class="w-3.5 h-3.5 text-muted-foreground" />
-                                    <Input
-                                        v-model="searchQuery"
-                                        type="text"
-                                        placeholder="Search by drug name, brand, or class..."
-                                        class="h-7 text-xs w-full"
-                                    />
-                                </div>
+                                <SearchInput
+                                    v-model="searchQuery"
+                                    placeholder="Search by drug name, brand, or class..."
+                                    class="flex-1 max-w-xs"
+                                />
                                 
                                 <div class="flex items-center gap-1">
                                     <Button
@@ -1240,22 +1234,11 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                                         </div>
 
                                         <!-- Live Search Box -->
-                                        <div class="relative w-60 md:w-72">
-                                            <Search class="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-                                            <input
-                                                type="text"
-                                                v-model="movementSearchQuery"
-                                                placeholder="Search drug, batch #, dispenser, Rx #..."
-                                                class="w-full h-7 pl-8 pr-7 rounded-md border border-input bg-background text-foreground text-xs shadow-2xs focus:outline-none focus:ring-1 focus:ring-primary"
-                                            />
-                                            <button
-                                                v-if="movementSearchQuery"
-                                                @click="movementSearchQuery = ''"
-                                                class="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 cursor-pointer"
-                                            >
-                                                <X class="w-3 h-3" />
-                                            </button>
-                                        </div>
+                                        <SearchInput
+                                            v-model="movementSearchQuery"
+                                            placeholder="Search drug, batch #, dispenser, Rx #..."
+                                            class="w-60 md:w-72"
+                                        />
                                     </div>
 
                                     <div class="flex flex-wrap items-center gap-2">
@@ -1296,7 +1279,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                                         </div>
 
                                         <!-- Date Range Filter -->
-                                        <select
+                                        <Select
                                             v-model="movementDateFilter"
                                             class="h-7 rounded-md border border-input bg-background text-foreground px-2 py-0 text-[10.5px] shadow-2xs"
                                         >
@@ -1304,7 +1287,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                                             <option value="today">Today</option>
                                             <option value="week">Past 7 Days</option>
                                             <option value="month">Past 30 Days</option>
-                                        </select>
+                                        </Select>
 
                                         <!-- Clear Filters -->
                                         <button
@@ -1722,7 +1705,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                 <form @submit.prevent="submitReceiveBatch" class="space-y-2.5 text-xs">
                     <div class="space-y-0.5">
                         <label class="block font-bold text-[11px] text-foreground">Medication Formulary *</label>
-                        <select 
+                        <Select 
                             v-model="receiveForm.medication_id" 
                             required
                             class="w-full h-8 rounded border border-input bg-background text-foreground px-2.5 py-0 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
@@ -1730,7 +1713,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
                             <option v-for="m in medications" :key="m.id" :value="m.id">
                                 {{ m.generic_name }} ({{ m.strength }} - {{ m.form }})
                             </option>
-                        </select>
+                        </Select>
                     </div>
 
                     <div class="grid grid-cols-2 gap-2">
@@ -1813,14 +1796,14 @@ onUnmounted(() => window.removeEventListener('keydown', handleTableKeydown));
 
                     <div class="space-y-0.5">
                         <label class="block font-bold text-[11px] text-foreground">Standard Audit Reason *</label>
-                        <select
+                        <Select
                             v-model="adjustReasonPreset"
                             class="w-full h-8 rounded border border-input bg-background text-foreground px-2.5 py-0 text-xs shadow-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                         >
                             <option v-for="r in adjustmentReasons" :key="r" :value="r">
                                 {{ r }}
                             </option>
-                        </select>
+                        </Select>
                     </div>
 
                     <div class="space-y-0.5">

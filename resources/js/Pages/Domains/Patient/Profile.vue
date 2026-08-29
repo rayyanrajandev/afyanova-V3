@@ -49,6 +49,7 @@ import AfyaContextPanel from '@/Components/Workspace/AfyaContextPanel.vue';
 
 // UI Primitives & Design Foundation
 import Button from '@/Components/ui/Button.vue';
+import Select from '@/Components/ui/Select.vue';
 import Card from '@/Components/ui/Card.vue';
 import CardHeader from '@/Components/ui/CardHeader.vue';
 import CardTitle from '@/Components/ui/CardTitle.vue';
@@ -1194,20 +1195,20 @@ const totalOutstanding = computed(() => {
                         />
                         <div class="space-y-1">
                             <label class="block text-xs font-semibold text-foreground">Clinical Status</label>
-                            <select v-model="problemForm.clinical_status" class="w-full h-8.5 text-xs rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/90 px-3">
+                            <Select v-model="problemForm.clinical_status" class="w-full h-8.5 text-xs rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/90 px-3">
                                 <option value="Confirmed">Confirmed</option>
                                 <option value="Provisional">Provisional</option>
                                 <option value="Differential">Differential</option>
-                            </select>
+                            </Select>
                             <InputError :message="problemForm.errors.clinical_status" />
                         </div>
                         <div class="space-y-1">
                             <label class="block text-xs font-semibold text-foreground">Severity</label>
-                            <select v-model="problemForm.severity" class="w-full h-8.5 text-xs rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/90 px-3">
+                            <Select v-model="problemForm.severity" class="w-full h-8.5 text-xs rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/90 px-3">
                                 <option value="Mild">Mild</option>
                                 <option value="Moderate">Moderate</option>
                                 <option value="Severe">Severe</option>
-                            </select>
+                            </Select>
                             <InputError :message="problemForm.errors.severity" />
                         </div>
                     </div>
@@ -1242,21 +1243,21 @@ const totalOutstanding = computed(() => {
                         />
                         <div class="space-y-1">
                             <label class="block text-xs font-semibold text-foreground">Allergen Type</label>
-                            <select v-model="allergyForm.allergen_type" class="w-full h-8.5 text-xs rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/90 px-3">
+                            <Select v-model="allergyForm.allergen_type" class="w-full h-8.5 text-xs rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/90 px-3">
                                 <option value="Drug">Drug</option>
                                 <option value="Food">Food</option>
                                 <option value="Environmental">Environmental</option>
                                 <option value="Other">Other</option>
-                            </select>
+                            </Select>
                             <InputError :message="allergyForm.errors.allergen_type" />
                         </div>
                         <div class="space-y-1">
                             <label class="block text-xs font-semibold text-foreground">Severity</label>
-                            <select v-model="allergyForm.severity" class="w-full h-8.5 text-xs rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/90 px-3">
+                            <Select v-model="allergyForm.severity" class="w-full h-8.5 text-xs rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/90 px-3">
                                 <option value="Mild">Mild</option>
                                 <option value="Moderate">Moderate</option>
                                 <option value="Severe">Severe</option>
-                            </select>
+                            </Select>
                             <InputError :message="allergyForm.errors.severity" />
                         </div>
                         <AfyaInput
@@ -1295,29 +1296,29 @@ const totalOutstanding = computed(() => {
                         />
                         <div class="space-y-1">
                             <label class="block text-xs font-semibold text-foreground">Allergen Type</label>
-                            <select v-model="amendAllergyForm.allergen_type" class="w-full h-8.5 text-xs rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/90 px-3">
+                            <Select v-model="amendAllergyForm.allergen_type" class="w-full h-8.5 text-xs rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/90 px-3">
                                 <option value="Drug">Drug</option>
                                 <option value="Food">Food</option>
                                 <option value="Environmental">Environmental</option>
                                 <option value="Other">Other</option>
-                            </select>
+                            </Select>
                             <InputError :message="amendAllergyForm.errors.allergen_type" />
                         </div>
                         <div class="space-y-1">
                             <label class="block text-xs font-semibold text-foreground">Severity</label>
-                            <select v-model="amendAllergyForm.severity" class="w-full h-8.5 text-xs rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/90 px-3">
+                            <Select v-model="amendAllergyForm.severity" class="w-full h-8.5 text-xs rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/90 px-3">
                                 <option value="Mild">Mild</option>
                                 <option value="Moderate">Moderate</option>
                                 <option value="Severe">Severe</option>
-                            </select>
+                            </Select>
                             <InputError :message="amendAllergyForm.errors.severity" />
                         </div>
                         <div class="space-y-1">
                             <label class="block text-xs font-semibold text-foreground">Status</label>
-                            <select v-model="amendAllergyForm.status" class="w-full h-8.5 text-xs rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/90 px-3">
+                            <Select v-model="amendAllergyForm.status" class="w-full h-8.5 text-xs rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/90 px-3">
                                 <option value="Active">Active</option>
                                 <option value="Inactive">Inactive</option>
-                            </select>
+                            </Select>
                             <InputError :message="amendAllergyForm.errors.status" />
                         </div>
                         <AfyaInput
@@ -1349,11 +1350,11 @@ const totalOutstanding = computed(() => {
                 <form @submit.prevent="submitReconciliation" class="space-y-4">
                     <div class="space-y-1 max-w-xs">
                         <label class="block text-xs font-semibold text-foreground">Stage</label>
-                        <select v-model="reconciliationForm.stage" class="w-full h-8.5 text-xs rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/90 px-3">
+                        <Select v-model="reconciliationForm.stage" class="w-full h-8.5 text-xs rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/90 px-3">
                             <option value="Admission">Admission</option>
                             <option value="Transfer">Transfer</option>
                             <option value="Discharge">Discharge</option>
-                        </select>
+                        </Select>
                         <InputError :message="reconciliationForm.errors.stage" />
                     </div>
 
@@ -1387,13 +1388,13 @@ const totalOutstanding = computed(() => {
                                 <AfyaInput v-model="med.route" label="Route" />
                                 <div class="space-y-1">
                                     <label class="block text-xs font-semibold text-foreground">Action Taken</label>
-                                    <select v-model="med.action_taken" class="w-full h-8.5 text-xs rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/90 px-3">
+                                    <Select v-model="med.action_taken" class="w-full h-8.5 text-xs rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/90 px-3">
                                         <option value="Continue">Continue</option>
                                         <option value="Discontinue">Discontinue</option>
                                         <option value="Substitute">Substitute</option>
                                         <option value="ModifyDose">Modify Dose</option>
                                         <option value="Hold">Hold</option>
-                                    </select>
+                                    </Select>
                                     <InputError :message="reconciliationForm.errors[`medications.${index}.action_taken`]" />
                                 </div>
                                 <AfyaInput

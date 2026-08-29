@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import { Activity, Save, Loader2, CheckCircle2, AlertTriangle, X, ShieldAlert, Clock } from 'lucide-vue-next';
 import Button from '@/Components/ui/Button.vue';
+import Select from '@/Components/ui/Select.vue';
 import Input from '@/Components/ui/Input.vue';
 import InputError from '@/Components/InputError.vue';
 import Table from '@/Components/ui/Table.vue';
@@ -128,25 +129,25 @@ const formatTime = (dateStr) => {
                 </div>
                 <div>
                     <label class="block text-[11px] font-semibold text-foreground mb-1">Liquor Status</label>
-                    <select v-model="form.liquor_status" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                    <Select v-model="form.liquor_status" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
                         <option value="Intact">I - Intact Membranes</option>
                         <option value="Clear">C - Clear Liquor</option>
                         <option value="Meconium">M - Meconium Stained</option>
                         <option value="Blood">B - Blood Stained</option>
                         <option value="Absent">A - Absent Liquor</option>
-                    </select>
+                    </Select>
                     <InputError :message="form.errors.liquor_status" class="mt-1" />
                 </div>
                 <div>
                     <label class="block text-[11px] font-semibold text-foreground mb-1">Head Descent (Fifth)</label>
-                    <select v-model="form.fetal_head_descent" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                    <Select v-model="form.fetal_head_descent" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
                         <option value="5/5">5/5 - High & Free</option>
                         <option value="4/5">4/5 - Above Brim</option>
                         <option value="3/5">3/5 - Engaged</option>
                         <option value="2/5">2/5 - Mid-Pelvis</option>
                         <option value="1/5">1/5 - Deep</option>
                         <option value="0/5">0/5 - On Perineum</option>
-                    </select>
+                    </Select>
                     <InputError :message="form.errors.fetal_head_descent" class="mt-1" />
                 </div>
             </div>

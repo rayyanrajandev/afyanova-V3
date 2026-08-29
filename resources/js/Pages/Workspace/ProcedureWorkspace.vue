@@ -39,6 +39,7 @@ import Modal from '@/Components/Modal.vue';
 
 // UI Primitives
 import Button from '@/Components/ui/Button.vue';
+import Select from '@/Components/ui/Select.vue';
 import Input from '@/Components/ui/Input.vue';
 import SearchInput from '@/Components/ui/SearchInput.vue';
 import Table from '@/Components/ui/Table.vue';
@@ -1520,31 +1521,31 @@ const formatTime = (dateStr) => {
                 <form @submit.prevent="submitOrder" class="space-y-3 text-xs">
                     <div class="space-y-1">
                         <label class="block font-bold text-xs text-foreground">Select Patient Encounter *</label>
-                        <select v-model="orderForm.encounter_id" required class="w-full h-8.5 rounded-md border border-input bg-background text-foreground px-3 py-1 text-xs">
+                        <Select v-model="orderForm.encounter_id" required class="w-full h-8.5 rounded-md border border-input bg-background text-foreground px-3 py-1 text-xs">
                             <option value="" disabled>-- Select Encounter --</option>
                             <option v-for="enc in encountersForProcedures" :key="enc.id" :value="enc.id">
                                 {{ enc.patient?.first_name }} {{ enc.patient?.last_name }} ({{ enc.patient?.primary_mrn }}) — Dr. {{ enc.provider?.last_name }}
                             </option>
-                        </select>
+                        </Select>
                     </div>
 
                     <div class="space-y-1">
                         <label class="block font-bold text-xs text-foreground">Procedure Catalog *</label>
-                        <select v-model="orderForm.procedure_catalog_id" required class="w-full h-8.5 rounded-md border border-input bg-background text-foreground px-3 py-1 text-xs">
+                        <Select v-model="orderForm.procedure_catalog_id" required class="w-full h-8.5 rounded-md border border-input bg-background text-foreground px-3 py-1 text-xs">
                             <option value="" disabled>-- Select Procedure --</option>
                             <option v-for="cat in procedureCatalogs" :key="cat.id" :value="cat.id">
                                 [{{ cat.procedure_code }}] {{ cat.name }} (TZS {{ formatCurrency(cat.base_price) }})
                             </option>
-                        </select>
+                        </Select>
                     </div>
 
                     <div class="space-y-1">
                         <label class="block font-bold text-xs text-foreground">Priority Level</label>
-                        <select v-model="orderForm.priority" class="w-full h-8.5 rounded-md border border-input bg-background text-foreground px-3 py-1 text-xs">
+                        <Select v-model="orderForm.priority" class="w-full h-8.5 rounded-md border border-input bg-background text-foreground px-3 py-1 text-xs">
                             <option value="Routine">Routine</option>
                             <option value="Urgent">Urgent</option>
                             <option value="Emergency">Emergency</option>
-                        </select>
+                        </Select>
                     </div>
 
                     <div class="space-y-1">
@@ -1712,21 +1713,21 @@ const formatTime = (dateStr) => {
                     <div class="grid grid-cols-2 gap-3">
                         <div class="space-y-1">
                             <label class="block font-bold text-xs text-foreground">Injection Site (Anatomical) *</label>
-                            <select v-model="injectionForm.injection_site" class="w-full h-8.5 rounded-md border border-input bg-background text-foreground px-3 py-1 text-xs" @change="updateInjectionNotes">
+                            <Select v-model="injectionForm.injection_site" class="w-full h-8.5 rounded-md border border-input bg-background text-foreground px-3 py-1 text-xs" @change="updateInjectionNotes">
                                 <option value="Right Deltoid (IM)">Right Deltoid Muscle (IM)</option>
                                 <option value="Left Deltoid (IM)">Left Deltoid Muscle (IM)</option>
                                 <option value="Right Gluteal (IM)">Right Gluteal / Buttock (IM)</option>
                                 <option value="Left Gluteal (IM)">Left Gluteal / Buttock (IM)</option>
                                 <option value="IV Cannula / Line">IV Cannula / Direct Intravenous</option>
                                 <option value="Subcutaneous (SC)">Subcutaneous (SC) - Abdomen/Thigh</option>
-                            </select>
+                            </Select>
                         </div>
                         <div class="space-y-1">
                             <label class="block font-bold text-xs text-foreground">Administration Setting</label>
-                            <select v-model="injectionForm.execution_setting" class="w-full h-8.5 rounded-md border border-input bg-background text-foreground px-3 py-1 text-xs">
+                            <Select v-model="injectionForm.execution_setting" class="w-full h-8.5 rounded-md border border-input bg-background text-foreground px-3 py-1 text-xs">
                                 <option value="InjectionRoom">Injection / Nursing Room</option>
                                 <option value="Ward">Inpatient Ward Bedside</option>
-                            </select>
+                            </Select>
                         </div>
                     </div>
 
@@ -1854,23 +1855,23 @@ const formatTime = (dateStr) => {
                     <div class="grid grid-cols-2 gap-3">
                         <div class="space-y-1">
                             <label class="block font-bold text-xs text-foreground">Wound Assessment Condition *</label>
-                            <select v-model="dressingForm.wound_condition" class="w-full h-8.5 rounded-md border border-input bg-background text-foreground px-3 py-1 text-xs">
+                            <Select v-model="dressingForm.wound_condition" class="w-full h-8.5 rounded-md border border-input bg-background text-foreground px-3 py-1 text-xs">
                                 <option value="Clean">Clean Wound</option>
                                 <option value="Contaminated">Contaminated / Traumatic</option>
                                 <option value="Purulent">Purulent / Abscess / Infected</option>
                                 <option value="Sloughy">Sloughy / Necrotic</option>
                                 <option value="Granulating">Granulating / Healing</option>
                                 <option value="Epithelializing">Epithelializing</option>
-                            </select>
+                            </Select>
                         </div>
                         <div class="space-y-1">
                             <label class="block font-bold text-xs text-foreground">Cleansing & Antiseptic Solution *</label>
-                            <select v-model="dressingForm.cleansing_solution" class="w-full h-8.5 rounded-md border border-input bg-background text-foreground px-3 py-1 text-xs">
+                            <Select v-model="dressingForm.cleansing_solution" class="w-full h-8.5 rounded-md border border-input bg-background text-foreground px-3 py-1 text-xs">
                                 <option value="Normal Saline 0.9%">Normal Saline 0.9%</option>
                                 <option value="Povidone-Iodine 10%">Povidone-Iodine 10%</option>
                                 <option value="Hydrogen Peroxide 3%">Hydrogen Peroxide 3% (Diluted)</option>
                                 <option value="Chlorhexidine 0.5%">Chlorhexidine 0.5%</option>
-                            </select>
+                            </Select>
                         </div>
                     </div>
 
@@ -2020,12 +2021,12 @@ const formatTime = (dateStr) => {
                     <div class="grid grid-cols-2 gap-3">
                         <div class="space-y-1">
                             <label class="block font-bold text-xs text-foreground">Local Anesthesia Agent *</label>
-                            <select v-model="minorSurgeryForm.anesthesia_agent" class="w-full h-8.5 rounded-md border border-input bg-background text-foreground px-3 py-1 text-xs">
+                            <Select v-model="minorSurgeryForm.anesthesia_agent" class="w-full h-8.5 rounded-md border border-input bg-background text-foreground px-3 py-1 text-xs">
                                 <option value="Lignocaine 2% Plain">Lignocaine 2% Plain</option>
                                 <option value="Lignocaine 2% with Adrenaline">Lignocaine 2% with Adrenaline (1:200,000)</option>
                                 <option value="Bupivacaine 0.5%">Bupivacaine 0.5%</option>
                                 <option value="None">None (Topical / Non-invasive)</option>
-                            </select>
+                            </Select>
                         </div>
                         <div class="space-y-1">
                             <label class="block font-bold text-xs text-foreground">Anesthesia Volume Administered (ml)</label>
@@ -2037,13 +2038,13 @@ const formatTime = (dateStr) => {
                     <div class="grid grid-cols-2 gap-3">
                         <div class="space-y-1">
                             <label class="block font-bold text-xs text-foreground">Suture Material / Closure</label>
-                            <select v-model="minorSurgeryForm.suture_material" class="w-full h-8.5 rounded-md border border-input bg-background text-foreground px-3 py-1 text-xs">
+                            <Select v-model="minorSurgeryForm.suture_material" class="w-full h-8.5 rounded-md border border-input bg-background text-foreground px-3 py-1 text-xs">
                                 <option value="Nylon 3-0">Nylon 3-0 (Skin / Face / Ext)</option>
                                 <option value="Nylon 2-0">Nylon 2-0 (Scalp / Tension)</option>
                                 <option value="Vicryl 2-0">Vicryl 2-0 (Absorbable / Subcutaneous)</option>
                                 <option value="Silk 2-0">Silk 2-0</option>
                                 <option value="None">None (Incision & Drainage / Pack)</option>
-                            </select>
+                            </Select>
                         </div>
                         <div class="space-y-1">
                             <label class="block font-bold text-xs text-foreground">Number of Sutures / Stitches Placed</label>
@@ -2147,12 +2148,12 @@ const formatTime = (dateStr) => {
                 <form @submit.prevent="submitBookSurgery" class="space-y-3 text-xs">
                     <div class="space-y-1">
                         <label class="block font-bold text-xs text-foreground">Operating Suite *</label>
-                        <select v-model="bookSurgeryForm.operating_suite_id" required class="w-full h-8.5 rounded-md border border-input bg-background text-foreground px-3 py-1 text-xs">
+                        <Select v-model="bookSurgeryForm.operating_suite_id" required class="w-full h-8.5 rounded-md border border-input bg-background text-foreground px-3 py-1 text-xs">
                             <option value="" disabled>-- Select Suite --</option>
                             <option v-for="suite in operatingSuites" :key="suite.id" :value="suite.id">
                                 {{ suite.name }} ({{ suite.suite_type }})
                             </option>
-                        </select>
+                        </Select>
                     </div>
 
                     <div class="grid grid-cols-2 gap-3">
@@ -2168,11 +2169,11 @@ const formatTime = (dateStr) => {
 
                     <div class="space-y-1">
                         <label class="block font-bold text-xs text-foreground">Urgency</label>
-                        <select v-model="bookSurgeryForm.urgency" class="w-full h-8.5 rounded-md border border-input bg-background text-foreground px-3 py-1 text-xs">
+                        <Select v-model="bookSurgeryForm.urgency" class="w-full h-8.5 rounded-md border border-input bg-background text-foreground px-3 py-1 text-xs">
                             <option value="Elective">Elective</option>
                             <option value="Urgent">Urgent</option>
                             <option value="Emergency">Emergency</option>
-                        </select>
+                        </Select>
                     </div>
 
                     <div class="flex items-center justify-end gap-2 pt-3 border-t border-border">
@@ -2202,11 +2203,11 @@ const formatTime = (dateStr) => {
                 <div class="space-y-3 text-xs">
                     <div class="space-y-1">
                         <label class="block font-bold text-xs text-foreground">Checklist Safety Stage *</label>
-                        <select v-model="whoChecklistForm.stage" class="w-full h-8.5 rounded-md border border-input bg-background text-foreground px-3 py-1 text-xs">
+                        <Select v-model="whoChecklistForm.stage" class="w-full h-8.5 rounded-md border border-input bg-background text-foreground px-3 py-1 text-xs">
                             <option value="sign_in">1. Sign-In (Before induction of anesthesia)</option>
                             <option value="time_out">2. Time-Out (Before skin incision - Patient, Procedure, Site)</option>
                             <option value="sign_out">3. Sign-Out (Before patient leaves operating room)</option>
-                        </select>
+                        </Select>
                     </div>
 
                     <div class="p-2.5 bg-muted/30 rounded border border-border/60 space-y-1.5 text-[10.5px]">
@@ -2248,46 +2249,46 @@ const formatTime = (dateStr) => {
                     <div class="space-y-2">
                         <div class="flex justify-between items-center">
                             <span class="font-semibold">Consciousness (0-2)</span>
-                            <select v-model="pacuForm.consciousness_score" class="h-7 text-xs rounded border border-input bg-background font-mono">
+                            <Select v-model="pacuForm.consciousness_score" class="h-7 text-xs rounded border border-input bg-background font-mono">
                                 <option :value="2">2 - Fully awake</option>
                                 <option :value="1">1 - Arousable on calling</option>
                                 <option :value="0">0 - Unresponsive</option>
-                            </select>
+                            </Select>
                         </div>
                         <div class="flex justify-between items-center">
                             <span class="font-semibold">Activity (0-2)</span>
-                            <select v-model="pacuForm.activity_score" class="h-7 text-xs rounded border border-input bg-background font-mono">
+                            <Select v-model="pacuForm.activity_score" class="h-7 text-xs rounded border border-input bg-background font-mono">
                                 <option :value="2">2 - Moves 4 extremities</option>
                                 <option :value="1">1 - Moves 2 extremities</option>
                                 <option :value="0">0 - Unable to move</option>
-                            </select>
+                            </Select>
                         </div>
                         <div class="flex justify-between items-center">
                             <span class="font-semibold">Respiration (0-2)</span>
-                            <select v-model="pacuForm.respiration_score" class="h-7 text-xs rounded border border-input bg-background font-mono">
+                            <Select v-model="pacuForm.respiration_score" class="h-7 text-xs rounded border border-input bg-background font-mono">
                                 <option :value="2">2 - Breathes deeply & coughs</option>
                                 <option :value="1">1 - Dyspneic / limited</option>
                                 <option :value="0">0 - Apneic</option>
-                            </select>
+                            </Select>
                         </div>
                         <div class="flex justify-between items-center">
                             <span class="font-semibold">Oxygen Saturation (0-2)</span>
-                            <select v-model="pacuForm.oxygen_saturation_score" class="h-7 text-xs rounded border border-input bg-background font-mono">
+                            <Select v-model="pacuForm.oxygen_saturation_score" class="h-7 text-xs rounded border border-input bg-background font-mono">
                                 <option :value="2">2 - SpO2 > 92% on room air</option>
                                 <option :value="1">1 - Needs supplemental O2</option>
                                 <option :value="0">0 - SpO2 &lt; 90%</option>
-                            </select>
+                            </Select>
                         </div>
                     </div>
 
                     <div class="space-y-1">
                         <label class="block font-bold text-xs text-foreground">Step-Down Destination Ward *</label>
-                        <select v-model="pacuForm.destination_ward_id" required class="w-full h-8.5 rounded-md border border-input bg-background text-foreground px-3 py-1 text-xs">
+                        <Select v-model="pacuForm.destination_ward_id" required class="w-full h-8.5 rounded-md border border-input bg-background text-foreground px-3 py-1 text-xs">
                             <option value="" disabled>-- Select Ward --</option>
                             <option v-for="ward in wards" :key="ward.id" :value="ward.id">
                                 {{ ward.name }} ({{ ward.ward_type }})
                             </option>
-                        </select>
+                        </Select>
                     </div>
 
                     <div class="space-y-1">
@@ -2331,14 +2332,14 @@ const formatTime = (dateStr) => {
                         </div>
                         <div class="space-y-1">
                             <label class="block font-bold text-muted-foreground text-[10px] uppercase">Category *</label>
-                            <select v-model="createCatalogForm.category" class="w-full h-8 rounded border border-input bg-background px-2 text-xs">
+                            <Select v-model="createCatalogForm.category" class="w-full h-8 rounded border border-input bg-background px-2 text-xs">
                                 <option value="Minor">Minor Treatment / Dressing</option>
                                 <option value="Injection">Injection / Infusion</option>
                                 <option value="Surgical">Major Surgical</option>
                                 <option value="Diagnostic">Endoscopy / Diagnostic</option>
                                 <option value="Dental">Dental Care</option>
                                 <option value="Eye">Ophthalmology</option>
-                            </select>
+                            </Select>
                         </div>
                     </div>
 
@@ -2350,12 +2351,12 @@ const formatTime = (dateStr) => {
                     <div class="grid grid-cols-2 gap-3">
                         <div class="space-y-1">
                             <label class="block font-bold text-muted-foreground text-[10px] uppercase">Tier Classification *</label>
-                            <select v-model="createCatalogForm.tier_level" class="w-full h-8 rounded border border-input bg-background px-2 text-xs">
+                            <Select v-model="createCatalogForm.tier_level" class="w-full h-8 rounded border border-input bg-background px-2 text-xs">
                                 <option value="Tier1_Minor">Tier 1 - Minor / Dressing</option>
                                 <option value="Tier2_Intermediate">Tier 2 - Intermediate Minor OR</option>
                                 <option value="Tier3_Major">Tier 3 - Major Theatre</option>
                                 <option value="Tier4_Specialized">Tier 4 - Specialized Surgical</option>
-                            </select>
+                            </Select>
                         </div>
                         <div class="space-y-1">
                             <label class="block font-bold text-muted-foreground text-[10px] uppercase">Default Duration (Mins)</label>
@@ -2412,23 +2413,23 @@ const formatTime = (dateStr) => {
                     <div class="grid grid-cols-2 gap-3">
                         <div class="space-y-1">
                             <label class="block font-bold text-muted-foreground text-[10px] uppercase">Category *</label>
-                            <select v-model="editCatalogForm.category" class="w-full h-8 rounded border border-input bg-background px-2 text-xs">
+                            <Select v-model="editCatalogForm.category" class="w-full h-8 rounded border border-input bg-background px-2 text-xs">
                                 <option value="Minor">Minor Treatment / Dressing</option>
                                 <option value="Injection">Injection / Infusion</option>
                                 <option value="Surgical">Major Surgical</option>
                                 <option value="Diagnostic">Endoscopy / Diagnostic</option>
                                 <option value="Dental">Dental Care</option>
                                 <option value="Eye">Ophthalmology</option>
-                            </select>
+                            </Select>
                         </div>
                         <div class="space-y-1">
                             <label class="block font-bold text-muted-foreground text-[10px] uppercase">Tier Level</label>
-                            <select v-model="editCatalogForm.tier_level" class="w-full h-8 rounded border border-input bg-background px-2 text-xs">
+                            <Select v-model="editCatalogForm.tier_level" class="w-full h-8 rounded border border-input bg-background px-2 text-xs">
                                 <option value="Tier1_Minor">Tier 1 - Minor</option>
                                 <option value="Tier2_Intermediate">Tier 2 - Intermediate Minor OR</option>
                                 <option value="Tier3_Major">Tier 3 - Major Theatre</option>
                                 <option value="Tier4_Specialized">Tier 4 - Specialized Surgical</option>
-                            </select>
+                            </Select>
                         </div>
                     </div>
 

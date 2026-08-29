@@ -27,6 +27,7 @@ import AfyaSidebarItem from '@/Components/Workspace/AfyaSidebarItem.vue';
 import AfyaWorkspaceMain from '@/Components/Workspace/AfyaWorkspaceMain.vue';
 import AfyaContextPanel from '@/Components/Workspace/AfyaContextPanel.vue';
 import Button from '@/Components/ui/Button.vue';
+import Select from '@/Components/ui/Select.vue';
 import Input from '@/Components/ui/Input.vue';
 import SearchInput from '@/Components/ui/SearchInput.vue';
 import Table from '@/Components/ui/Table.vue';
@@ -803,10 +804,10 @@ const breadcrumbLabel = computed(() => {
                                 </div>
                                 <div>
                                     <label class="text-[10px] font-bold text-muted-foreground uppercase">Facility Scope (Optional)</label>
-                                    <select v-model="testFacilityId" class="w-full h-7 text-xs rounded border border-border bg-card px-2">
+                                    <Select v-model="testFacilityId" class="w-full h-7 text-xs rounded border border-border bg-card px-2">
                                         <option value="">Global Tenant Check</option>
                                         <option v-for="f in facilities" :key="f.id" :value="f.id">{{ f.name }}</option>
-                                    </select>
+                                    </Select>
                                 </div>
                                 <Button 
                                     variant="default" 
@@ -855,26 +856,26 @@ const breadcrumbLabel = computed(() => {
                 <div class="space-y-3 text-xs">
                     <div>
                         <label class="font-bold text-muted-foreground text-[10px] uppercase">Staff Member</label>
-                        <select v-model="assignRoleForm.user_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                        <Select v-model="assignRoleForm.user_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
                             <option v-for="u in users" :key="u.id" :value="u.id">{{ u.first_name }} {{ u.last_name }} ({{ u.email }})</option>
-                        </select>
+                        </Select>
                         <InputError :message="assignRoleForm.errors.user_id" class="mt-1" />
                     </div>
 
                     <div>
                         <label class="font-bold text-muted-foreground text-[10px] uppercase">System Role</label>
-                        <select v-model="assignRoleForm.role_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                        <Select v-model="assignRoleForm.role_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
                             <option v-for="r in roles" :key="r.id" :value="r.id">{{ r.name }}</option>
-                        </select>
+                        </Select>
                         <InputError :message="assignRoleForm.errors.role_id" class="mt-1" />
                     </div>
 
                     <div>
                         <label class="font-bold text-muted-foreground text-[10px] uppercase">Facility Scope</label>
-                        <select v-model="assignRoleForm.facility_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                        <Select v-model="assignRoleForm.facility_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
                             <option value="">All Facilities (Tenant Wide)</option>
                             <option v-for="f in facilities" :key="f.id" :value="f.id">{{ f.name }}</option>
-                        </select>
+                        </Select>
                         <InputError :message="assignRoleForm.errors.facility_id" class="mt-1" />
                     </div>
                 </div>
@@ -988,17 +989,17 @@ const breadcrumbLabel = computed(() => {
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="font-bold text-muted-foreground text-[10px] uppercase">Primary Role Archetype *</label>
-                            <select v-model="createUserForm.role_id" required class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                            <Select v-model="createUserForm.role_id" required class="w-full h-8 text-xs rounded border border-border bg-card px-2">
                                 <option v-for="r in roles" :key="r.id" :value="r.id">{{ r.name }}</option>
-                            </select>
+                            </Select>
                             <InputError :message="createUserForm.errors.role_id" class="mt-1" />
                         </div>
                         <div>
                             <label class="font-bold text-muted-foreground text-[10px] uppercase">Facility Branch</label>
-                            <select v-model="createUserForm.facility_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                            <Select v-model="createUserForm.facility_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
                                 <option value="">All Branches (Tenant Wide)</option>
                                 <option v-for="f in facilities" :key="f.id" :value="f.id">{{ f.name }}</option>
-                            </select>
+                            </Select>
                             <InputError :message="createUserForm.errors.facility_id" class="mt-1" />
                         </div>
                     </div>
@@ -1060,11 +1061,11 @@ const breadcrumbLabel = computed(() => {
 
                     <div>
                         <label class="font-bold text-muted-foreground text-[10px] uppercase">Account Status</label>
-                        <select v-model="editUserForm.status" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                        <Select v-model="editUserForm.status" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
                             <option value="Active">Active</option>
                             <option value="Suspended">Suspended</option>
                             <option value="Inactive">Inactive</option>
-                        </select>
+                        </Select>
                         <InputError :message="editUserForm.errors.status" class="mt-1" />
                     </div>
 
@@ -1138,12 +1139,12 @@ const breadcrumbLabel = computed(() => {
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="font-bold text-muted-foreground text-[10px] uppercase">Facility Type *</label>
-                            <select v-model="createFacilityForm.facility_type" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                            <Select v-model="createFacilityForm.facility_type" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
                                 <option value="Hospital">General Hospital</option>
                                 <option value="Clinic">Polyclinic / Outpatient</option>
                                 <option value="Dispensary">Dispensary</option>
                                 <option value="Diagnostic_Center">Diagnostic Center</option>
-                            </select>
+                            </Select>
                             <InputError :message="createFacilityForm.errors.facility_type" class="mt-1" />
                         </div>
                         <div>
@@ -1210,13 +1211,13 @@ const breadcrumbLabel = computed(() => {
                         </div>
                         <div>
                             <label class="font-bold text-muted-foreground text-[10px] uppercase">Department Type *</label>
-                            <select v-model="createDepartmentForm.department_type" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                            <Select v-model="createDepartmentForm.department_type" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
                                 <option value="Clinical">Clinical</option>
                                 <option value="Diagnostic">Diagnostic / Lab / Rad</option>
                                 <option value="Surgical">Surgical / Theatre</option>
                                 <option value="Administrative">Administrative / Finance</option>
                                 <option value="Support">Support Services</option>
-                            </select>
+                            </Select>
                             <InputError :message="createDepartmentForm.errors.department_type" class="mt-1" />
                         </div>
                     </div>

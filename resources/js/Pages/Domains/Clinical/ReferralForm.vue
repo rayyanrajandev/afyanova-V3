@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import { ArrowUpRight, Save, Loader2, CheckCircle2, AlertTriangle, X, Building2, Truck } from 'lucide-vue-next';
 import Button from '@/Components/ui/Button.vue';
+import Select from '@/Components/ui/Select.vue';
 import Input from '@/Components/ui/Input.vue';
 import InputError from '@/Components/InputError.vue';
 import Table from '@/Components/ui/Table.vue';
@@ -110,11 +111,11 @@ const formatDate = (dateStr) => {
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                     <label class="block text-[11px] font-semibold text-foreground mb-1">Urgency Level *</label>
-                    <select v-model="form.urgency" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                    <Select v-model="form.urgency" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
                         <option value="Routine">Routine (Elective / Outpatient)</option>
                         <option value="Urgent">Urgent (&lt; 24 Hours)</option>
                         <option value="Emergency">Emergency (Immediate Transfer)</option>
-                    </select>
+                    </Select>
                     <InputError :message="form.errors.urgency" class="mt-1" />
                 </div>
                 <div>
@@ -155,11 +156,11 @@ const formatDate = (dateStr) => {
                 </div>
                 <div>
                     <label class="block text-[11px] font-semibold text-foreground mb-1">Mode of Transport</label>
-                    <select v-model="form.transport_mode" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                    <Select v-model="form.transport_mode" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
                         <option value="Private Transport">Patient / Family Private Transport</option>
                         <option value="Hospital Ambulance">Hospital Ambulance</option>
                         <option value="Emergency Medical Evacuation">Emergency Medical Evacuation (Aero/STAT)</option>
-                    </select>
+                    </Select>
                     <InputError :message="form.errors.transport_mode" class="mt-1" />
                 </div>
             </div>

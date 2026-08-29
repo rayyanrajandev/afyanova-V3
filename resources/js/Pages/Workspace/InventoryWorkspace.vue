@@ -43,6 +43,7 @@ import AfyaSidebarItem from '@/Components/Workspace/AfyaSidebarItem.vue';
 import AfyaWorkspaceMain from '@/Components/Workspace/AfyaWorkspaceMain.vue';
 import AfyaContextPanel from '@/Components/Workspace/AfyaContextPanel.vue';
 import Button from '@/Components/ui/Button.vue';
+import Select from '@/Components/ui/Select.vue';
 import Input from '@/Components/ui/Input.vue';
 import SearchInput from '@/Components/ui/SearchInput.vue';
 import AfyaDatePicker from '@/Components/Afya/AfyaDatePicker.vue';
@@ -1710,21 +1711,21 @@ const breadcrumbLabel = computed(() => {
                     <div class="grid grid-cols-3 gap-2.5">
                         <div>
                             <label class="font-bold text-muted-foreground text-[10px] uppercase">Department / Ward</label>
-                            <select v-model="requisitionForm.department_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                            <Select v-model="requisitionForm.department_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
                                 <option v-for="d in departments" :key="d.id" :value="d.id">{{ d.name }}</option>
-                            </select>
+                            </Select>
                             <InputError :message="requisitionForm.errors.department_id" class="mt-1" />
                         </div>
                         <div>
                             <label class="font-bold text-muted-foreground text-[10px] uppercase">Destination Cabinet</label>
-                            <select v-model="requisitionForm.destination_location_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                            <Select v-model="requisitionForm.destination_location_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
                                 <option v-for="l in locations" :key="l.id" :value="l.id">{{ l.name }}</option>
-                            </select>
+                            </Select>
                             <InputError :message="requisitionForm.errors.destination_location_id" class="mt-1" />
                         </div>
                         <div>
                             <label class="font-bold text-muted-foreground text-[10px] uppercase">Material Scope</label>
-                            <select v-model="requisitionScope" class="w-full h-8 text-xs rounded border border-primary/50 bg-primary/5 px-2 font-bold text-foreground">
+                            <Select v-model="requisitionScope" class="w-full h-8 text-xs rounded border border-primary/50 bg-primary/5 px-2 font-bold text-foreground">
                                 <option value="ALL">Mixed (All 9 Categories)</option>
                                 <option value="Surgical_Consumable">Surgical Consumables Only</option>
                                 <option value="Pharmaceutical">Pharmaceuticals Only</option>
@@ -1733,7 +1734,7 @@ const breadcrumbLabel = computed(() => {
                                 <option value="Stationery_Registers">Stationery & MTUHA</option>
                                 <option value="Medical_Gas">Medical Gases Only</option>
                                 <option value="Linen_Bedding">Linen & Apparel Only</option>
-                            </select>
+                            </Select>
                         </div>
                     </div>
 
@@ -1827,7 +1828,7 @@ const breadcrumbLabel = computed(() => {
                         </div>
                         <div>
                             <label class="font-bold text-muted-foreground text-[10px] uppercase">Category</label>
-                            <select v-model="newItemForm.category" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                            <Select v-model="newItemForm.category" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
                                 <option value="Surgical_Consumable">Medical & Surgical Consumables</option>
                                 <option value="Pharmaceutical">Pharmaceuticals & IV Fluids</option>
                                 <option value="Lab_Reagent">Lab Reagents & Diagnostics</option>
@@ -1837,7 +1838,7 @@ const breadcrumbLabel = computed(() => {
                                 <option value="Linen_Apparel">Linen & Apparel</option>
                                 <option value="Nutrition_Food">Kitchen Rations</option>
                                 <option value="Fixed_Asset">Biomedical Fixed Asset</option>
-                            </select>
+                            </Select>
                             <InputError :message="newItemForm.errors.category" class="mt-1" />
                         </div>
                     </div>
@@ -1888,21 +1889,21 @@ const breadcrumbLabel = computed(() => {
                     <div class="grid grid-cols-3 gap-2.5">
                         <div>
                             <label class="font-bold text-muted-foreground text-[10px] uppercase">From Source Store</label>
-                            <select v-model="transferForm.source_location_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                            <Select v-model="transferForm.source_location_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
                                 <option v-for="l in locations" :key="l.id" :value="l.id">{{ l.name }}</option>
-                            </select>
+                            </Select>
                             <InputError :message="transferForm.errors.source_location_id" class="mt-1" />
                         </div>
                         <div>
                             <label class="font-bold text-muted-foreground text-[10px] uppercase">To Destination Store</label>
-                            <select v-model="transferForm.destination_location_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                            <Select v-model="transferForm.destination_location_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
                                 <option v-for="l in locations" :key="l.id" :value="l.id">{{ l.name }}</option>
-                            </select>
+                            </Select>
                             <InputError :message="transferForm.errors.destination_location_id" class="mt-1" />
                         </div>
                         <div>
                             <label class="font-bold text-muted-foreground text-[10px] uppercase">Material Scope</label>
-                            <select v-model="transferScope" class="w-full h-8 text-xs rounded border border-primary/50 bg-primary/5 px-2 font-bold text-foreground">
+                            <Select v-model="transferScope" class="w-full h-8 text-xs rounded border border-primary/50 bg-primary/5 px-2 font-bold text-foreground">
                                 <option value="ALL">Mixed (All 9 Categories)</option>
                                 <option value="Surgical_Consumable">Surgical Consumables Only</option>
                                 <option value="Pharmaceutical">Pharmaceuticals Only</option>
@@ -1911,7 +1912,7 @@ const breadcrumbLabel = computed(() => {
                                 <option value="Stationery_Registers">Stationery & MTUHA</option>
                                 <option value="Medical_Gas">Medical Gases Only</option>
                                 <option value="Linen_Bedding">Linen & Apparel Only</option>
-                            </select>
+                            </Select>
                         </div>
                     </div>
 
@@ -2020,21 +2021,21 @@ const breadcrumbLabel = computed(() => {
                     <div class="grid grid-cols-3 gap-2.5">
                         <div>
                             <label class="font-bold text-muted-foreground text-[10px] uppercase">Supplier</label>
-                            <select v-model="poForm.supplier_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                            <Select v-model="poForm.supplier_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
                                 <option v-for="s in suppliers" :key="s.id" :value="s.id">{{ s.name }}</option>
-                            </select>
+                            </Select>
                             <InputError :message="poForm.errors.supplier_id" class="mt-1" />
                         </div>
                         <div>
                             <label class="font-bold text-muted-foreground text-[10px] uppercase">Receiving Store</label>
-                            <select v-model="poForm.destination_location_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                            <Select v-model="poForm.destination_location_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
                                 <option v-for="l in locations" :key="l.id" :value="l.id">{{ l.name }}</option>
-                            </select>
+                            </Select>
                             <InputError :message="poForm.errors.destination_location_id" class="mt-1" />
                         </div>
                         <div>
                             <label class="font-bold text-muted-foreground text-[10px] uppercase">Material Scope</label>
-                            <select v-model="poScope" class="w-full h-8 text-xs rounded border border-primary/50 bg-primary/5 px-2 font-bold text-foreground">
+                            <Select v-model="poScope" class="w-full h-8 text-xs rounded border border-primary/50 bg-primary/5 px-2 font-bold text-foreground">
                                 <option value="ALL">Mixed (All 9 Categories)</option>
                                 <option value="Surgical_Consumable">Surgical Consumables Only</option>
                                 <option value="Pharmaceutical">Pharmaceuticals Only</option>
@@ -2043,7 +2044,7 @@ const breadcrumbLabel = computed(() => {
                                 <option value="Stationery_Registers">Stationery & MTUHA</option>
                                 <option value="Medical_Gas">Medical Gases Only</option>
                                 <option value="Linen_Bedding">Linen & Apparel Only</option>
-                            </select>
+                            </Select>
                         </div>
                     </div>
 
@@ -2114,21 +2115,21 @@ const breadcrumbLabel = computed(() => {
                     <div class="grid grid-cols-3 gap-3">
                         <div>
                             <label class="font-bold text-muted-foreground text-[10px] uppercase">Supplier</label>
-                            <select v-model="grnForm.supplier_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                            <Select v-model="grnForm.supplier_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
                                 <option v-for="s in suppliers" :key="s.id" :value="s.id">{{ s.name }}</option>
-                            </select>
+                            </Select>
                             <InputError :message="grnForm.errors.supplier_id" class="mt-1" />
                         </div>
                         <div>
                             <label class="font-bold text-muted-foreground text-[10px] uppercase">Receiving Warehouse</label>
-                            <select v-model="grnForm.location_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                            <Select v-model="grnForm.location_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
                                 <option v-for="l in locations" :key="l.id" :value="l.id">{{ l.name }}</option>
-                            </select>
+                            </Select>
                             <InputError :message="grnForm.errors.location_id" class="mt-1" />
                         </div>
                         <div>
                             <label class="font-bold text-muted-foreground text-[10px] uppercase">Material Scope</label>
-                            <select v-model="grnScope" class="w-full h-8 text-xs rounded border border-primary/50 bg-primary/5 px-2 font-bold text-foreground">
+                            <Select v-model="grnScope" class="w-full h-8 text-xs rounded border border-primary/50 bg-primary/5 px-2 font-bold text-foreground">
                                 <option value="ALL">Mixed (All 9 Categories)</option>
                                 <option value="Surgical_Consumable">Surgical Consumables Only</option>
                                 <option value="Pharmaceutical">Pharmaceuticals Only</option>
@@ -2137,7 +2138,7 @@ const breadcrumbLabel = computed(() => {
                                 <option value="Stationery_Registers">Stationery & MTUHA</option>
                                 <option value="Medical_Gas">Medical Gases Only</option>
                                 <option value="Linen_Bedding">Linen & Apparel Only</option>
-                            </select>
+                            </Select>
                         </div>
                     </div>
 
@@ -2262,16 +2263,16 @@ const breadcrumbLabel = computed(() => {
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="block font-bold text-[10px] uppercase text-muted-foreground mb-1">Facility *</label>
-                            <select v-model="ddaForm.facility_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                            <Select v-model="ddaForm.facility_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
                                 <option v-for="f in facilities" :key="f.id" :value="f.id">{{ f.name }}</option>
-                            </select>
+                            </Select>
                             <InputError :message="ddaForm.errors.facility_id" class="mt-1" />
                         </div>
                         <div>
                             <label class="block font-bold text-[10px] uppercase text-muted-foreground mb-1">Controlled Item *</label>
-                            <select v-model="ddaForm.item_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                            <Select v-model="ddaForm.item_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
                                 <option v-for="item in itemMasters" :key="item.id" :value="item.id">{{ item.name }} ({{ item.item_code }})</option>
-                            </select>
+                            </Select>
                             <InputError :message="ddaForm.errors.item_id" class="mt-1" />
                         </div>
                     </div>
@@ -2279,9 +2280,9 @@ const breadcrumbLabel = computed(() => {
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="block font-bold text-[10px] uppercase text-muted-foreground mb-1">Batch / Lot # *</label>
-                            <select v-model="ddaForm.batch_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                            <Select v-model="ddaForm.batch_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
                                 <option v-for="b in batches" :key="b.id" :value="b.id">{{ b.batch_number }}</option>
-                            </select>
+                            </Select>
                             <InputError :message="ddaForm.errors.batch_id" class="mt-1" />
                         </div>
                         <div>
@@ -2336,9 +2337,9 @@ const breadcrumbLabel = computed(() => {
                 <form @submit.prevent="submitStocktake" class="p-6 space-y-4 text-xs">
                     <div>
                         <label class="block font-bold text-[10px] uppercase text-muted-foreground mb-1">Stocktake Session *</label>
-                        <select v-model="stocktakeForm.session_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                        <Select v-model="stocktakeForm.session_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
                             <option v-for="st in stocktakeSessions" :key="st.id" :value="st.id">{{ st.session_number }} ({{ st.location?.name }})</option>
-                        </select>
+                        </Select>
                         <InputError :message="stocktakeForm.errors.session_id" class="mt-1" />
                     </div>
 
@@ -2346,9 +2347,9 @@ const breadcrumbLabel = computed(() => {
                         <div class="grid grid-cols-2 gap-2">
                             <div>
                                 <label class="block font-bold text-[10px] uppercase text-muted-foreground mb-1">Medication / Item *</label>
-                                <select v-model="count.medication_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                                <Select v-model="count.medication_id" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
                                     <option v-for="m in medications" :key="m.id" :value="m.id">{{ m.name || m.generic_name }}</option>
-                                </select>
+                                </Select>
                                 <InputError :message="stocktakeForm.errors[`counts.${idx}.medication_id`]" class="mt-1" />
                             </div>
                             <div>

@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import { useForm } from '@inertiajs/vue3';
 import { Syringe, Save, Loader2, CheckCircle2, AlertTriangle, X, ShieldAlert } from 'lucide-vue-next';
 import Button from '@/Components/ui/Button.vue';
+import Select from '@/Components/ui/Select.vue';
 import Input from '@/Components/ui/Input.vue';
 import AfyaDatePicker from '@/Components/Afya/AfyaDatePicker.vue';
 import InputError from '@/Components/InputError.vue';
@@ -149,9 +150,9 @@ const formatDate = (dateStr) => {
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                     <label class="block text-[11px] font-semibold text-foreground mb-1">Standard Vaccine Schedule *</label>
-                    <select v-model="form.vaccine_code" @change="onVaccineSelect" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
+                    <Select v-model="form.vaccine_code" @change="onVaccineSelect" class="w-full h-8 text-xs rounded border border-border bg-card px-2">
                         <option v-for="v in standardVaccines" :key="v.code" :value="v.code">{{ v.code }} - {{ v.name }}</option>
-                    </select>
+                    </Select>
                     <InputError :message="form.errors.vaccine_code" class="mt-1" />
                 </div>
                 <div>
@@ -183,12 +184,12 @@ const formatDate = (dateStr) => {
                 </div>
                 <div>
                     <label class="block text-[11px] font-semibold text-foreground mb-1">Route *</label>
-                    <select v-model="form.route" class="w-full h-8.5 text-xs rounded border border-border bg-card px-2">
+                    <Select v-model="form.route" class="w-full h-8.5 text-xs rounded border border-border bg-card px-2">
                         <option value="Intradermal">Intradermal (ID)</option>
                         <option value="Intramuscular">Intramuscular (IM)</option>
                         <option value="Subcutaneous">Subcutaneous (SC)</option>
                         <option value="Oral">Oral (PO)</option>
-                    </select>
+                    </Select>
                     <InputError :message="form.errors.route" class="mt-1" />
                 </div>
                 <div>

@@ -121,11 +121,16 @@
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 
+  /* Sensible defaults for a bare <select> with no size-variant classes of
+     its own — pr-8 leaves 32px of clearance so text never runs under a
+     dropdown arrow. Deliberately NOT !important: the Select.vue component
+     sets its own per-variant padding/line-height (xs/sm/default/lg), and
+     Tailwind's utilities layer already outranks this base layer on its
+     own — !important here was overriding every variant down to this one
+     fixed size regardless, which is what was clipping text in anything
+     other than the default size. */
   select {
-    @apply truncate text-xs;
-    padding-right: 2rem !important; /* 32px room so text never overlaps native or custom dropdown arrow */
-    padding-left: 0.625rem;
-    line-height: 1.25rem !important;
+    @apply truncate text-xs pr-8 pl-2.5 leading-normal;
     text-overflow: ellipsis;
     white-space: nowrap;
     vertical-align: middle;

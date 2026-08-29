@@ -59,6 +59,7 @@ import { useHospitalAudio } from '@/Composables/useHospitalAudio';
 
 // UI Primitives
 import Button from '@/Components/ui/Button.vue';
+import Select from '@/Components/ui/Select.vue';
 import Input from '@/Components/ui/Input.vue';
 import SearchInput from '@/Components/ui/SearchInput.vue';
 import Table from '@/Components/ui/Table.vue';
@@ -1923,7 +1924,7 @@ const formatCurrency = (val) => Number(val || 0).toLocaleString('en-US');
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                         <div class="space-y-1">
                             <label class="block font-bold text-xs text-foreground">Department *</label>
-                            <select 
+                            <Select 
                                 v-model="addTestForm.category" 
                                 required
                                 class="w-full h-8.5 rounded-md border border-input bg-background text-foreground px-3 py-1 text-xs shadow-xs"
@@ -1935,20 +1936,20 @@ const formatCurrency = (val) => Number(val || 0).toLocaleString('en-US');
                                 <option value="Urinalysis">Urinalysis</option>
                                 <option value="Serology & Immunology">Serology & Immunology</option>
                                 <option value="Blood Transfusion">Blood Transfusion</option>
-                            </select>
+                            </Select>
                         </div>
 
                         <div class="space-y-1">
                             <label class="block font-bold text-xs text-foreground">Specimen Container *</label>
-                            <select
-                                :value="addTestForm.specimen_type"
-                                @change="onContainerSelected($event.target.value)"
+                            <Select
+                                v-model="addTestForm.specimen_type"
+                                @change="onContainerSelected"
                                 required
                                 class="w-full h-8.5 rounded-md border border-input bg-background text-foreground px-2.5 py-1 text-xs shadow-xs"
                             >
                                 <option v-for="c in standardContainers" :key="c.value" :value="c.value">{{ c.label }}</option>
                                 <option value="Other / Custom Container">➕ Other / Custom Container</option>
-                            </select>
+                            </Select>
                         </div>
 
                         <div class="space-y-1">
@@ -1967,7 +1968,7 @@ const formatCurrency = (val) => Number(val || 0).toLocaleString('en-US');
                             <p class="text-[10px] text-muted-foreground">Auto-deducts 1 unit from Lab Phlebotomy Bench store upon sample collection.</p>
                         </div>
                         <div>
-                            <select
+                            <Select
                                 v-model="addTestForm.inventory_item_id"
                                 class="w-full h-8 rounded-md border border-input bg-background text-foreground px-2.5 py-1 text-xs shadow-xs font-mono"
                             >
@@ -1975,7 +1976,7 @@ const formatCurrency = (val) => Number(val || 0).toLocaleString('en-US');
                                 <option v-for="item in props.labConsumables" :key="item.id" :value="item.id">
                                     [{{ item.item_code }}] {{ item.name }}
                                 </option>
-                            </select>
+                            </Select>
                         </div>
                     </div>
 
