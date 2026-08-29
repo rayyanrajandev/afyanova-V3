@@ -1,6 +1,6 @@
 <script setup>
 import { cn } from "@/lib/utils";
-import { Button } from "@/Components/ui/button";
+import Button from "@/Components/ui/Button.vue";
 import { inputGroupButtonVariants } from ".";
 
 const props = defineProps({

@@ -1,6 +1,6 @@
 <script setup>
 import { cn } from "@/lib/utils";
-import { Input } from "@/Components/ui/input";
+import Input from "@/Components/ui/Input.vue";
 
 const props = defineProps({
   class: {
